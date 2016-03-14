@@ -75,7 +75,6 @@
         "test:integration": "istanbul cover --config=tests/integration/.istanbul.yml node_modules/mocha/bin/_mocha -- --opts tests/mocha.opts tests/integration",
         "test": "npm run test:unit && npm run test:integration",
         "api-doc": "bootprint openapi swagger/swagger.yaml build/reports/api-doc",
-        "deb": "gulp deb",
-        "build": "npm run test && npm run api-doc && npm run deb"
+        "deb": "gulp deb"
     }
 }
