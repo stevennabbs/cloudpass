@@ -78,7 +78,7 @@
     "test": "npm run test:unit && npm run test:integration",
     "coveralls": "cat build/reports/coverage/integration/lcov.info | coveralls",
     "api-doc": "bootprint openapi swagger/swagger.yaml build/reports/api-doc",
-    "gh-pages": "gh-pages-deploy-cmd 'build/reports/api-doc'",
+    "gh-pages": "gh-pages-deploy-cmd 'build/reports/api-doc/**'",
     "deb": "gulp deb"
   }
 }
