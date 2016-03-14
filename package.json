@@ -57,7 +57,7 @@
     "bootprint-openapi": "0.14.0",
     "coveralls": "2.11.8",
     "env-test": "1.0.0",
-    "gh-pages-deploy-cmd": "1.0.1",
+    "gh-pages-with-token": "1.0.0",
     "gulp": "3.9.1",
     "gulp-deb": "0.2.0",
     "gulp-rename": "1.2.2",
@@ -78,7 +78,7 @@
     "test": "npm run test:unit && npm run test:integration",
     "coveralls": "cat build/reports/coverage/integration/lcov.info | coveralls",
     "api-doc": "bootprint openapi swagger/swagger.yaml build/reports/api-doc",
-    "gh-pages": "gh-pages-deploy-cmd 'build/reports/api-doc/**/*'",
+    "gh-pages": "gh-pages-with-token -d build/reports/api-doc",
     "deb": "gulp deb"
   }
 }
