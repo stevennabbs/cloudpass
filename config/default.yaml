@@ -1,0 +1,47 @@
+# Please do not modify this file !
+# Create instead a 'local.yaml' file in the same directory
+# and override the relevant values
+
+server:
+  # URL of cloudpass, used to prefix hrefs. If null, hrefs will be relative paths
+  rootUrl: null
+  # Port on which the server will listen
+  port: 10010
+  # If true, the application will be clusted in a number of procesess equals to
+  # the number of process cores (but not more than 4)
+  clustering: true
+  # path of the folder containing static UI files. These files will be served under /ui
+  uiFolder: public
+
+email:
+  # List of address that will receive a copy of each email sent
+  bcc: null
+  # configuration of email transport
+  transport:
+    direct: true   
+# Or To use SMTP server:
+#  transport:
+#    direct: false
+#    host: smtp.example.com
+#    port: 587
+#    auth:
+#      user: mailer@example.com
+#      pass: xxxxxxx
+
+# PostgreSQL persistence, UNIX socket connection using peer authentication
+# TO use TCP sockets, change the 'host' property and add username and password
+persistence:
+  database: cloudpass
+  options:
+    dialect: postgres
+    host: /var/run/postgresql
+    port: 5432
+    pool:
+      minConnections: 5
+      maxConnections: 5
+      maxIdleTime: 1000
+# Or for SQLLite:
+#persistence:
+#  options:
+#    dialect: sqlite
+#    storage: cloudpass.db (or storage: ':memory:')

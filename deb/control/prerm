@@ -1,0 +1,11 @@
+#!/bin/sh -e
+
+if [ "$1" = "remove" ] 
+then
+  rm -rf /usr/share/cloudpass/node_modules
+  if which systemctl >/dev/null
+  then
+    systemctl stop cloudpass.service || true
+    systemctl disable cloudpass.service || true
+  fi
+fi

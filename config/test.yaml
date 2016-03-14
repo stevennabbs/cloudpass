@@ -1,0 +1,18 @@
+server:
+    port: 20020
+    # using clustering would also fork tests
+    clustering: false
+    
+email:
+    transport:
+        direct: false
+        host: localhost
+        port: 20030
+        secure: false
+        ignoreTLS: true
+
+# in memory sqlite persistence
+persistence:
+    options:
+        dialect: sqlite
+        storage: ':memory:'

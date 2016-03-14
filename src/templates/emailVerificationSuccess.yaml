@@ -1,0 +1,14 @@
+subject: Your account has been confirmed
+textBody: |
+    Hi,
+    Your account has been successfully verified for ${account.directory.name}.
+
+    --------------------
+    For general inquiries or to request support with your account, please email change-me@example.com
+htmlBody: >
+    <p>Hi,</p>
+    
+    <p>Your account has been successfully verified for ${account.directory.name}.</p>
+    
+    <p>--------------------<br />
+    For general inquiries or to request support with your account, please email change-me@example.com</p>

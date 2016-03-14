@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+if [ "$1" = "remove" ] && which systemctl >/dev/null; then
+   systemctl daemon-reload || true
+fi
+
+if [ "$1" = "purge" ]
+then
+  # delete cloudpass user and groups
+  sudo -u postgres dropdb cloudpass || true
+  sudo -u postgres dropuser cloudpass || true
+  deluser cloudpass || true
+  delgroup cloudpass || true
+fi

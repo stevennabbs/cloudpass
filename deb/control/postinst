@@ -1,0 +1,31 @@
+#!/bin/sh -e
+
+if [ "$1" = "configure" ]
+then
+  
+  # install npm dependencies
+  (cd /usr/share/cloudpass/ && npm update -loglevel error > /dev/null)
+
+  # create debian group and user
+  if ! getent group "cloudpass" > /dev/null 2>&1 ; then
+    addgroup --system "cloudpass" --quiet
+  fi
+  if ! id cloudpass > /dev/null 2>&1 ; then
+    adduser --system --no-create-home --ingroup "cloudpass" --disabled-password --shell /bin/false "cloudpass"
+  fi
+  
+  # create postgres user and database if not already exists
+  sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='cloudpass'" | grep -q 1 || sudo -u postgres createuser cloudpass
+  sudo -u postgres psql -lqtA | cut -d \| -f 1 | grep -wq cloudpass || sudo -u postgres createdb --owner=cloudpass cloudpass
+
+  # assign installed files
+  chown -Rh root:cloudpass /etc/cloudpass
+  chown -Rh cloudpass:cloudpass /usr/share/cloudpass
+  # chown -Rh cloudpass:adm /var/log/cloudpass  
+
+  if which systemctl >/dev/null; then
+    systemctl daemon-reload
+    systemctl enable cloudpass.service
+    systemctl start cloudpass.service || true
+  fi
+fi

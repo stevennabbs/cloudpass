@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+if [ "$1" = "upgrade" ] && which systemctl >/dev/null; then
+    systemctl stop cloudpass.service || true
+fi
