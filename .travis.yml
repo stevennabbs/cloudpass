@@ -4,7 +4,15 @@ node_js:
 after_success:
 - npm run coveralls
 - npm run api-doc
+- openssl aes-256-cbc -K $encrypted_ee3bd25dbd34_key -iv $encrypted_ee3bd25dbd34_iv -in id_rsa.enc -out id_rsa -d
 - npm run gh-pages
 env:
   global:
-    secure: kjv41yjBuO+NXKQBrnRnoY6zZNM0FHUjFwYk9nr1Hbpww3D5FOWaKk2El5U8wl6uIpgCM9m0EI/EKAdljY4+sSZaOPit8BxhCKD7ROd3EiI/kWfLtx/2HQw/ZgL95HwHiLFdl3U27q8PFC2nGsoir+mMNbFtQrGnAMZUMP7isuJpzLvibR3rLnVhd7Z6qetfLW93nzELyhD2KPAePsSjLhhjQhFDAYXXZYQUYMSbGduUQBi9UP2UHP3dbx7e4YIGVMkj9RQg/tBE34MyrLaME+ha0F11HBn8TpFrvTVGRDodUYPIynocNV03Rmk3Q5nnUNetxr99Z3yYSxPFZUgf1EdQ4XiyVx7ie8HgEkuPBMXrhH53vXvQ2tPdweAOUfvc5wM6IzaSukzcgapz1sYpm0aekk843t5WUyA1Naum0mtoysTtUM0wpesG/oNnRSNa1yLZpBO9MUd+ikF6J2Fp6G+aJVag/r/2UDo7TJvP9/Tp7nav18xU709AqsEGHxu9+NJ479eYb2VjVRAeETqOjM1Uj/A4LHJ9lQ85166m2lkM137lmIN+EH/oQvXF0G+vgHeNKUL1cBSFZTEdZaQLh4hd0h2ZfvM5UjY6PUFo40TtCsOBClnV4IPOXhhq6k2inOknvVFRhIjJxtyk0MsuHD3j7z6RgUVU40NrYfzPMFo=
+    - SSH_KEY="id_rsa"
+    - GIT_NAME="msuret"
+    - GIT_EMAIL="msuret@dhatim.com"
+    - SOURCE_DIR="build/reports/api-doc"
+    - DEPLOY_BRANCH="master"
+branches:
+  except:
+    - gh-pages
