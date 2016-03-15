@@ -6,3 +6,5 @@
 [![Coverage Status](https://coveralls.io/repos/github/dhatim/cloudpass/badge.svg?branch=master)](https://coveralls.io/github/dhatim/cloudpass?branch=master)
 
 User management system
+
+The full API description is [here](http://blog.dhatim.io/cloudpass)
