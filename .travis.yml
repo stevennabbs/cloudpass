@@ -4,15 +4,15 @@ node_js:
 after_success:
 - npm run coveralls
 - npm run api-doc
-- openssl aes-256-cbc -K $encrypted_ee3bd25dbd34_key -iv $encrypted_ee3bd25dbd34_iv -in id_rsa.enc -out id_rsa -d
+- openssl aes-256-cbc -K $encrypted_9fbbc0973790_key -iv $encrypted_9fbbc0973790_iv -in id_rsa.enc -out id_rsa -d
 - npm run gh-pages
 env:
   global:
-    - SSH_KEY="id_rsa"
-    - GIT_NAME="msuret"
-    - GIT_EMAIL="msuret@dhatim.com"
-    - SOURCE_DIR="build/reports/api-doc"
-    - DEPLOY_BRANCH="master"
+  - SSH_KEY="id_rsa"
+  - GIT_NAME="msuret"
+  - GIT_EMAIL="msuret@dhatim.com"
+  - SOURCE_DIR="build/reports/api-doc"
+  - DEPLOY_BRANCH="master"
 branches:
   except:
-    - gh-pages
+  - gh-pages
