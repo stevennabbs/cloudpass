@@ -4,7 +4,7 @@ if [ "$1" = "configure" ]
 then
   
   # install npm dependencies
-  (cd /usr/share/cloudpass/ && npm update -loglevel error > /dev/null)
+  (cd /usr/share/cloudpass/ && npm update --production -loglevel error > /dev/null)
 
   # create debian group and user
   if ! getent group "cloudpass" > /dev/null 2>&1 ; then
@@ -21,7 +21,8 @@ then
   # assign installed files
   chown -Rh root:cloudpass /etc/cloudpass
   chown -Rh cloudpass:cloudpass /usr/share/cloudpass
-  # chown -Rh cloudpass:adm /var/log/cloudpass  
+  # make directories executable
+  chmod -R a+X,go-w /usr/share/cloudpass /etc/cloudpass
 
   if which systemctl >/dev/null; then
     systemctl daemon-reload

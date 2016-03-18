@@ -3,13 +3,18 @@ var gulp = require('gulp');
 var deb = require('gulp-deb');
 var rename = require("gulp-rename");
 var merge = require('merge-stream');
+//can't pipe with supertest (c.f. https://github.com/visionmedia/supertest/issues/49), use superagent directly 
+var request = require('./node_modules/supertest/node_modules/superagent');
 var pkg = require('./package.json');
- 
+
+var debFileName = pkg.name+'_'+pkg.version+'_all.deb';
+
 gulp.task('deb', function () {
  
   return merge(
         gulp.src(
             [
+                '.',
                 'src/**',
                 'swagger/**',
                 'migrations/**',
@@ -21,9 +26,9 @@ gulp.task('deb', function () {
             path.dirname = '/usr/share/cloudpass/'+path.dirname;
          })),
         gulp.src(['deb/data/**']),
-        gulp.src(["config/default.yaml"]).pipe(rename({dirname: "/etc/cloudpass"}))
+        gulp.src(['.', 'default.yaml'], {cwd: 'config', base: 'config'}).pipe(rename({dirname: "/etc/cloudpass"}))
     )
-    .pipe(deb(pkg.name+'_'+pkg.version+'_all.deb', {
+    .pipe(deb(debFileName, {
         name: pkg.name,
         version: pkg.version,
         maintainer: {
@@ -48,4 +53,21 @@ gulp.task('deb', function () {
         }
     }))
     .pipe(gulp.dest('build/'));
+});
+
+gulp.task('deploy-deb', ['deb'], function(){
+    var stream =  fs.createReadStream('build/'+debFileName);
+    stream.pipe(
+        request.put('https://api.bintray.com/content/dhatim/deb/pool/main/c/cloudpass/'+debFileName)
+            .auth(process.env.BINTRAY_NAME, process.env.BINTRAY_KEY)
+            .set("Content-Type", "application/octet-stream")
+            .set('X-Bintray-Package', 'cloudpass')
+            .set('X-Bintray-Version', pkg.version)
+            .set('X-Bintray-Publish', 1)
+            .set('X-Bintray-Override', 1)
+            .set('X-Bintray-Debian-Distribution', 'stable')
+            .set('X-Bintray-Debian-Component', 'main')
+            .set('X-Bintray-Debian-Architecture', 'all')
+    );
+    return stream;
 });
