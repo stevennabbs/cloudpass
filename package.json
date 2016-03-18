@@ -79,7 +79,6 @@
     "coveralls": "cat build/reports/coverage/integration/lcov.info | coveralls",
     "api-doc": "bootprint openapi swagger/swagger.yaml build/reports/api-doc",
     "gh-pages": "gh-pages-travis",
-    "deb": "gulp deb",
     "deploy-deb": "gulp deploy-deb"
   }
 }
