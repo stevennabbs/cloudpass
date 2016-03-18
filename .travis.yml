@@ -29,4 +29,6 @@ deploy:
   on:
     tags: true
 after_deploy:
+- eval `ssh-agent -s`
+- ssh-add $SSH_KEY
 - git push
