@@ -4,7 +4,7 @@ var deb = require('gulp-deb');
 var rename = require("gulp-rename");
 var merge = require('merge-stream');
 //can't pipe with supertest (c.f. https://github.com/visionmedia/supertest/issues/49), use superagent directly 
-var request = require('./node_modules/supertest/node_modules/superagent');
+var request = require('supertest/node_modules/superagent');
 var pkg = require('./package.json');
 
 var debFileName = pkg.name+'_'+pkg.version+'_all.deb';
