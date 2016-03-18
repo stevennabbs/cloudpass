@@ -30,5 +30,6 @@ deploy:
     tags: true
 after_deploy:
 - eval `ssh-agent -s`
+- chmod 600 $SSH_KEY
 - ssh-add $SSH_KEY
 - git push
