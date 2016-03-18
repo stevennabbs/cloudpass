@@ -29,7 +29,8 @@ deploy:
   on:
     tags: true
 after_deploy:
-- eval `ssh-agent -s`
+- eval "$(ssh-agent -s)"
 - chmod 600 $SSH_KEY
 - ssh-add $SSH_KEY
-- git push
+- git remote add deploy git@github.com:dhatim/cloudpass.git
+- git push deploy
