@@ -23,12 +23,11 @@ before_deploy:
 - chmod 600 $SSH_KEY
 - ssh-add $SSH_KEY
 - git remote add deploy git@github.com:dhatim/cloudpass.git
-- git checkout master
 - git config --global user.name "$GIT_NAME"
 - git config --global user.email "$GIT_EMAIL"
+- git checkout -b master
 - git tag -f -a $TRAVIS_TAG -m $TRAVIS_TAG
 - npm version from-git
-- git status
 - git push deploy master
 deploy:
   provider: script
