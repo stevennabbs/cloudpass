@@ -18,11 +18,6 @@ after_success:
 - npm run api-doc
 - openssl aes-256-cbc -K $encrypted_9fbbc0973790_key -iv $encrypted_9fbbc0973790_iv -in id_rsa.enc -out id_rsa -d
 - npm run gh-pages
-before_deploy:
-- git config --global user.name "$GIT_NAME"
-- git config --global user.email "$GIT_EMAIL"
-- git tag -f -a $TRAVIS_TAG -m $TRAVIS_TAG
-- npm version from-git
 deploy:
   provider: script
   script: npm run deploy-deb

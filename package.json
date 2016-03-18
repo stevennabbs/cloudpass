@@ -1,6 +1,6 @@
 {
   "name": "cloudpass",
-  "version": "1.2.1",
+  "version": "1.2.0",
   "private": true,
   "description": "User management system",
   "keywords": [
@@ -80,6 +80,8 @@
     "coveralls": "cat build/reports/coverage/integration/lcov.info | coveralls",
     "api-doc": "bootprint openapi swagger/swagger.yaml build/reports/api-doc",
     "gh-pages": "gh-pages-travis",
-    "deploy-deb": "gulp deploy-deb"
+    "deploy-deb": "gulp deploy-deb",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags"
   }
 }
