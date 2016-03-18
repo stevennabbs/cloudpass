@@ -28,7 +28,7 @@ before_deploy:
 - git tag -f -a $TRAVIS_TAG -m $TRAVIS_TAG
 - npm version from-git
 - git status
-- git push deploy
+- git push deploy master
 deploy:
   provider: script
   script: npm run deploy-deb
