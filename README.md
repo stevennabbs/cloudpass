@@ -15,30 +15,29 @@ Persistence of data is done either through PostgreSQL, MySQL, MariaDB, SQLite or
 
 ### Debian based distributions
 
-Cloudpass can be installed on Debian and Ubuntu based linux distributions from a package hosted on bintray.
+Cloudpass can be installed on Debian and Ubuntu based linux distributions from a package hosted on Bintray.
 Note that this package depends on PostgreSQL, as it is the default DBMS.
 
-- Cloupdass needs Node.js 4.x to run, so you will need to add node debian repository to your source list if you have not done so already.
-You can find instructions [here](https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions), or simply run this command:
-```bash
-wget -O - https://deb.nodesource.com/setup_4.x | sudo -E bash -
-```
+- Cloupdass needs Node.js 4.x to run, so you will need to add node debian repository to your source list if you have not done so already. You can find instructions [here](https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions), or simply run this command:
+  ```bash
+  wget -O - https://deb.nodesource.com/setup_4.x | sudo -E bash -
+  ```
 
-- Add Dhatim bintrays's debian repository in sources.list:
-```bash
-echo "deb http://dl.bintray.com/dhatim/deb stable main" | sudo tee -a /etc/apt/sources.list
-```
+- Add Dhatim Bintray's debian repository in sources.list:
+  ```bash
+  echo "deb http://dl.bintray.com/dhatim/deb stable main" | sudo tee -a /etc/apt/sources.list
+  ```
 
-- If it is the first repository from bintray that you add, you will also need to add Bintray's public key to apt:
-```bash
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
-```
+- If it is the first repository from Bintray that you add, you will also need to add Bintray's public key to apt:
+  ```bash
+  sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
+  ```
 
 - Now all you need to do is install the cloudpass package:
-```bash
-sudo apt-get update && sudo apt-get install cloudpass
-```
-It can take a few minutes. Don't worry, that's just `npm install` doing its job. Subsequent updates will be much faster!
+  ```bash
+  sudo apt-get update && sudo apt-get install cloudpass
+  ```
+  It can take a few minutes. Don't worry, that's just `npm install` doing its job. Subsequent updates will be much faster!
 
 Cloudpass is now installed as a systemd service with no additional configuration needed!
 
