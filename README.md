@@ -86,7 +86,7 @@ If `rootUrl` is left null, all hrefs will be relatives (e.g `/tenants/foo`). Thi
 
 - `database`: name of the database to connect to (irrelevant for sqlite).
 - `username` and `password`: connection credentials.
-- `options`: connection options. Cloudpass uses Sequelize internally, and this object is passed *as it is* to the Sequelize constructor. A list of available options is available in [Sequelize documentation(http://docs.sequelizejs.com/en/latest/api/sequelize/#new-sequelizedatabase-usernamenull-passwordnull-options).
+- `options`: connection options. Cloudpass uses Sequelize internally, and this object is passed *as it is* to the Sequelize constructor. A list of available options is available in [Sequelize documentation](http://docs.sequelizejs.com/en/latest/api/sequelize/#new-sequelizedatabase-usernamenull-passwordnull-options).
 
 :exclamation: If you choose a database other than PostgreSQL, you will need to install the corresponding client:
 - MySQL or MariaDB: `npm install mysql`
