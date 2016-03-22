@@ -76,10 +76,11 @@
     "clean": "rimraf build",
     "test:unit": "istanbul cover --config=tests/unit/.istanbul.yml node_modules/mocha/bin/_mocha -- --opts tests/mocha.opts tests/unit",
     "test:integration": "istanbul cover --config=tests/integration/.istanbul.yml node_modules/mocha/bin/_mocha -- --opts tests/mocha.opts tests/integration",
-    "test": "npm run test:unit && npm run test:integration",
-    "coveralls": "cat build/reports/coverage/integration/lcov.info | coveralls",
+    "test": "istanbul cover --config=tests/.istanbul.yml node_modules/mocha/bin/_mocha -- --opts tests/mocha.opts tests",
+    "coveralls": "cat build/reports/coverage/global/lcov.info | coveralls",
     "api-doc": "bootprint openapi swagger/swagger.yaml build/reports/api-doc",
     "gh-pages": "gh-pages-travis",
+    "deb": "gulp deb",
     "deploy-deb": "gulp deploy-deb",
     "preversion": "npm test",
     "postversion": "git push && git push --tags"
