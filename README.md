@@ -105,7 +105,7 @@ persistence:
     storage: cloudpass.db
 ```
 
-You can also use unix sockets take profit of peer authentication to avoid having to provide a password in the configuration file:
+You can also use unix sockets and take profit of peer authentication to avoid having to provide a password in the configuration file:
 
 ```yaml
 persistence:
@@ -125,9 +125,9 @@ persistence:
     options:
 	  dialect: postgres
       host: localhost
-	pool:
-      minConnections: 5
-      maxConnections: 10
+      pool:
+        minConnections: 5
+        maxConnections: 10
 ```
 
 ### Email
