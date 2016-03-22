@@ -122,12 +122,12 @@ persistence:
   database: cloudpass
   username: cloudpass
   password: wouldntyouliketoknow
-    options:
-	  dialect: postgres
-      host: localhost
-      pool:
-        minConnections: 5
-        maxConnections: 10
+  options:
+    dialect: postgres
+    host: localhost
+    pool:
+      minConnections: 5
+      maxConnections: 10
 ```
 
 ### Email
@@ -143,7 +143,7 @@ The default configuration uses direct transport, which is a very good way of get
 email:
   bcc:
     - foo@example.com
-	- bar@example.com
+    - bar@example.com
   transport:
     direct: false
     host: smtp.example.com
