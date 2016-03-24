@@ -108,9 +108,7 @@ var sequelize = new Sequelize(sequelizeConfig.database, sequelizeConfig.username
 
 //convenience method to start a transaction only if none is already started
 sequelize.requireTransaction = function(query){
-    return Sequelize.cls.get('transaction')
-        ? query()
-        : this.transaction(query);
+    return Sequelize.cls.get('transaction') ? query() : this.transaction(query);
 };
 
 //default Model.count is not working with SSACL (see https://github.com/pumpupapp/ssacl/issues/4)
@@ -253,7 +251,7 @@ function resolveHref(href){
             return model.build({id:split[1]});
         }
     }
-};
+}
 db.resolveHref = resolveHref;
 
 db.sequelize = sequelize;

@@ -2,7 +2,6 @@
 
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
-var util = require('util');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
 
@@ -36,10 +35,10 @@ function getOrderClause(orderParam){
                     case 2:
                         return (split[1].toUpperCase() === 'DESC')?[split[0], 'DESC']:split[0];
                     default:
-                        throw new ApiError(400, 2104,
-                            "Invalid orderBy clause '"
-                                +orderStatement
-                                +"'.  An order statement must be a queryable property optionally followed by a space character and order direction token (asc or desc).");
+                        throw new ApiError(
+                            400,
+                            2104,
+                            "Invalid orderBy clause '" + orderStatement + "'.  An order statement must be a queryable property optionally followed by a space character and order direction token (asc or desc).");
                     }
             }
         );
@@ -76,7 +75,7 @@ function getWhereClause(query, target){
             return whereClauses[0];
         default:
             return {$and: whereClauses};
-    };
+    }
 }
 function getCollectionQueryOptions(req, target){
     return _.defaults(

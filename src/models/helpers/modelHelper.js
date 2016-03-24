@@ -1,3 +1,5 @@
+"use strict";
+
 exports.arrayField = function(DataTypes, name){
     return {
         type: DataTypes.STRING(1022),

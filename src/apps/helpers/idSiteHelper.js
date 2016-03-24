@@ -1,15 +1,10 @@
 'use strict';
 
-var scopeHelper = require('./scopeHelper');
 var jwt = require('jsonwebtoken');
-var moment = require('moment');
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var getApiKey = require('./getApiKey');
 var models = require('../../models');
-
-//get all API paths used by ID sites
-var idSiteAllowedPaths = scopeHelper.scopeToPaths(scopeHelper.getIdSiteScope(':id'));
 
 exports.idSiteHeaders = function(req, res, next){
     
@@ -88,5 +83,5 @@ function getJwtResponse(apiKey, cbUri, initialJwtId, isNewSub, accountHref){
             _.partial(callback, null)
         );
     });
-};
+}
 exports.getJwtResponse = getJwtResponse;

@@ -2,7 +2,6 @@
 
 var express = require('express');
 var jwt = require('jsonwebtoken');
-var ssacl = require('ssacl');
 var cookieParser = require('cookie-parser');
 var moment = require('moment');
 var BluebirdPromise = require('sequelize').Promise;

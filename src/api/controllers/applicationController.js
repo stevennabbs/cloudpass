@@ -130,7 +130,7 @@ controller.createPasswordResetToken = function(req, res){
         .then(function(expanded){
            res.json(expanded);         
         })
-        .catch(req.next);;
+        .catch(req.next);
 };
 
 controller.getPasswordResetToken = function(req, res){

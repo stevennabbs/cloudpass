@@ -1,3 +1,5 @@
+"use strict";
+
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var Optional = require('optional-js');
@@ -7,9 +9,7 @@ var models = require('../../models');
 var config = require('config');
 var sendEmail = require('../../sendEmail');
 
-var invitationBaseUrl = Optional.ofNullable(config.get('server.rootUrl'))
-                    .orElseGet({get: function(){return 'http://'+require('os').hostname()+':'+config.get('server.port');}})
-                        +'/ui/';
+var invitationBaseUrl = Optional.ofNullable(config.get('server.rootUrl')).orElseGet(function(){return 'http://'+require('os').hostname()+':'+config.get('server.port');}) +'/ui/';
 var invitationSender =  config.has('email.transport.auth.user')?config.get('email.transport.auth.user'):'support@cloudpass.com';
 
 //a user can only access its own tenant

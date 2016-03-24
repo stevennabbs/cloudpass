@@ -112,5 +112,5 @@ function createNewAccount(attributes, registrationWorflowEnabled){
                }).tap(function(account){
                    //add the account into this group
                     return this.addAccount(account, {tenantId: this.tenantId});
-               }.bind(this));;
-};
+               }.bind(this));
+}

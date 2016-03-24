@@ -1,3 +1,5 @@
+"use strict";
+
 var _ = require('lodash');
 var controllerHelper = require('./controllerHelper');
 var ApiError = require('../../ApiError');
@@ -91,7 +93,7 @@ module.exports = function (model, transactionalMethods) {
                 .spread(function(rowNb){
                     ApiError.assert(rowNb, ApiError.NOT_FOUND);
                     res.status(204).json();
-                }).catch(req.next);;
+                }).catch(req.next);
         },
         deleteCustomDataField: function(req, res){
             return model

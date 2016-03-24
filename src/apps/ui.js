@@ -1,4 +1,3 @@
-var fs = require('fs');
 var config = require('config');
 var compression = require('compression');
 var express = require('express');

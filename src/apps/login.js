@@ -39,7 +39,7 @@ app.post('/', function(req, res){
                 .end();
         });
     })
-    .catch(req.next);;
+    .catch(req.next);
 });
 
 app.use(function (err, req, res, next) {

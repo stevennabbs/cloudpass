@@ -88,7 +88,7 @@ module.exports = function (sequelize, DataTypes) {
                     }
                 ],
                 beforeUpdate: validateAndHashPassword,
-                beforeDestroy: function(instance, options){
+                beforeDestroy: function(instance){
                     if(instance.emailVerificationTokenId){
                         return instance.sequelize.models.emailVerificationToken
                             .destroy({where: {id: instance.emailVerificationTokenId}});
@@ -136,22 +136,22 @@ module.exports = function (sequelize, DataTypes) {
 function validateAndHashPassword(instance) {
     var password = instance.get('password', {role: 'passwordHashing'});
     //nothing to do if the password is already hashed
-    if (isModularCryptFormat(password)) return;
-    
-    //else validate the password against the password policy and hash it
-    return instance.getDirectory({include: [instance.sequelize.models.passwordPolicy]})
-        .then(function(directory){
-            directory.passwordPolicy.validatePassword(password);
-        })
-        .then(function(){
-            return bcrypt.hashAsync(password, 8);
-        })
-        .then(function(hash){
-            instance.set({'password': hash}, {role: 'passwordHashing'});
-        });
-};
+    if (!isModularCryptFormat(password)){
+        //else validate the password against the password policy and hash it
+        return instance.getDirectory({include: [instance.sequelize.models.passwordPolicy]})
+            .then(function(directory){
+                directory.passwordPolicy.validatePassword(password);
+            })
+            .then(function(){
+                return bcrypt.hashAsync(password, 8);
+            })
+            .then(function(hash){
+                instance.set({'password': hash}, {role: 'passwordHashing'});
+            });
+    }
+}
 
 function isModularCryptFormat(string){
     //this regex tests only for bcrypt MCF
     return /^\$2[axy]?\$\d{2}\$[a-zA-Z0-9./]{53}$/g.test(string);
-};
+}

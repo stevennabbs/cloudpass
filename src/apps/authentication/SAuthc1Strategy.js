@@ -30,12 +30,12 @@ SAuthc1Strategy.prototype.authenticate = function (req) {
     
     //the header must start with the authentication scheme and be made of three name value pairs separated by comas
     BluebirdPromise.try(function(){
-        var nameValuePairs = Optional.ofNullable(req.headers['authorization'])
+        var nameValuePairs = Optional.ofNullable(req.headers.authorization)
                 .filter(function(header){return header.substring(0, AUTHENTICATION_SCHEME.length) === AUTHENTICATION_SCHEME;})
                 .map(function(header){return header.substring(AUTHENTICATION_SCHEME.length +1);})
                 .map(function(authorization){return authorization.split(', ');})
                 .filter(function(nameValuePairs){return nameValuePairs.length === 3;})
-                .orElseThrow(function(){return 'Invalid authorization header: '+req.headers['authorization'];});
+                .orElseThrow(function(){return 'Invalid authorization header: '+req.headers.authorization;});
 
         //first name value pair: sauthc1Id=*apiKeyId*/*dateStamp*/*nonce*/sauthc1_request
         var idParts = Optional.ofNullable(nameValuePairs[0])

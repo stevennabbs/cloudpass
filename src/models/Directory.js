@@ -133,17 +133,17 @@ function createNewAccount(attributes, registrationWorflowEnabled){
     return this.getAccountCreationPolicy().then(function(accountCreationPolicy){
         return (
             //if necessary, generate an email verification token (and save the account in the same transaction)
-            (registrationWorflowEnabled && accountCreationPolicy.verificationEmailStatus === 'ENABLED' && account.status !== 'DISABLED')
-            ? this.sequelize.requireTransaction(function () {
+            (registrationWorflowEnabled && accountCreationPolicy.verificationEmailStatus === 'ENABLED' && account.status !== 'DISABLED') ?
+            this.sequelize.requireTransaction(function () {
                 return models.emailVerificationToken
                     .create({tenantId: account.tenantId })
                     .then(function(token){
                         account.set({status: 'UNVERIFIED', emailVerificationTokenId: token.id});
                         return account.save();
                     });
-            })
+            }):
             //else just save the account
-            : account.save()
+            account.save()
         )
         .tap(function(account){
             if(account.emailVerificationTokenId){
@@ -170,7 +170,7 @@ function createNewAccount(attributes, registrationWorflowEnabled){
             }
         }.bind(this));
     }.bind(this));
-};
+}
 
 function createNewGroup(attributes){
     return this.createGroup(
@@ -178,4 +178,4 @@ function createNewGroup(attributes){
             .pick(this.sequelize.models.group.getSettableAttributes())
             .defaults({tenantId: this.tenantId})
             .value());
-};
+}

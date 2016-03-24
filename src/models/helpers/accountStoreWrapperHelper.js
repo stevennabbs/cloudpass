@@ -1,5 +1,6 @@
 //helper methods to create new accounts or groups in resources mapped to account store
 //its simply delegates the creation to the default account stores
+"use strict";
 
 var ApiError = require('../../ApiError');
 

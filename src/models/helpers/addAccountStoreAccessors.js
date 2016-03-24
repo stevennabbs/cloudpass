@@ -1,3 +1,5 @@
+"use strict";
+
 var _ = require('lodash');
 
 function sign(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
@@ -19,15 +21,15 @@ function findPaths(source, destination){
     return _(source.associations)
             .values()
             .filter(function(a){
-                return _.includes(accountStoreHierarchy, a.target)
+                return _.includes(accountStoreHierarchy, a.target) &&
                     //go in the right direction
-                    && sign(accountStoreHierarchy.indexOf(a.target) - accountStoreHierarchy.indexOf(source)) === sign(accountStoreHierarchy.indexOf(destination) - accountStoreHierarchy.indexOf(source))
+                    sign(accountStoreHierarchy.indexOf(a.target) - accountStoreHierarchy.indexOf(source)) === sign(accountStoreHierarchy.indexOf(destination) - accountStoreHierarchy.indexOf(source)) &&
                     //but don't go to far
-                    && (a.target === destination || sign(accountStoreHierarchy.indexOf(destination) - accountStoreHierarchy.indexOf(a.target)) === sign(accountStoreHierarchy.indexOf(destination) - accountStoreHierarchy.indexOf(source)))
+                    (a.target === destination || sign(accountStoreHierarchy.indexOf(destination) - accountStoreHierarchy.indexOf(a.target)) === sign(accountStoreHierarchy.indexOf(destination) - accountStoreHierarchy.indexOf(source))) &&
                     //only direct associations to avoid duplicate paths
-                    && a.associationType !== 'BelongsToMany'
+                    a.associationType !== 'BelongsToMany' &&
                     //remove default account or group store mappings
-                    && !_.startsWith(a.as, 'default');})
+                    !_.startsWith(a.as, 'default');})
             .map(function(a){
                 if(a.target === destination){
                     return [[a]];

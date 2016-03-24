@@ -106,7 +106,7 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
                                 );
 
                                 // set up hooks to destroy account store mappings when the related accounts are destroyed
-                                models[accountStoreType].afterDestroy(function(instance, options){
+                                models[accountStoreType].afterDestroy(function(instance){
                                     return models[mappingModel].destroy({
                                         where: {
                                             accountStoreId: instance.id,
@@ -174,5 +174,7 @@ function beforeDestroy(mapping){
     if(!sequelize.Utils._.isEmpty(newDefaultMapping)){
         return mappedModel.update(newDefaultMapping, {where: {id: mapping[mappedModelFk]}});
     }
-    else return sequelize.Promise.resolve();
+    else{
+        return sequelize.Promise.resolve();
+    }
 }

@@ -1,3 +1,5 @@
+"use strict";
+
 var controllerHelper = require('./controllerHelper');
 var baseController = require('./baseController');
 

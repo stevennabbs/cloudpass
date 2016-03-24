@@ -2,7 +2,7 @@
 
 var scopeHelper = require('./scopeHelper');
 
-module.exports = function (req, res, next) {
+module.exports = function (req, res) {
     if (req.authInfo && req.authInfo.scope){
         var allowedPaths = scopeHelper.scopeToPaths(req.authInfo.scope);
         var requestPath = req.path;

@@ -169,6 +169,6 @@ function getDefaultPasswordPolicy(accountStoreWrapper){
                         return asm
                                 .getAccountStore({attributes: ['defaultAccountStoreMappingId']})
                                 .then(getDefaultPasswordPolicy);
-                };
+                }
             });
 }

@@ -29,7 +29,9 @@ ApiError.FROM_ERROR = function (error) {
     return (error instanceof ApiError) ? error : new ApiError(500, 500, error.message || 'error');
 };
 ApiError.assert = function(condition){
-     condition || thr.apply(null, Array.prototype.slice.call(arguments, 1));
+     if(!condition){
+         thr.apply(null, Array.prototype.slice.call(arguments, 1));
+     }
 };
 
 module.exports = ApiError;
