@@ -1,10 +1,15 @@
 var fs = require("fs");
+var path = require('path');
 var gulp = require('gulp');
 var deb = require('gulp-deb');
 var rename = require("gulp-rename");
 var merge = require('merge-stream');
 //can't pipe with supertest (c.f. https://github.com/visionmedia/supertest/issues/49), use superagent directly 
 var request = require('superagent');
+var Docker = require('dockerode-promise');
+//var Docker = require('dockerode');
+var tar = require('tar-fs');
+var thenify = require('thenify');
 var pkg = require('./package.json');
 
 var debFileName = pkg.name+'_'+pkg.version+'_all.deb';
@@ -70,4 +75,21 @@ gulp.task('deploy-deb', ['deb'], function(){
             .set('X-Bintray-Debian-Architecture', 'all')
     );
     return stream;
+});
+
+
+gulp.task('build-docker-image', function(){
+    var docker = new Docker();
+    
+    var tarStream = tar.pack('.', {
+        ignore: function(name) {
+            return path.basename(name) === 'node_modules'; // don't upload modules
+        }
+    });
+    
+    return docker.buildImage(tarStream, { t: 'dhatim/cloudpass:'+pkg.version})
+    .then(function(stream){
+        return thenify(docker.$subject.modem.followProgress)(stream);
+    });
+        
 });
