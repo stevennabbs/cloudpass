@@ -1,0 +1,5 @@
+# in-memory persistence
+persistence:
+    options:
+        dialect: sqlite
+        storage: ':memory:'

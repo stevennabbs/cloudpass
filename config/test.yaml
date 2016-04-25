@@ -3,6 +3,7 @@ server:
     # using clustering would also fork tests
     clustering: false
     
+# send emails to a fake smtp server started during integration tests
 email:
     transport:
         direct: false

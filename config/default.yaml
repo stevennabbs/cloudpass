@@ -44,4 +44,4 @@ persistence:
 #persistence:
 #  options:
 #    dialect: sqlite
-#    storage: cloudpass.db (or storage: ':memory:')
+#    storage: cloudpass.db
