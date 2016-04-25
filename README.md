@@ -45,6 +45,15 @@ To stop it: `sudo systemctl stop cloudpass.service`, or alternatively `sudo serv
 
 You can see the logs with `sudo journaltcl -u cloudpass`.
 
+### Docker
+
+An [image is available on docker hub](https://hub.docker.com/r/dhatim/cloudpass). It uses SQLite by default.
+You can easily override the default configuration with the NODE_CONFIG environment variable, e.g:
+```bash
+NODE_CONFIG='{"persistence":{"database":"cloudpass","username":"postgres","password":"postgres","options":{"host":"customerdb.prod","port":5432}}}'
+docker -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
+```
+
 ### Other systems
 
 - Install Node.js (version 4.3.2 or higher). You can find installation instructions for your system [here](nodejs.org/en/download/package-manager).
