@@ -51,7 +51,7 @@ An [image is available on docker hub](https://hub.docker.com/r/dhatim/cloudpass)
 You can easily override the default configuration with the NODE_CONFIG environment variable, e.g:
 ```bash
 NODE_CONFIG='{"persistence":{"database":"cloudpass","username":"postgres","password":"postgres","options":{"host":"customerdb.prod","port":5432}}}'
-docker -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
+docker run -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
 ```
 
 ### Other systems
