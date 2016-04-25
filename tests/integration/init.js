@@ -29,7 +29,7 @@ exports.getEmailPromise = function (mailServer, address) {
             function (callback) {
                 mailServer.bind(address, function handler(addr, id, email) {
                     mailServer.unbind(address, handler);
-                    mailServer.remove(id-1);
+                    mailServer.remove(id);
                     callback(null, email);
                 });
             }
