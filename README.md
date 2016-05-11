@@ -4,7 +4,6 @@
 [![Dependency Status](https://david-dm.org/dhatim/cloudpass.svg)](https://david-dm.org/dhatim/cloudpass)
 [![devDependency Status](https://david-dm.org/dhatim/cloudpass/dev-status.svg)](https://david-dm.org/dhatim/cloudpass#info=devDependencies)
 [![Coverage Status](https://coveralls.io/repos/github/dhatim/cloudpass/badge.svg?branch=master)](https://coveralls.io/github/dhatim/cloudpass?branch=master)
-[![Docker Layers](https://imagelayers.io/badge/dhatim/cloudpass:latest.svg)](https://imagelayers.io/?images=dhatim/cloudpass:latest)
 
 Cloudpass is an implementation of Stormpath Identity Management written in Node.js.
 
