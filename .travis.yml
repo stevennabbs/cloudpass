@@ -1,8 +1,16 @@
 language: node_js
 node_js:
 - stable
+addons:
+  # c.f. https://docs.travis-ci.com/user/languages/javascript-with-nodejs#Node.js-v4-(or-io.js-v3)-compiler-requirements
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
 env:
   global:
+  - CXX=g++-4.8
   - SSH_KEY="id_rsa"
   - GIT_NAME="msuret"
   - GIT_EMAIL="msuret@dhatim.com"
