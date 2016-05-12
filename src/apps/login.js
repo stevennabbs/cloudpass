@@ -3,7 +3,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var ssacl = require('ssacl');
-var jwt = require('jsonwebtoken');
+var signJwt = require('sequelize').Promise.promisify(require('jsonwebtoken').sign);
 var Optional = require('optional-js');
 var config = require('config');
 var url = require('url');
@@ -30,14 +30,16 @@ app.post('/', function(req, res){
         return authenticateAccount(tenant.applications[0].id, req.body.email, req.body.password);
     })
     .then(function(account){
-        jwt.sign({tenantId: account.tenantId, accountId: account.id}, req.app.get('secret'), {expiresIn: '1d', audience: 'admin'}, function(token){
-            res.cookie(
-                    'sessionToken',
-                    token,
-                    {httpOnly: true, path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/v1').pathname})
-                .status(204)
-                .end();
-        });
+        return signJwt({tenantId: account.tenantId, accountId: account.id}, req.app.get('secret'), {expiresIn: '1d', audience: 'admin'});
+    })
+    .then(function(token){
+        return res.cookie(
+                'sessionToken',
+                token,
+                {httpOnly: true, path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/v1').pathname}
+            )
+            .status(204)
+            .end();
     })
     .catch(req.next);
 });

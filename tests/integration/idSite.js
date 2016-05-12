@@ -1,6 +1,6 @@
 var assert = require("assert");
 var BluebirdPromise = require('sequelize').Promise;
-var jwt = require('jsonwebtoken');
+var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var request = require('supertest-as-promised');
 var init = require('./init');
 
@@ -31,20 +31,16 @@ describe('idSite', function(){
     });
     
     function getJwtRequest(){
-        return BluebirdPromise.fromCallback(
-                function(callback){
-                    jwt.sign(
-                        {
-                            cb_uri: callbackUrl
-                        },
-                        init.apiKey.secret,
-                        {
-                            issuer: init.apiKey.id,
-                            subject: 'http://localhost:20020/v1/applications/'+application.id
-                        },
-                        callback.bind(null, null)
-                    );
-        });
+        return signJwt(
+            {
+                cb_uri: callbackUrl
+            },
+            init.apiKey.secret,
+            {
+                issuer: init.apiKey.id,
+                subject: 'http://localhost:20020/v1/applications/'+application.id
+            }
+        );
     };
     
     function getBearer(){

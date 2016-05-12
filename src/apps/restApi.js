@@ -12,7 +12,7 @@ var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
 var JwtCookieStrategy = require('./authentication/JwtCookieStrategy');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var BearerStrategy = require('passport-http-bearer');
-var jwt = require('jsonwebtoken');
+var verifyJwt = BluebirdPromise.promisify(require('jsonwebtoken').verify);
 var idSiteHelper = require('./helpers/idSiteHelper');
 var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
@@ -35,7 +35,7 @@ passport.use(new SAuthc1Strategy(
 passport.use(new BearerStrategy(
     {passReqToCallback: true},
     function(req, token, done){
-        BluebirdPromise.promisify(jwt.verify)(token, req.app.get('secret'), {algorithms: ["HS256"]})
+        verifyJwt(token, req.app.get('secret'), {algorithms: ["HS256"]})
             .then(function(payload){
                 return BluebirdPromise.join(
                     getApiKey(payload.sub),

@@ -2,10 +2,9 @@
 
 var util = require('util');
 var passport = require('passport');
-var jwt = require('jsonwebtoken');
 var Optional = require('optional-js');
 var BluebirdPromise = require('sequelize').Promise;
-var verifyJwt = BluebirdPromise.promisify(jwt.verify);
+var verifyJwt = BluebirdPromise.promisify(require('jsonwebtoken').verify);
 
 function JwtCookieStrategy(cookieName, secretAppProperty, jwtOptions) {
     this.name = 'jwtcookie';

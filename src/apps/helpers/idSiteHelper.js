@@ -1,7 +1,6 @@
 'use strict';
 
-var jwt = require('jsonwebtoken');
-var BluebirdPromise = require('sequelize').Promise;
+var signJwt = require('sequelize').Promise.promisify(require('jsonwebtoken').sign);
 var _ = require('lodash');
 var getApiKey = require('./getApiKey');
 var models = require('../../models');
@@ -48,15 +47,18 @@ exports.idSiteHeaders = function(req, res, next){
         }
         
         //re-send an updated token as Authorization header
-        jwt.sign(
+        signJwt(
             _.omit(req.authInfo, ['jti', 'iat', 'exp']),
             req.app.get('secret'),
-            {expiresIn: 300},
-            function(token){
-                res.set('Authorization', 'Bearer '+token);
-                res.set('Access-Control-Expose-Headers', ['Authorization']);
-                next();
-            });
+            {expiresIn: 300}
+        )
+        .then(function(token){
+            res.set('Authorization', 'Bearer '+token);
+            res.set('Access-Control-Expose-Headers', ['Authorization']);
+            next();
+        })
+        .catch(next);
+
   } else {
       next();
   }
@@ -65,23 +67,20 @@ exports.idSiteHeaders = function(req, res, next){
 // returns an Jwt response that can be used by the application to authenticate a user
 function getJwtResponse(apiKey, cbUri, initialJwtId, isNewSub, accountHref){
     //jwt to use in the redirection query
-    return BluebirdPromise.fromCallback(function(callback){
-        jwt.sign(
-            {
-                isNewSub: isNewSub,
-                status: "AUTHENTICATED",
-                cb_uri: cbUri,
-                irt: initialJwtId
-            },
-            apiKey.secret,
-            {
-                expiresIn: 60,
-                issuer: apiKey.tenant.idSites[0].url,
-                subject: accountHref,
-                audience: apiKey.id
-            },
-            _.partial(callback, null)
-        );
-    });
+    return signJwt(
+        {
+            isNewSub: isNewSub,
+            status: "AUTHENTICATED",
+            cb_uri: cbUri,
+            irt: initialJwtId
+        },
+        apiKey.secret,
+        {
+            expiresIn: 60,
+            issuer: apiKey.tenant.idSites[0].url,
+            subject: accountHref,
+            audience: apiKey.id
+        }
+    );
 }
 exports.getJwtResponse = getJwtResponse;

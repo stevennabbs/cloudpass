@@ -1,16 +1,15 @@
 'use strict';
 
 var express = require('express');
-var jwt = require('jsonwebtoken');
 var cookieParser = require('cookie-parser');
 var moment = require('moment');
 var BluebirdPromise = require('sequelize').Promise;
+var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
 var url = require('url');
 var models = require('../models');
 var scopeHelper = require('./helpers/scopeHelper');
 var getApiKey = require('./helpers/getApiKey');
 var idSiteHelper = require('./helpers/idSiteHelper');
-var verifyJwt = BluebirdPromise.promisify(jwt.verify);
 
 var app = express();
 app.use(cookieParser());
@@ -31,7 +30,7 @@ function verifyApiKeySignedJwt(token, apiKeyField){
         .then(function(apiKey){
             //validate the JWT with the API key secret
             return BluebirdPromise.join(
-                    verifyJwt(token, apiKey.secret, {algorithms: ["HS256"]}),
+                    jwt.verifyAsync(token, apiKey.secret, {algorithms: ["HS256"]}),
                     apiKey);
         });
 }
@@ -48,7 +47,7 @@ app.get('/', function(req, res){
                 if(cookie){
                     //the user already authenticated for this tenant
                     //check if his account belongs to the requested application
-                    return verifyJwt(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
+                    return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
                         .get('sub')
                         .then(function(accountId){
                             return application.getAccounts({where: {id: accountId}, limit:1, actor: apiKey.tenantId});
@@ -78,17 +77,14 @@ app.get('/', function(req, res){
                 .spread(function(payload, apiKey){
                     //make a jwt cookie from the account ID
                     return BluebirdPromise.join(
-                        BluebirdPromise.fromCallback(function(callback){
-                            jwt.sign(
-                                {},
-                                req.app.get('secret'),
-                                {
-                                    subject: models.resolveHref(payload.sub).id,
-                                    expiresIn: moment.duration(apiKey.tenant.idSites[0].sessionTtl).asSeconds()
-                                },
-                                callback.bind(null, null)
-                            );
-                        }),
+                        jwt.signAsync(
+                            {},
+                            req.app.get('secret'),
+                            {
+                                subject: models.resolveHref(payload.sub).id,
+                                expiresIn: moment.duration(apiKey.tenant.idSites[0].sessionTtl).asSeconds()
+                            }
+                        ),
                         payload,
                         apiKey
                     );
@@ -142,21 +138,25 @@ function addParamToUri(uri, paramName, paramValue){
 }
 
 function redirectToIdSite(jwtPayload, application, apiKey, res){
-    jwt.sign(
-    {
-        init_jti: jwtPayload.jti,
-        scope: scopeHelper.getIdSiteScope(application.id),
-        app_href: jwtPayload.sub,
-        cb_uri: jwtPayload.cb_uri,
-        state: jwtPayload.state
-    },
-    res.app.get('secret'),
-    {
-        expiresIn: 60,
-        subject: jwtPayload.iss
-    },
-    function(token){
+    jwt.signAsync(
+        {
+            init_jti: jwtPayload.jti,
+            scope: scopeHelper.getIdSiteScope(application.id),
+            app_href: jwtPayload.sub,
+            cb_uri: jwtPayload.cb_uri,
+            state: jwtPayload.state
+        },
+        res.app.get('secret'),
+        {
+            expiresIn: 60,
+            subject: jwtPayload.iss
+        }
+     )
+     .then(function(token){
         res.status(302).location(apiKey.tenant.idSites[0].url+(jwtPayload.path || '')+'?jwt='+token).send();
+    })
+    .catch(function(){
+        res.status(500).end();
     });
 }
 
