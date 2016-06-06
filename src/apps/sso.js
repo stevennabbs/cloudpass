@@ -144,7 +144,8 @@ function redirectToIdSite(jwtPayload, application, apiKey, res){
             scope: scopeHelper.getIdSiteScope(application.id),
             app_href: jwtPayload.sub,
             cb_uri: jwtPayload.cb_uri,
-            state: jwtPayload.state
+            state: jwtPayload.state,
+            sp_token: 'null' //only to not make stormpath.js crash
         },
         res.app.get('secret'),
         {
