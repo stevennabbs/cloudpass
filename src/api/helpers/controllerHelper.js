@@ -88,12 +88,12 @@ function getCollectionQueryOptions(req, target){
             defaultPagination);
 }
 
-function getExpands(includeParam){
+function getExpands(expandParam){
     //get the expand parameter, e.g. 'tenant,groups(offset:0,limit:10)'
     //and split the different parts: ['tenant', 'groups(offset:0,limit:10)']
     var expands = {};
-    if(includeParam){
-        var expandStrings = includeParam.split(/,(?!offset|limit)/);
+    if(expandParam){
+        var expandStrings = expandParam.split(/,(?!offset|limit)/);
         for(var i in expandStrings){
             //separate the association name and the pagination parts
             var expandParts = /^([^\(]*)\(([^\)]*)\)*$/.exec(expandStrings[i]);
