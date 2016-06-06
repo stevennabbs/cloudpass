@@ -42,6 +42,10 @@ function getOrderClause(orderParam){
                     }
             }
         );
+    } else {
+        //if no order clause is specified, we must still order the results to ensure a consistent pagination
+        //('id' is present and indexed in all tables)
+        return ['id'];
     }
 }
 
@@ -77,6 +81,7 @@ function getWhereClause(query, target){
             return {$and: whereClauses};
     }
 }
+
 function getCollectionQueryOptions(req, target){
     return _.defaults(
                 _.pickBy({

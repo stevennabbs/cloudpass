@@ -2,6 +2,44 @@ var assert = require("assert");
 var controllerHelper = require('rewire')('../../src/api/helpers/controllerHelper');
 
 describe('controllerHelper', function () {
+    
+    var getOrderClause = controllerHelper.__get__("getOrderClause");
+    
+    describe('getOrderClause', function(){
+        it('should preserve clause order', function(){
+            assert.deepStrictEqual(
+                    getOrderClause(['id', 'name', 'description']),
+                    ['id', 'name', 'description']
+            );
+        });
+        
+        it('should take into account ordering direction', function(){
+            assert.deepStrictEqual(
+                    getOrderClause(['id', 'name ASC', 'description DESC']),
+                    ['id', 'name', ['description',  'DESC']]
+            );
+        });
+        
+        it('should throw an error in case of invalid clause', function(){
+            assert.throws(
+                 function(){
+                    getOrderClause(['id', 'name ASC foo']);
+                },
+                function(error){
+                    return error.status === 400 && error.code === 2104;
+                }
+            );
+            
+        });
+        
+        it('should return a default ordering clause if none is provided', function(){
+            assert.deepStrictEqual(
+                    getOrderClause(),
+                    ['id']
+            );
+        });
+    });
+    
     describe('getExpands', function () {
 
         it('should return an empty object if no expand parameter is provided', function () {
