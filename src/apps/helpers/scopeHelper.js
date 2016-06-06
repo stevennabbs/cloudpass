@@ -7,7 +7,7 @@ exports.getIdSiteScope = function(applicationId){
     var applicationScope = {};
     applicationScope[applicationId] = [
         "read",
-        { idSiteModels: [ "read" ] },
+        { idSiteModel: [ "read" ] },
         { loginAttempts: [ "create" ] },
         { accounts: [ "create" ] },
         { passwordResetTokens: [ "create" ] }
