@@ -80,6 +80,12 @@ before(function(){
         })
         .then(function(res){
             exports.apiKey = res.body;
+        })
+        .then(function(){
+            //logout
+            return request(exports.app)
+                .get('/logout')
+                .expect(204);
         });
             
 });
