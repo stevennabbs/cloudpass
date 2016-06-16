@@ -136,7 +136,7 @@ function createNewAccount(attributes, registrationWorflowEnabled){
             (registrationWorflowEnabled && accountCreationPolicy.verificationEmailStatus === 'ENABLED' && account.status !== 'DISABLED') ?
             this.sequelize.requireTransaction(function () {
                 return models.emailVerificationToken
-                    .create({tenantId: account.tenantId })
+                    .create({tenantId: account.tenantId})
                     .then(function(token){
                         account.set({status: 'UNVERIFIED', emailVerificationTokenId: token.id});
                         return account.save();

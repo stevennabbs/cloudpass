@@ -10,24 +10,22 @@ module.exports = function(model, transactionalMethods){
     var controller = baseController(model, transactionalMethods);
 
     controller.createAccount = function(req, res){
-          var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
           model.findById(req.swagger.params.id.value)
                .then(function(accountStore){
                     return accountStore.createNewAccount(req.swagger.params.attributes.value, req.swagger.params.registrationWorkflowEnabled.value);
                 }).then(function(account){
-                    return controllerHelper.expandResource(expands, account);
+                    return controllerHelper.expandResource(controllerHelper.getExpands(req.swagger.params.expand.value), account);
                 }).then(function(expanded){
                     res.json(expanded);
                 }).catch(req.next);
     };
 
     controller.createGroup = function(req, res){
-        var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
           model.findById(req.swagger.params.id.value)
                 .then(function(accountStore){
                      return accountStore.createNewGroup(req.swagger.params.attributes.value);
                 }).then(function(group){
-                    return controllerHelper.expandResource(expands, group);
+                    return controllerHelper.expandResource(controllerHelper.getExpands(req.swagger.params.expand.value), group);
                 }).then(function(expanded){
                     res.json(expanded);
                 }).catch(req.next);
