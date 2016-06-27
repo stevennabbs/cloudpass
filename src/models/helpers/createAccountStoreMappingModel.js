@@ -1,5 +1,7 @@
 "use strict";
 
+var _ = require('lodash');
+
 module.exports = function(mappedModel, mappingModel, accountStoreTypes){
     return function (sequelize, DataTypes) {
         return sequelize.define(
@@ -47,9 +49,9 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
                         }
                     ],
                     hooks: {
-                        beforeCreate: beforeUpdateOrCreate,
-                        beforeUpdate: beforeUpdateOrCreate,
-                        beforeDestroy: beforeDestroy
+                        afterCreate: afterUpdateOrCreate,
+                        afterUpdate: afterUpdateOrCreate,
+                        afterDestroy: beforeDestroy
                     },
                     validate: {
                         noGroupNesting: function(){
@@ -123,12 +125,13 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
     };
 };
 
-function beforeUpdateOrCreate(mapping){
+function afterUpdateOrCreate(mapping){
     var sequelize = this.sequelize;
     var mappedModel = this.mappedModelAssociation().target;
     var mappedModelFk = this.mappedModelAssociation().identifier;
     var promises = [];
     var newDefaultMapping = {};
+    var mappingUpdate = {};
     var storeTypes = ['Account', 'Group'];
     for(var i in storeTypes){
         var mappingAttribute = 'isDefault'+storeTypes[i]+'Store';
@@ -140,21 +143,25 @@ function beforeUpdateOrCreate(mapping){
             
             if(mapping[mappingAttribute]){
                 //there can be only one default store
-                var mappingUpdate = {};
                 mappingUpdate[mappingAttribute] = false;
-                promises.push(this.update(
-                    mappingUpdate,
-                    {where: sequelize.where(sequelize.col(mappedModelFk), mapping[mappedModelFk])}
-                ));
             }
         }
     }
     
     //update the mapped object with its default mappings
-    if(!sequelize.Utils._.isEmpty(newDefaultMapping)){
+    if(!_.isEmpty(newDefaultMapping)){
         promises.push(mappedModel.update(
             newDefaultMapping,
             {where: {id: mapping[mappedModelFk]}}));
+        
+        if(!_.isEmpty(mappingUpdate)){
+            promises.push(
+                this.update(
+                        mappingUpdate,
+                        {where: sequelize.where(sequelize.col(mappedModelFk), mapping[mappedModelFk])}
+                    )
+            );
+        }
     }
     return sequelize.Promise.all(promises);
 }
@@ -171,10 +178,10 @@ function beforeDestroy(mapping){
             newDefaultMapping['default'+storeTypes[i]+'StoreMappingId'] = null;
         }
     }
-    if(!sequelize.Utils._.isEmpty(newDefaultMapping)){
+    if(!_.isEmpty(newDefaultMapping)){
         return mappedModel.update(newDefaultMapping, {where: {id: mapping[mappedModelFk]}});
     }
-    else{
+    else {
         return sequelize.Promise.resolve();
     }
 }

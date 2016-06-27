@@ -174,7 +174,7 @@ exports.expandResource = expandResource;
 
 function execute(query, inTransaction){
     return inTransaction ?
-            models.sequelize.transaction(query):
+            models.sequelize.requireTransaction(query):
             query();
 }
 exports.execute = execute;
@@ -196,7 +196,7 @@ exports.createAndExpandResource = function(model, foreignKeys, req, res, inTrans
 
 function findAndCountAssociation(instance, association, options){
     //do count + get in a REPETABLE_READ transaction
-    return models.sequelize.transaction(function(){
+    return models.sequelize.requireTransaction(function(){
                 return BluebirdPromise.join(
                     instance[association.accessors.count]({where: options.where}),
                     instance[association.accessors.get](options));

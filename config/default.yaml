@@ -40,7 +40,7 @@ persistence:
       minConnections: 5
       maxConnections: 5
       maxIdleTime: 1000
-# Or for SQLLite:
+# Or for SQLite:
 #persistence:
 #  options:
 #    dialect: sqlite
