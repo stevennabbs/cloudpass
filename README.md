@@ -197,7 +197,7 @@ curl -L -u e777909e-854b-4464-bd2c-55f951029c33:sFdJN5p2EbT5iSls76vt4x1yyHKAyIq4
 
 ### REST API
 
-The currently implemented REST API is described [here](http://blog.dhatim.io/cloudpass).
+The currently implemented REST API is described [here](http://dhatim.github.io/cloudpass).
 The list of features is:
 - CRUD on Tenant with custom data and to invite users,
 - CRUD on application, custom data, accounts and groups, reset password,
