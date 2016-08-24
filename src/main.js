@@ -41,7 +41,7 @@ function startServer(secret){
     app.set('secret', secret);
     app.set('ssaclCls', ssaclCls);
     app.get('/', function(req, res){
-        res.status(302).location('ui').end();
+        res.status(302).location('ui/').end();
     });
     app.use('/login', loginApp);
     app.use('/logout', logoutApp);
