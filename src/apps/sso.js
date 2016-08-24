@@ -15,10 +15,10 @@ var app = express();
 app.use(cookieParser());
 
 
-function verifyApiKeySignedJwt(token, apiKeyField){
+function verifyApiKeySignedJwt(token, apiKey){
     return getApiKey(
-            //find the API key with witch the JWT was signed
-            jwt.decode(token)[apiKeyField],
+            //find the API key the JWT was signed with
+            apiKey,
             [{
                 model: models.tenant,
                 include: [{
@@ -40,7 +40,7 @@ app.get('/', function(req, res){
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
         //the api key is the JWT issuer
-        verifyApiKeySignedJwt(req.query.jwtRequest, 'iss')
+        verifyApiKeySignedJwt(req.query.jwtRequest, jwt.decode(req.query.jwtRequest).iss)
             .spread(function(payload, apiKey){
                 var application = models.resolveHref(payload.sub);
                 var cookie = req.cookies[apiKey.tenantId];
@@ -73,7 +73,7 @@ app.get('/', function(req, res){
     } else if (req.query.jwtResponse) {
         //the user was redirected from the ID site to here, and we must redirect it back to the application
         //the api key is the JWT audience
-        verifyApiKeySignedJwt(req.query.jwtResponse, 'aud')
+        verifyApiKeySignedJwt(req.query.jwtResponse, jwt.decode(req.query.jwtResponse, {complete: true}).header.kid)
                 .spread(function(payload, apiKey){
                     //make a jwt cookie from the account ID
                     return BluebirdPromise.join(
@@ -95,7 +95,7 @@ app.get('/', function(req, res){
                         path: '/sso'
                     };
                     if(apiKey.tenant.idSites[0].sessionCookiePersistent){
-                        cookieOptions.maxAge =  moment.duration(apiKey.tenant.idSites[0].sessionTtl).asMilliseconds();
+                        cookieOptions.maxAge =  moment.duration(apiKey.tenant.idSites[0].sessionTtl).asSeconds();
                     }
                     res.cookie(apiKey.tenant.id, cookieToken, cookieOptions);
                     res.status(302).location(addParamToUri(payload.cb_uri, 'jwtResponse', req.query.jwtResponse)).send();
@@ -108,7 +108,7 @@ app.get('/', function(req, res){
 
 app.get('/logout', function(req, res){
     if(req.query.jwtRequest){
-        verifyApiKeySignedJwt(req.query.jwtRequest, 'iss')
+        verifyApiKeySignedJwt(req.query.jwtRequest, jwt.decode(req.query.jwtRequest).iss)
             .spread(function(payload, apiKey){
                 res.clearCookie(apiKey.tenant.id, {path: '/sso'})
                    .status(302)

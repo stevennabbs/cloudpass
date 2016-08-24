@@ -79,7 +79,7 @@ function getJwtResponse(apiKey, cbUri, initialJwtId, isNewSub, accountHref){
             expiresIn: 60,
             issuer: apiKey.tenant.idSites[0].url,
             subject: accountHref,
-            audience: apiKey.id
+            header: {kid: apiKey.id}
         }
     );
 }
