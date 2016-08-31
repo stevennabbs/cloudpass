@@ -133,8 +133,8 @@ module.exports = SwaggerExpress
             } else if (err.failedValidation){
                 //swagger validation errors, keep the first one
                 error = ApiError.BAD_REQUEST(_.isEmpty(err.results)?err.message:err.results.errors[0].message);
-            } else if(err.name === 'SequelizeUniqueConstraintError' && err.errors.length > 0){
-                error = new ApiError(400, 2001, err.errors[0].message+' ('+err.errors[0].value+')');
+            } else if(err.name === 'SequelizeUniqueConstraintError'){
+                error = new ApiError(400, 2001, err.errors.length > 0 ? err.errors[0].message+' ('+err.errors[0].value+')': err.message);
             } else if (_.startsWith(err.message, 'Validation error') || err.name === 'SequelizeValidationError'){
                 //sequelize validation error
                  error = ApiError.BAD_REQUEST(_.isEmpty(err.errors)?err.message:err.errors[0].message);
