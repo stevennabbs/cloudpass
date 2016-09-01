@@ -33,7 +33,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             password: {
                 type: DataTypes.STRING(60),
-                allowNull: false,
+                allowNull: true,
                 validate: {len: [1, 255]},
                 roles: { passwordHashing: true }
             },
@@ -97,7 +97,8 @@ module.exports = function (sequelize, DataTypes) {
             },
             instanceMethods:{
                 verifyPassword: function(password){
-                    return bcrypt.compareAsync(password, this.get('password', {role: 'passwordHashing'}));
+                    var hash = this.get('password', {role: 'passwordHashing'});
+                    return hash && bcrypt.compareAsync(password, hash);
                 }
             },
             classMethods: {
@@ -136,7 +137,7 @@ module.exports = function (sequelize, DataTypes) {
 function validateAndHashPassword(instance) {
     var password = instance.get('password', {role: 'passwordHashing'});
     //nothing to do if the password is already hashed
-    if (!isModularCryptFormat(password)){
+    if (password && !isModularCryptFormat(password)){
         //else validate the password against the password policy and hash it
         return instance.getDirectory({include: [instance.sequelize.models.passwordPolicy]})
             .then(function(directory){

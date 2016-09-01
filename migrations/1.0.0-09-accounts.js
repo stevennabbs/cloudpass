@@ -17,8 +17,7 @@ module.exports = {
                     type: DataTypes.STRING
                 },
                 password: {
-                    type: DataTypes.STRING(60),
-                    allowNull: false
+                    type: DataTypes.STRING(60)
                 },
                 givenName: {
                     type: DataTypes.STRING,
