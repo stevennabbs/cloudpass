@@ -89,13 +89,15 @@ controller.consumeSamlAssertion = function(req, res){
            .spread(function(account, created){
                 return BluebirdPromise.join(
                     account.update(
+                    //'_.fromPairs' doesn't support  property paths (customData.xxx), so we use zipObjectDeep(zip) instead
+                     _.spread(_.zipObjectDeep)(_.spread(_.zip)(
                      _(mappingRules.items)
                         //get account attribute lists and their new value
                         .map(_.over(_.property('accountAttributes'), _.flow(_.property('name'), _.propertyOf(samlResponse.user.attributes), _.head)))
                         //make pairs of account attribute/value (obviously)
                         .flatMap(_.spread(_.overArgs(_.map, [_.identity, _.flow(_.constant, _.partial(_.over, _.identity))])))
-                        .fromPairs()
-                        .value(),
+                        .value()
+                    )),
                      {transaction: t}
                     ),
                     created
