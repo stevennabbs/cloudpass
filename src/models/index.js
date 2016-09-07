@@ -8,8 +8,8 @@ var _ = require('lodash');
 var Umzug = require('umzug');
 var Optional = require('optional-js');
 var ApiError = require('../ApiError');
+var hrefHelper = require('./helpers/hrefHelper');
 
-var baseUrl = Optional.ofNullable(config.get('server.rootUrl')).map(function(url){return url+'/v1/';}).orElse('/');
 
 var sequelizeConfig = config.get('persistence');
 sequelizeConfig.options.define = {
@@ -22,7 +22,7 @@ sequelizeConfig.options.define = {
     },
     classMethods: {
         getHref: function (id) {
-            return  baseUrl + this.options.name.plural + '/' + id;
+            return  hrefHelper.baseUrl + this.options.name.plural + '/' + id;
         },
        getAclAttribute: function(){
            return 'tenantId';
@@ -44,7 +44,7 @@ sequelizeConfig.options.define = {
                 object,
                 function(instance, v, k){
                     if(v.href){
-                        //turn href into instances
+                        //turn hrefs into instances
                         var refInstance = resolveHref(v.href);
                         ApiError.assert(refInstance, ApiError, 400, 2002, '%s href has an invalid value', k);
                         //if the object corresponds to an association, set the corresponding foreign key
@@ -90,9 +90,10 @@ sequelizeConfig.options.define = {
                 function (association, associationName) {
                     if(!values[associationName]){
                         if(association.associationType === 'BelongsTo'){
-                            values[associationName] = this[association.foreignKey]?
-                                {'href': association.target.getHref(this[association.foreignKey], this.id)}:
-                                null;
+                            values[associationName] =
+                                    Optional.ofNullable(this[association.foreignKey])
+                                        .map(function(fk){return {'href': association.target.getHref(fk, this.id)};}.bind(this))
+                                        .orElse(null);
                         } else {
                             values[associationName] = {'href': this.href + "/" + associationName};
                         }
@@ -108,7 +109,7 @@ var sequelize = new Sequelize(sequelizeConfig.database, sequelizeConfig.username
 
 //convenience method to start a transaction only if none is already started
 sequelize.requireTransaction = function(query){
-    return Sequelize.cls.get('transaction') ? query() : this.transaction(query);
+    return Sequelize.cls.get('transaction') ? query(Sequelize.cls.get('transaction')) : this.transaction(query);
 };
 
 //default Model.count is not working with SSACL (see https://github.com/pumpupapp/ssacl/issues/4)
@@ -165,7 +166,7 @@ _.values(db)
                 return {href: this.href+'/customData'};
             },
             set: function(val){
-                this.setDataValue('customData',JSON.stringify( _.assign(JSON.parse(this.getDataValue('customData') || "{}"), _.omit(val, 'href', 'createdAt', 'modifiedAt'))));
+                this.setDataValue('customData', JSON.stringify( _.assign(JSON.parse(this.getDataValue('customData') || "{}"), _.omit(val, 'href', 'createdAt', 'modifiedAt'))));
             },
             defaultValue: '{}'
         };
@@ -232,19 +233,9 @@ db.useSsacl = function(ssacl, cls){
     });
 };
 
-var hrefPattern = /^(.*?)\/v1\/(.*)$/;
-
-db.getRootUrl = function(href){
-    return href.replace(hrefPattern, '$1');
-};
-
-db.unqualifyHref = function(href){
-    return href.replace(hrefPattern, '$2');
-};
-
 function resolveHref(href){
     //unqualify href
-    var split = _.compact(db.unqualifyHref(href).split('/'));
+    var split = _.compact(hrefHelper.unqualifyHref(href).split('/'));
     if(split.length === 2){
         var model = _.find(_.values(sequelize.models), function(m){return m.options.name.plural === split[0];});
         if(model){

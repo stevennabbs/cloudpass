@@ -10,7 +10,8 @@ exports.getIdSiteScope = function(applicationId){
         { idSiteModel: [ "read" ] },
         { loginAttempts: [ "create" ] },
         { accounts: [ "create" ] },
-        { passwordResetTokens: [ "create" ] }
+        { passwordResetTokens: [ "create" ] },
+        { saml: {sso : {idpRedirect: ['read'] } } }
     ];
     return {applications: applicationScope};
 };

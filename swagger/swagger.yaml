@@ -721,6 +721,28 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /applications/{id}/saml/sso/idpRedirect:
+    x-swagger-router-controller: applicationController
+    get:
+      summary: redirects to the configured SAML identity provider
+      description: redirects to the configured SAML identity provider
+      operationId: samlIdpRedirect
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: accountStore.href
+          in: query
+          description: the account store where SAML was configured
+          required: false
+          type: string
+      responses:
+        "302":
+          description: redirection to the Identity provider
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /applications/{id}/{collection}:
     x-swagger-router-controller: applicationController
     get:
@@ -781,6 +803,26 @@ paths:
                 enum:
                   - ENABLED
                   - DISABLED
+              provider:
+                type: object
+                required:
+                  - providerId
+                properties:
+                  providerId:
+                    type: string
+                    enum:
+                      - cloudpass
+                      - saml
+                  clientId:
+                    type: string
+                  clientSecret:
+                    type: string
+                  ssoLoginUrl:
+                    type: string
+                  ssoLogoutUrl:
+                    type: string
+                  encodedX509SigningCert:
+                    type: string
       responses:
         "200":
           description: directory created
@@ -827,7 +869,7 @@ paths:
             properties:
               name:
                 type: string
-              desciption:
+              description:
                 type: string
               status:
                 type: string
@@ -859,6 +901,89 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /directories/{id}/provider:
+    x-swagger-router-controller: directoryController
+    get:
+      summary: retrieve the directory provider
+      description: retrieve the directory provider
+      operationId: getProvider
+      tags:
+        - directory providers
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/DirectoryProvider"
+        "default":
+           description: error
+           schema:
+             $ref: "#/definitions/Error"
+    post:
+      summary: updates diectory provider information
+      description: updates diectory provider information
+      operationId: updateProvider
+      tags:
+        - directory providers
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              clientId:
+                type: string
+              clientSecret:
+                type: string
+              ssoLoginUrl:
+                type: string
+              ssoLogoutUrl:
+                type: string
+              encodedX509SigningCert:
+                type: string
+      responses:
+        "200":
+          description: updated
+          schema:
+            $ref: "#/definitions/DirectoryProvider"
+        "default":
+           description: error
+           schema:
+             $ref: "#/definitions/Error"
+  /directories/{id}/saml/sso/post:
+    x-swagger-router-controller: directoryController
+    post:
+      summary: consume a SAML assertion
+      description: consume a SAML assertion
+      operationId: consumeSamlAssertion
+      consumes:
+        - application/x-www-form-urlencoded
+      tags:
+        - directories
+        - SAML
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: SAMLResponse
+          description: SAML response
+          in: formData
+          required: true
+          type: string
+        - name: RelayState
+          description: Relay state
+          in: formData
+          required: true
+          type: string
+      responses:
+        "302":
+          description: redirection to the application
+          schema:
+            $ref: "#/definitions/DirectoryProvider"
   /directories/{id}/customData:
     x-swagger-router-controller: directoryController
     get:
@@ -1297,6 +1422,10 @@ paths:
       responses:
         "302":
           description: redirection to the current account
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /accounts/{id}:
     x-swagger-router-controller: accountController
     get:
@@ -2590,7 +2719,150 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
-
+  /samlServiceProviderMetadatas/{id}:
+    x-swagger-router-controller: samlServiceProviderMetadataController
+    get:
+      summary: get the metadata used by cloudpass to act as a SAML service provider
+      description: get the metadata used by cloudpass to act as a SAML service provider
+      tags:
+        - saml service provider metadata
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/SamlServiceProviderMetadata"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /attributeStatementMappingRules/{id}:
+    x-swagger-router-controller: attributeStatementMappingRulesController
+    get:
+      summary: get rules used to map SAML statements to account attributes
+      description: get rules used to map SAML statements to account attributes
+      tags:
+        - attribute statement mapping rules
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/AttributeStatementMappingRules"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update rules used to map SAML statements to account attributes
+      description: update rules used to map SAML statements to account attributes
+      operationId: update
+      tags:
+        - attribute statement mapping rules
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - items
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/AttributeStatementMappingRule'
+      responses:
+        "200":
+          description: rules updated
+          schema:
+            $ref: "#/definitions/AttributeStatementMappingRules"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlPolicies/{id}:
+    x-swagger-router-controller: applicationController
+    get:
+      summary: retrieve a SAML policy from its ID
+      description: retrieve a SAML policy from its ID
+      operationId: getSamlPolicy
+      tags:
+        - saml policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/SamlPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlServiceProviders/{id}:
+    x-swagger-router-controller: samlServiceProviderController
+    get:
+      summary: retrieve SAML Service Provider endpoints
+      description: retrieve SAML Service Provider endpoints
+      tags:
+        - saml service provider
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/SamlServiceProvider"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlServiceProviders/{id}/defaultRelayStates:
+    x-swagger-router-controller: samlServiceProviderController
+    post:
+      summary: generate a default relay state
+      description: generate a default relay state
+      operationId: generateDefaultRelayState
+      tags:
+        - saml service provider
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: properties
+          description: releay state properties
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - callbackUri
+            properties:
+              callbackUri:
+                type: string
+              state:
+                type: string
+      responses:
+        "200":
+          description: found
+          schema:
+            type: object
+            required:
+              - defaultRelayState
+            properties:
+              defaultRelayState:
+                type: string
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
 definitions:
   Resource:
     type: object
@@ -2708,8 +2980,8 @@ definitions:
           - organizations
           - loginAttempts
           - passwordResetTokens
+          - samlPolicy
           - customData
-          - authorizedCallbackUris
         properties:
           name:
             type: string
@@ -2736,12 +3008,10 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           passwordResetTokens:
             $ref: "#/definitions/ResourceReference"
+          samlPolicy:
+            $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
-          authorizedCallbackUris:
-            type: array
-            items:
-              type: string
   Directory:
     allOf:
       - $ref: "#/definitions/Resource"
@@ -2750,6 +3020,7 @@ definitions:
           - name
           - tenant
           - description
+          - provider
           - status
           - groups
           - accounts
@@ -2766,6 +3037,8 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           description:
             type: string
+          provider:
+            $ref: "#/definitions/ResourceReference"
           status:
             type: string
             enum:
@@ -3172,6 +3445,91 @@ definitions:
         type: object
       logoUrl:
         type: string
+  DirectoryProvider:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - providerId
+        properties:
+          providerId:
+            type: string
+            enum:
+              - cloudpass
+              - saml
+          clientId:
+            type: string
+          clientSecret:
+            type: string
+          ssoLoginUrl:
+            type: string
+          ssoLogoutUrl:
+            type: string
+          encodedX509SigningCert:
+            type: string
+          samlServiceProviderMetadata:
+            $ref: "#/definitions/ResourceReference"
+          attributeStatementMappingRules:
+            $ref: "#/definitions/ResourceReference"
+  AttributeStatementMappingRule:
+    type: object
+    required:
+      - name
+      - accountAttributes
+    properties:
+      name:
+        type: string
+      accountAttributes:
+        type: array
+        items:
+          type: string
+  AttributeStatementMappingRules:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/definitions/AttributeStatementMappingRule'
+  SamlServiceProviderMetadata:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - entityId
+          - x509SigningCert
+          - assertionConsumerServicePostEndpoint
+        properties:
+          entityId:
+            type: string
+          x509SigningCert:
+            type: string
+          assertionConsumerServicePostEndpoint:
+            $ref: "#/definitions/ResourceReference"
+  SamlPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - serviceProvider
+        properties:
+          serviceProvider:
+            $ref: "#/definitions/ResourceReference"
+  SamlServiceProvider:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - ssoInitiationEndpoint
+          - defaultRelayStates
+        properties:
+          ssoInitiationEndpoint:
+            $ref: "#/definitions/ResourceReference"
+          defaultRelayStates:
+            $ref: "#/definitions/ResourceReference"
 parameters:
   Id:
     name: id

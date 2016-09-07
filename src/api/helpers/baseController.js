@@ -10,20 +10,15 @@ module.exports = function (model, transactionalMethods) {
         create: function(req, res){
             var foreignKeys = {};
             foreignKeys[model.getAclAttribute()] = req.user.tenantId;
-            return controllerHelper.createAndExpandResource(model, foreignKeys, req, res, _.includes(transactionalMethods, 'create'));
+            return controllerHelper.createAndExpand(model, foreignKeys, req, res, _.includes(transactionalMethods, 'create'));
         },
         //get a resource by id (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb)
         get: function (req, res) {
-            var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
             return model
                 .findById(req.swagger.params.id.value)
-                .then(function (resource) {
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
-                    return controllerHelper.expandResource(expands, resource);
-                })
-                .then(function(expanded){
-                    res.json(expanded);
-                 })
+                .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
+                .then(_.partial(controllerHelper.expand, _, req))
+                .then(res.json.bind(res))
                 .catch(req.next);
         },
         //get a collection associated to a resource (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb/accounts)
@@ -41,7 +36,6 @@ module.exports = function (model, transactionalMethods) {
                 .catch(req.next);
         },
         update: function(req, res){
-            var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
             return controllerHelper.execute(
                 function(){
                    return model
@@ -53,12 +47,8 @@ module.exports = function (model, transactionalMethods) {
                 },
                 _.includes(transactionalMethods, 'update')
             )
-            .then(function(updatedResource){
-                return controllerHelper.expandResource(expands, updatedResource);
-            })
-            .then(function(expanded){
-                res.json(expanded);
-            })
+            .then(_.partial(controllerHelper.expand, _, req))
+            .then(res.json.bind(res))
             .catch(req.next);
         },
         updateCustomData: function(req, res){

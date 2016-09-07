@@ -49,7 +49,7 @@ function startServer(secret){
     app.use('/registration', registrationApp);
     app.use('/adminInvitation', adminInvitationApp);
     app.use('/sso', ssoApp);
-    return restApiApp.then(function(apiApp){
+    return restApiApp(secret).then(function(apiApp){
         app.use('/v1', apiApp);
         //start the server
         return app.listen(config.get('server.port'));

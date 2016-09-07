@@ -2,29 +2,32 @@
 
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
+var Optional = require('optional-js');
 var controllerHelper = require('../helpers/controllerHelper');
 var accountStoreController = require('../helpers/accountStoreController');
 var accountHelper = require('../helpers/accountHelper');
+var samlHelper = require('../helpers/samlHelper');
 var sendEmail = require('../../sendEmail');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
+
 var controller = accountStoreController(models.application);
 
-controller.getIdSiteModel = function(req, res){
+function getSubResource(getter, req, res){
     models.application
         .findById(req.swagger.params.id.value)
         .then(function(application){
             ApiError.assert(application, ApiError.NOT_FOUND);
-            return application.getIdSiteModel();
+            return application[getter]();
         })
-        .then(function(idSiteModel){
-            return res.json(idSiteModel);
-         })
-        .catch(req.next);  
-};
+        .then(_.partial(controllerHelper.expand, _, req))
+        .then(res.json.bind(res))
+        .catch(req.next);
+}
+controller.getIdSiteModel = _.partial(getSubResource, 'getIdSiteModel');
+controller.getSamlPolicy = _.partial(getSubResource, 'getSamlPolicy');
 
 controller.create = function(req, res){
-    var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
     var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
     attributes.tenantId = req.user.tenantId;
     
@@ -57,8 +60,8 @@ controller.create = function(req, res){
                     }
                 });
     })
-    .then(function(application){return controllerHelper.expandResource(expands, application);})
-    .then(function(expanded){res.json(expanded);})
+    .then(function(application){return controllerHelper.expand(application, req);})
+    .then(res.json.bind(res))
     .catch(req.next);
 };
 
@@ -79,7 +82,6 @@ controller.authenticate = function(req, res){
 };
 
 controller.createPasswordResetToken = function(req, res){
-    var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
     
     accountHelper.findAccount(
             req.swagger.params.id.value,
@@ -125,29 +127,22 @@ controller.createPasswordResetToken = function(req, res){
                 
         })
         .then(function(token){
-           return controllerHelper.expandResource(expands, token);
+           return controllerHelper.expand(token, req);
         })
-        .then(function(expanded){
-           res.json(expanded);         
-        })
+        .then(_.bindKey(res, 'json'))
         .catch(req.next);
 };
 
 controller.getPasswordResetToken = function(req, res){
-    var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
     models.passwordResetToken.findOne({
         where: {
             id: req.swagger.params.tokenId.value,
             applicationId: req.swagger.params.id.value
         }
     })
-    .then(function(token){
-        ApiError.assert(token, ApiError.NOT_FOUND);
-        return controllerHelper.expandResource(expands, token);
-    })
-    .then(function(expanded){
-        res.json(expanded);
-     })
+    .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
+    .then(_.partial(controllerHelper.expand, _, req))
+    .then(_.bindKey(res, 'json'))
     .catch(req.next);
 };
 
@@ -227,6 +222,44 @@ controller.resendVerificationEmail = function(req, res){
         })
        .then(function(){ res.status(204).json();})
        .catch(req.next);
+};
+
+controller.samlIdpRedirect = function(req, res){
+    return BluebirdPromise.join(
+        models.application.build({id: req.swagger.params.id.value})
+           .getDirectories({
+               attributes: [],
+               include: [{
+                       model: models.directoryProvider,
+                       as: 'provider',
+                       where: {providerId: 'saml'},
+                       include: [models.samlServiceProviderMetadata]
+               }],
+               where: Optional.ofNullable(req.swagger.params['accountStore.href'].value)
+                       .map(models.resolveHref)
+                       .map(function(directory){
+                           return { id: directory.id };
+                       })
+                       .orElse(undefined)
+           })
+           .map(_.iteratee('provider'))
+           .then(_.head)
+           .tap(_.partial(ApiError.assert, _, ApiError, 404, 404, 'SAML provider not found')),
+        //if the request was made by the ID site, the cb_uri and state are in the authInfo
+        //TODO: get them from the 'jwt' query param for apps that don't use ID site
+        samlHelper.getRelayState(
+            req.app.get('secret'),
+            req.user.id,
+            req.authInfo.cb_uri,
+            req.authInfo.state,
+            req.authInfo.init_jti,
+            req.authInfo.app_href,
+            '1h'
+        )
+    )
+    .spread(samlHelper.getLoginRequestUrl)
+    .then(_.bindKey(res, 'redirect'))
+    .catch(req.next);
 };
 
 function expandAccountActionResult(account, expand){

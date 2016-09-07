@@ -16,7 +16,7 @@ controller.getCurrent = function (req, res) {
 controller.getApiKeys = _.partial(controllerHelper.getCollection, models.account, 'apiKeys');
 
 controller.createApiKey = function(req, res){
-    return controllerHelper.createAndExpandResource(
+    return controllerHelper.createAndExpand(
             models.apiKey,
             {tenantId: req.user.tenantId, accountId: req.swagger.params.id.value},
             req, res);

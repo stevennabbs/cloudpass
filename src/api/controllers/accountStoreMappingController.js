@@ -1,6 +1,6 @@
 "use strict";
 
-var accountStoreMappingController = require('../helpers/accountStoreMappingController');
+var baseController = require('../helpers/baseController');
 var models = require('../../models');
 
-module.exports = accountStoreMappingController(models.accountStoreMapping);
+module.exports = baseController(models.accountStoreMapping, ['create', 'update', 'delete']);

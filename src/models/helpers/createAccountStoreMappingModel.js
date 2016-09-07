@@ -81,7 +81,7 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
                     },
                     classMethods: {
                         getSettableAttributes: function(){
-                            return ['listIndex', 'isDefaultAccountStore', 'isDefaultGroupStore'];
+                            return ['accountStore', mappedModel, 'listIndex', 'isDefaultAccountStore', 'isDefaultGroupStore'];
                         },
                         associatePriority: function(){
                             //'through' association seem to reset the instance prototypes
@@ -167,7 +167,7 @@ function afterUpdateOrCreate(mapping){
 }
 
 function beforeDestroy(mapping){
-    //1. update default account & group mappings
+    //update default account & group mappings
     var sequelize = this.sequelize;
     var mappedModel = this.mappedModelAssociation().target;
     var mappedModelFk = this.mappedModelAssociation().identifier;

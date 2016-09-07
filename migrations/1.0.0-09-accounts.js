@@ -41,7 +41,8 @@ module.exports = {
                 },
                 customData: {
                     type: DataTypes.STRING(1024),
-                    defaultValue: "{}"
+                    defaultValue: "{}",
+                    allowNull: false
                 },
                 createdAt: {
                     allowNull: false,

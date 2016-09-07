@@ -93,7 +93,7 @@ function getCollectionQueryOptions(req, target){
             defaultPagination);
 }
 
-function getExpands(expandParam){
+function parseExpandParam(expandParam){
     //get the expand parameter, e.g. 'tenant,groups(offset:0,limit:10)'
     //and split the different parts: ['tenant', 'groups(offset:0,limit:10)']
     var expands = {};
@@ -124,16 +124,17 @@ function getExpands(expandParam){
     }
     return expands;
 }
-exports.getExpands = getExpands;
+exports.parseExpandParam = parseExpandParam;
 
-function expandResource(expands, resource){
-    var resourceJson = resource.toJSON();
+function performExpansion(resource, expands){
+    //convert to JSON to make sure the expanded resources will not be overriden by custom getters
+    var resourceJson = _.defaultTo(resource.toJSON, _.constant(resource)).call(resource);
     return BluebirdPromise
             .all(
                 _.map(
                     expands,
                     function(v, k){
-                        var association = resource.Model.associations[k]|| _.get(resource.Model, 'customAssociations.'+k);
+                        var association = _.get(resource, 'Model.associations.'+k) || _.get(resource, 'Model.customAssociations.'+k);
                         var promise = null;
                         if(association){
                             if(_.includes(['BelongsTo', 'HasOne'], association.associationType)){
@@ -146,7 +147,7 @@ function expandResource(expands, resource){
                         } else {
                             //the resource must be expanded via a custom getter
                             var getterName = 'get'+_.upperFirst(k);
-                            ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', resource.Model.name, k);
+                            ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', _.get(resource, 'Model.name', ''), k);
                             promise = BluebirdPromise.resolve(resource[getterName](v));
                         }
                         
@@ -170,7 +171,11 @@ function expandResource(expands, resource){
             return resourceJson;
         });
 }
-exports.expandResource = expandResource;
+
+function expand(resource, req){
+    return performExpansion(resource, parseExpandParam(_.get(req.swagger.params, 'expand.value', '')));
+}
+exports.expand = expand;
 
 function execute(query, inTransaction){
     return inTransaction ?
@@ -179,27 +184,29 @@ function execute(query, inTransaction){
 }
 exports.execute = execute;
 
-exports.createAndExpandResource = function(model, foreignKeys, req, res, inTransaction){
-   var expands = getExpands(req.swagger.params.expand.value);
+function create(model, foreignKeys, attributes, inTransaction){
    var newInstance = model.fromJSON(
-            _(req.swagger.params.attributes.value)
+            _(attributes)
                .pick(model.getSettableAttributes())
                .defaults(foreignKeys)
                .value());
-   return execute(newInstance.save.bind(newInstance), inTransaction)
-            .then(function(newInstance){
-                return expandResource(expands, newInstance);
-            }).then(function(expanded){
-                res.json(expanded);
-            }).catch(req.next);
+   return execute(newInstance.save.bind(newInstance), inTransaction);
+}
+exports.create = create;
+
+exports.createAndExpand = function(model, foreignKeys, req, res, inTransaction){
+   return create(model, foreignKeys, req.swagger.params.attributes.value, inTransaction)
+            .then(_.partial(expand, _, req))
+            .then(res.json.bind(res))
+            .catch(req.next);
 };
 
 function findAndCountAssociation(instance, association, options){
     //do count + get in a REPETABLE_READ transaction
     return models.sequelize.requireTransaction(function(){
-                return BluebirdPromise.join(
-                    instance[association.accessors.count]({where: options.where}),
-                    instance[association.accessors.get](options));
+        return BluebirdPromise.join(
+            instance[association.accessors.count]({where: options.where}),
+            instance[association.accessors.get](options));
     })
     .spread(function(count, rows){
         return {count: count, rows: rows};
@@ -212,13 +219,13 @@ exports.getCollection = function(model, collection, req, res){
     ApiError.assert(association, ApiError.NOT_FOUND);
     
     var target = association.target;
-    var expands = getExpands(_.get(req.swagger.params, 'expand.value', ''));
+    var expands = parseExpandParam(_.get(req.swagger.params, 'expand.value', ''));
     var options = getCollectionQueryOptions(req, target);
     
     return findAndCountAssociation(instance, association, options)
         .then(function(result){
             return BluebirdPromise
-                    .all(_.map(result.rows, _.partial(expandResource, expands)))
+                    .all(_.map(result.rows, _.partial(performExpansion, _, expands)))
                     .then(function(expanded){
                         res.json(
                           createCollectionResource(

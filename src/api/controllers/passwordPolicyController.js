@@ -20,9 +20,7 @@ controller.setStrength = function(req, res) {
     models.passwordPolicy
         .findById(req.swagger.params.id.value)
         .then(function(passwordPolicy){
-             if (passwordPolicy === null) {
-                throw ApiError.NOT_FOUND;
-            }
+            ApiError.assert(passwordPolicy, ApiError.NOT_FOUND);
             return passwordPolicy.update({strength: req.swagger.params.newAttributes.value});
         })
         .then(function(passwordPolicy){

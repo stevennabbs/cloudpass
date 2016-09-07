@@ -3,6 +3,7 @@
 var _ = require('lodash');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
 var sendEmail = require('../sendEmail');
+var Optional = require('optional-js');
 
 module.exports = function (sequelize, DataTypes) {
     return sequelize.define(
@@ -24,7 +25,7 @@ module.exports = function (sequelize, DataTypes) {
                 validate: {len: [0, 1022]},
                 defaultValue: ''
             },
-            status:{
+            status: {
                 type: DataTypes.STRING(8),
                 validate: {isIn: [['ENABLED', 'DISABLED']]},
                 allowNull: false,
@@ -49,9 +50,14 @@ module.exports = function (sequelize, DataTypes) {
                         instance.set('accountCreationPolicyId', accountCreationPolicy.id);
                     });
                 },
+                beforeDestroy: function(instance){
+                    //trigger the provider's hooks
+                    return this.sequelize.models.directoryProvider.destroy({where: {directoryId: instance.id}, individualHooks: true});
+                },
                 afterDestroy: function(instance){
                     return instance.sequelize.Promise.join(
                         this.sequelize.models.passwordPolicy.destroy({where: {id: instance.passwordPolicyId}}),
+                        this.sequelize.models.accountCreationPolicy.destroy({where: {id: instance.accountCreationPolicyId}}),
                         this.sequelize.models.accountCreationPolicy.destroy({where: {id: instance.accountCreationPolicyId}})
                     );
                 }
@@ -65,13 +71,14 @@ module.exports = function (sequelize, DataTypes) {
                     return ['id', 'name', 'description', 'status'];  
                 },
                 getSettableAttributes: function(){
-                    return ['name', 'description', 'status', 'customData'];  
+                    return ['name', 'description', 'status', 'provider', 'customData'];  
                 },
                 isCustomizable: function(){
                     return true;  
                 },
                 associate: function(models) {
                     models.directory.belongsTo(models.tenant, {onDelete: 'cascade'});
+                    models.directory.hasOne(models.directoryProvider, {as: 'provider', onDelete: 'cascade'});
                     models.directory.belongsTo(models.passwordPolicy, {onDelete: 'cascade'});
                     models.directory.belongsTo(models.accountCreationPolicy, {onDelete: 'cascade'});
                     models.directory.hasMany(models.group, {onDelete: 'cascade'});
@@ -114,6 +121,8 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 afterAssociate: function(models){
                     addAccountStoreAccessors(models.directory, models.application);
+                    //override the 'getProvider' method to return a 'cloudpass' provider by default
+                    models.directory.Instance.prototype.getProvider = getProvider;
                 }
             }
         }
@@ -178,4 +187,20 @@ function createNewGroup(attributes){
             .pick(this.sequelize.models.group.getSettableAttributes())
             .defaults({tenantId: this.tenantId})
             .value());
+}
+
+function getProvider(){
+    return this.sequelize.models.directoryProvider
+            .findOne({where: {directoryId: this.id}})
+            .then(function(provider){
+                return Optional.ofNullable(provider).orElseGet(function(){
+                    //default provider is 'cloudpass'
+                    return this.sequelize.models.directoryProvider.build({
+                        id: this.id,
+                        providerId: 'cloudpass',
+                        directoryId: this.id,
+                        tenantId: this.tenantId
+                    });
+                }.bind(this));
+            }.bind(this));
 }

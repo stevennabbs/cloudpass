@@ -40,50 +40,50 @@ describe('controllerHelper', function () {
         });
     });
     
-    describe('getExpands', function () {
+    describe('parseExpandParam', function () {
 
         it('should return an empty object if no expand parameter is provided', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands(),
+                    controllerHelper.parseExpandParam(),
                     {}
             );
         });
 
         it('should correctly parse pagination options', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(offset:2,limit:10)'),
+                    controllerHelper.parseExpandParam('groups(offset:2,limit:10)'),
                     {groups: {offset: 2, limit: 10}}
             );
         });
 
         it('should add default pagination options if some are missing', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(limit:10)'),
+                    controllerHelper.parseExpandParam('groups(limit:10)'),
                     {groups: {offset: 0, limit: 10}}
             );
 
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(offset:2)'),
+                    controllerHelper.parseExpandParam('groups(offset:2)'),
                     {groups: {offset: 2, limit: 25}}
             );
         });
 
         it('should add default pagination options if all are missing', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups'),
+                    controllerHelper.parseExpandParam('groups'),
                     {groups: {offset: 0, limit: 25}}
             );
         });
 
         it('should fail if an invalid pagination option is passed', function () {
             assert.throws(function () {
-                controllerHelper.getExpands('groups(size:10)');
+                controllerHelper.parseExpandParam('groups(size:10)');
             });
         });
 
         it('should parse multiple expand parameters', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(limit:10),directories,tenants(limit:3,offset:8)'),
+                    controllerHelper.parseExpandParam('groups(limit:10),directories,tenants(limit:3,offset:8)'),
                     {
                         groups: {offset: 0, limit: 10},
                         directories: {offset: 0, limit: 25},

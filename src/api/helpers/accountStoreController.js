@@ -13,11 +13,12 @@ module.exports = function(model, transactionalMethods){
           model.findById(req.swagger.params.id.value)
                .then(function(accountStore){
                     return accountStore.createNewAccount(req.swagger.params.attributes.value, req.swagger.params.registrationWorkflowEnabled.value);
-                }).then(function(account){
-                    return controllerHelper.expandResource(controllerHelper.getExpands(req.swagger.params.expand.value), account);
-                }).then(function(expanded){
-                    res.json(expanded);
-                }).catch(req.next);
+                })
+                .then(function(account){
+                    return controllerHelper.expand(account, req);
+                })
+                .then(res.json.bind(res))
+                .catch(req.next);
     };
 
     controller.createGroup = function(req, res){
@@ -25,7 +26,7 @@ module.exports = function(model, transactionalMethods){
                 .then(function(accountStore){
                      return accountStore.createNewGroup(req.swagger.params.attributes.value);
                 }).then(function(group){
-                    return controllerHelper.expandResource(controllerHelper.getExpands(req.swagger.params.expand.value), group);
+                    return controllerHelper.expand(group, req);
                 }).then(function(expanded){
                     res.json(expanded);
                 }).catch(req.next);

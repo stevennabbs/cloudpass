@@ -54,7 +54,7 @@ app.get('/', function(req, res){
                         })
                         .spread(function(account){
                             if(account){
-                                return idSiteHelper.getJwtResponse(apiKey, payload.cb_uri, payload.jti, false, account.href)
+                                return idSiteHelper.getJwtResponse(apiKey, payload.cb_uri, payload.jti, false, account.href, payload.state)
                                 .then(function(redirectUrl){
                                     res.status(302).location(addParamToUri(payload.cb_uri, 'jwtResponse', redirectUrl)).send();
                                 });
@@ -150,7 +150,8 @@ function redirectToIdSite(jwtPayload, application, apiKey, res){
         res.app.get('secret'),
         {
             expiresIn: 60,
-            subject: jwtPayload.iss
+            subject: jwtPayload.iss,
+            audience: 'idSite'
         }
      )
      .then(function(token){

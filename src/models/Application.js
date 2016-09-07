@@ -1,7 +1,9 @@
 "use strict";
 
+var _ = require('lodash');
 var accountStoreWrapperHelper = require('./helpers/accountStoreWrapperHelper');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
+var hrefHelper = require('./helpers/hrefHelper');
 
 module.exports = function (sequelize, DataTypes) {
     return sequelize.define(
@@ -46,6 +48,9 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 idSiteModel: function(){
                     return {href: this.href+'/idSiteModel'};
+                },
+                samlPolicy: function(){
+                    return {href: hrefHelper.baseUrl+'/samlPolicies/'+this.id};
                 }
             },
             instanceMethods: {
@@ -53,7 +58,7 @@ module.exports = function (sequelize, DataTypes) {
                 createNewGroup: accountStoreWrapperHelper.createNewGroup,
                 getIdSiteModel: function(){
                     return this.sequelize.Promise.join(
-                            [],
+                            getProviders(this),
                             getDefaultPasswordStrengthPolicy(this),
                             getLogoUrl(this)
                     ).spread(function(providers, passwordPolicy, logoUrl){
@@ -64,6 +69,26 @@ module.exports = function (sequelize, DataTypes) {
                             logoUrl: logoUrl
                         };
                     }.bind(this));
+                },
+                getSamlPolicy: function(){
+                    var applicationHref = this.href;
+                    return {
+                        id: this.id,
+                        href: hrefHelper.baseUrl+'samlPolicies/'+this.id,
+                        createdAt: this.createdAt,
+                        modifiedAt: this.createdAt,
+                        serviceProvider: {href: hrefHelper.baseUrl+'samlServiceProviders/'+this.id},
+                        getServiceProvider: function(){
+                            return {
+                                id: this.id,
+                                href: hrefHelper.baseUrl+'samlServiceProviders/'+this.id,
+                                createdAt: this.createdAt,
+                                modifiedAt: this.createdAt,
+                                ssoInitiationEndpoint: {href: applicationHref+'/saml/sso/idpRedirect'},
+                                defaultRelayStates: {href: hrefHelper.baseUrl+'samlServiceProviders/'+this.id+'/defaultRelayStates'}
+                            };
+                        }
+                    };
                 }
             },
             classMethods: {
@@ -104,6 +129,27 @@ module.exports = function (sequelize, DataTypes) {
         }
     );
 };
+
+function getProviders(application){
+    return application.getDirectories({
+            attributes: ['id', 'name'],
+            include: [{
+                    model: application.sequelize.models.directoryProvider,
+                    as: 'provider',
+                    attributes: ['providerId']
+            }]
+        })
+        .filter(_.flow([_.iteratee('provider.providerId'), _.negate(_.isEmpty)]))
+        .map(function(directory){
+            return {
+                providerId: directory.provider.providerId,
+                accountStore: {
+                    href: directory.href,
+                    name: directory.name
+                }
+            };
+        });
+}
 
 function getLogoUrl(application){
     return application.getTenant({
