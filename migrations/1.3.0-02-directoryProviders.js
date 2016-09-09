@@ -56,13 +56,13 @@ module.exports = {
                 },
                 attributeStatementMappingRulesId:{
                     type: DataTypes.UUID,
-                    allowNull: false,
+                    allowNull: true,
                     references: {model: "attributeStatementMappingRules"},
                     onDelete: "cascade"
                 },
                 samlServiceProviderMetadataId:{
                     type: DataTypes.UUID,
-                    allowNull: false,
+                    allowNull: true,
                     references: {model: "samlServiceProviderMetadata"},
                     onDelete: "cascade"
                 }

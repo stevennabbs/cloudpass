@@ -25,7 +25,11 @@ controller.create = function(req, res){
                 if(attributes.provider && attributes.provider.providerId !== 'cloudpass'){
                     return controllerHelper.create(
                         models.directoryProvider,
-                        {tenantId: req.user.tenantId, directoryId: newDirectory.id},
+                        {
+                            tenantId: req.user.tenantId,
+                            directoryId: newDirectory.id,
+                            providerId: attributes.provider.providerId
+                        },
                         attributes.provider,
                         true
                     );

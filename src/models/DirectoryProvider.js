@@ -112,7 +112,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             classMethods: {
                 getSettableAttributes: function(){
-                    return ['providerId', 'clientId', 'clientSecret', 'ssoLoginUrl', 'ssoLogoutUrl', 'encodedX509SigningCert'];  
+                    return ['clientId', 'clientSecret', 'ssoLoginUrl', 'ssoLogoutUrl', 'encodedX509SigningCert'];  
                 },
                 associate: function(models){
                     models.directoryProvider.belongsTo(models.tenant, {onDelete: 'cascade'});

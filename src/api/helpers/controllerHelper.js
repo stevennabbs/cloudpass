@@ -185,12 +185,12 @@ function execute(query, inTransaction){
 exports.execute = execute;
 
 function create(model, foreignKeys, attributes, inTransaction){
-   var newInstance = model.fromJSON(
-            _(attributes)
-               .pick(model.getSettableAttributes())
-               .defaults(foreignKeys)
-               .value());
-   return execute(newInstance.save.bind(newInstance), inTransaction);
+    var newInstance = model.fromJSON(
+             _(attributes)
+                .pick(model.getSettableAttributes())
+                .defaults(foreignKeys)
+                .value());
+    return execute(_.ary(newInstance.save.bind(newInstance), 0), inTransaction);
 }
 exports.create = create;
 
