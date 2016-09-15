@@ -19,9 +19,9 @@ exports.generateDefaultRelayState = function(req, res){
     samlHelper.getRelayState(
         req.app.get('secret'),
         req.user.id, //TODO req.user.id is not set after cookie authentication
-        req.swagger.params.cb_uri.value,
-        req.swagger.params.state.value,
-        req.swagger.params.app_href.value
+        req.swagger.params.properties.value.callbackUri,
+        req.swagger.params.properties.value.state,
+        models.application.getHref(req.swagger.params.id.value)
     )
     .then(function(relayState){
         res.json({defaultRelayState: relayState});

@@ -50,7 +50,7 @@ module.exports = function (sequelize, DataTypes) {
                     return {href: this.href+'/idSiteModel'};
                 },
                 samlPolicy: function(){
-                    return {href: hrefHelper.baseUrl+'/samlPolicies/'+this.id};
+                    return {href: hrefHelper.baseUrl+'samlPolicies/'+this.id};
                 }
             },
             instanceMethods: {

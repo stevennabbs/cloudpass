@@ -225,6 +225,8 @@ controller.resendVerificationEmail = function(req, res){
 };
 
 controller.samlIdpRedirect = function(req, res){
+    ApiError.assert(req.authInfo, ApiError.FORBIDDEN);
+    
     return BluebirdPromise.join(
         models.application.build({id: req.swagger.params.id.value})
            .getDirectories({

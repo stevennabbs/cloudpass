@@ -8,6 +8,7 @@ var config = require('config');
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var passport = require('passport');
+var Optional = require('optional-js');
 var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
 var JwtCookieStrategy = require('./authentication/JwtCookieStrategy');
 var BasicStrategy = require('passport-http').BasicStrategy;
@@ -36,12 +37,12 @@ module.exports = function(secret){
     passport.use(new JwtStrategy(
         {
             secretOrKey : secret,
-            //TODO use ExtractJwt.fromExtractors when it is released
-            jwtFromRequest: function(req){
+            jwtFromRequest: ExtractJwt.fromExtractors([
                 //ID sites send request with a JWT in the authorization header
+                ExtractJwt.fromAuthHeaderWithScheme('Bearer'),
                 //SAML identity providers use the 'RelayState' POST param
-                return ExtractJwt.fromAuthHeaderWithScheme('Bearer')(req) || ExtractJwt.fromBodyField('RelayState')(req);
-            }
+                ExtractJwt.fromBodyField('RelayState')
+            ])
         },
         function(payload, done) {
             BluebirdPromise.join(getApiKey(payload.sub), payload)
@@ -57,7 +58,12 @@ module.exports = function(secret){
         function(apiKeyId, secret, done){
             getApiKey(apiKeyId)
                     .then(function(apiKey){
-                        done(null, !apiKey || apiKey.secret !== secret ? false : apiKey);
+                        done(
+                            null,
+                            Optional.ofNullable(apiKey)
+                               .filter(_.flow(_.property('secret'), _.partial(_.eq, secret)))
+                               .orElse(false)
+                        );
             })
             .catch(done);
         }
@@ -139,9 +145,9 @@ module.exports = function(secret){
                     error = ApiError.FROM_ERROR(err);
                 }
                 if(error.status === 500){
-                console.error(JSON.stringify(err));
+                    console.error(JSON.stringify(err));
                     console.error(err.stack);
-            }
+                }
                 error.write(res);
             });
 
