@@ -31,7 +31,7 @@ controller.create = function(req, res){
     var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
     attributes.tenantId = req.user.tenantId;
     
-    models.sequelize.transaction(function () {
+    models.sequelize.requireTransaction(function () {
         //create the application
         return models.application
                 .create(attributes)

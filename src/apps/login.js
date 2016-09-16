@@ -36,7 +36,11 @@ app.post('/', function(req, res){
         return res.cookie(
                 'sessionToken',
                 token,
-                {httpOnly: true, path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/v1').pathname}
+                {
+                    httpOnly: true,
+                    signed: true,
+                    path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/v1').pathname
+                }
             )
             .status(204)
             .end();

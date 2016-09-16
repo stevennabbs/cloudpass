@@ -3,17 +3,16 @@
 var express = require('express');
 var morgan = require('morgan');
 var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
 var config = require('config');
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var passport = require('passport');
 var Optional = require('optional-js');
 var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
-var JwtCookieStrategy = require('./authentication/JwtCookieStrategy');
 var BasicStrategy = require('passport-http').BasicStrategy;
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
+var JwtCookieComboStrategy = require('passport-jwt-cookiecombo');
 var idSiteHelper = require('./helpers/idSiteHelper');
 var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
@@ -51,9 +50,22 @@ module.exports = function(secret){
         }
     ));
     
-    //register JwtCookie authentication strategy
-    passport.use(new JwtCookieStrategy('sessionToken', 'secret', {algorithms: ["HS256"], audience: 'admin'}));
-    // register HTTP basic authentication strategy
+    //admins can be authenticated by a cookie set by the /login endpoint
+    passport.use(new JwtCookieComboStrategy(
+        {
+            secretOrPublicKey: secret,
+            jwtCookieName: 'sessionToken',
+            jwtVerifyOptions: {
+                algorithms: ["HS256"],
+                audience: 'admin'
+            }
+        },
+        function(payload, done){
+            return done(null, payload);
+        }
+    ));
+
+    // basic authentication with API key & secret
     passport.use(new BasicStrategy(
         function(apiKeyId, secret, done){
             getApiKey(apiKeyId)
@@ -79,7 +91,6 @@ module.exports = function(secret){
 
             var app = express();
             app.use(morgan('tiny'));
-            app.use(cookieParser());
             //Sauthc1 needs the raw body
             app.use(bodyParser.json({
                 verify: function(req, res, buf) {
@@ -95,7 +106,7 @@ module.exports = function(secret){
                 if(req.method === 'OPTIONS'){
                     return next();
                 }
-                passport.authenticate(['sauthc1', 'jwt', 'jwtcookie', 'basic'], {session: false}, function (err, user, info) {
+                passport.authenticate(['sauthc1', 'jwt', 'jwt-cookiecombo', 'basic'], {session: false}, function (err, user, info) {
                     if (err) {
                         return next(err);
                     }

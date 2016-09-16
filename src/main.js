@@ -3,11 +3,12 @@
 var ssaclCls = require('continuation-local-storage').createNamespace('sequelize-cls');
 var express = require('express');
 var cluster = require('cluster');
-var models = require('./models');
+var cookieParser = require('cookie-parser');
 var numCPUs = require('os').cpus().length;
 var config = require('config');
 var ssacl = require('ssacl');
-var randomstring = require("randomstring");
+var randomstring = require('randomstring');
+var models = require('./models');
 var loginApp = require('./apps/login');
 var logoutApp = require('./apps/logout');
 var restApiApp = require('./apps/restApi');
@@ -39,6 +40,7 @@ function startServer(secret){
     
     var app = express();
     app.set('secret', secret);
+    app.use(cookieParser(secret));
     app.set('ssaclCls', ssaclCls);
     app.get('/', function(req, res){
         res.status(302).location('ui/').end();
