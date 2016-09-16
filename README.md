@@ -225,8 +225,8 @@ Client client = Clients.builder()
 
 ## ID sites
 
-Cloudpass supports ID sites. You can even use an ID site hosted on Stormpath (every Stormpath tenant has one, even free ones).
-All you need to do is to configure the `url` attribute of your tenant's `Idsite` resource.
+Cloudpass supports ID sites.
+The default one is [https://id.stormpath.io](https://id.stormpath.io), but you can configure it by changing the `url` attribute of your tenant's `Idsite` resource.
 You can read more about ID sites on Stormpath's website.
 
 ## What's missing ?
@@ -235,7 +235,6 @@ Cloudpass is a work in progress and these features are not yet available. Let us
 - A user interface
 - Social login
 - Oauth token generation
-- SAML authentication
 - password reset & account creation from ID sites
 
 ## Development
