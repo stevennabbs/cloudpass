@@ -2,6 +2,7 @@ var request = require('supertest-as-promised');
 var randomstring = require("randomstring");
 var ms = require('smtp-tester');
 var BluebirdPromise = require('sequelize').Promise;
+var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var models = require('../../src/models');
 
 exports.postRequest = function(path){
@@ -37,6 +38,34 @@ exports.getEmailPromise = function (mailServer, address) {
     };
 
 exports.randomName = randomstring.generate;
+
+exports.getIdSiteJwtRequest = function(applicationId, callbackUrl){
+    return signJwt(
+        {
+            cb_uri: callbackUrl
+        },
+        exports.apiKey.secret,
+        {
+            issuer: exports.apiKey.id,
+            subject: 'http://localhost:20020/v1/applications/'+applicationId
+        }
+    );
+};
+
+exports.getIdSiteBearer = function(applicationId, callbackUrl){
+    return exports.getIdSiteJwtRequest(applicationId, callbackUrl)
+        .then(function(jwtRequest){
+                //send it it cloudpass, it should redirect to ID site
+                return request(exports.app).get('/sso')
+                   .query({ jwtRequest: jwtRequest})
+                   .expect(302)
+                   .toPromise();
+        })
+        .then(function(res){
+            var fragmentStart = '#?jwt=';
+            return res.header.location.substring(res.header.location.indexOf(fragmentStart) + fragmentStart.length);
+        });
+};
 
 before(function(){
     this.timeout(0);

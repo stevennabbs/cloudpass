@@ -6,6 +6,7 @@ var moment = require('moment');
 var BluebirdPromise = require('sequelize').Promise;
 var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
 var url = require('url');
+var _ = require('lodash');
 var models = require('../models');
 var scopeHelper = require('./helpers/scopeHelper');
 var getApiKey = require('./helpers/getApiKey');
@@ -87,7 +88,7 @@ app.get('/', function(req, res){
                         ),
                         payload,
                         apiKey
-                    );
+                    ); 
                 })
                 .spread(function(cookieToken, payload, apiKey){
                     var cookieOptions = {
@@ -155,7 +156,7 @@ function redirectToIdSite(jwtPayload, application, apiKey, res){
         }
      )
      .then(function(token){
-        res.status(302).location(apiKey.tenant.idSites[0].url+(jwtPayload.path || '')+'?jwt='+token).send();
+        res.status(302).location(apiKey.tenant.idSites[0].url+'#'+_.defaultTo(jwtPayload.path, '')+'?jwt='+token).send();
     })
     .catch(function(){
         res.status(500).end();

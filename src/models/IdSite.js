@@ -12,7 +12,8 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 url: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true}
+                    validate: {isUrl: true},
+                    defaultValue: 'http://id.stormpath.io'
                 },
                 logoUrl: {
                     type: DataTypes.STRING,

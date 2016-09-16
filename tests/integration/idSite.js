@@ -1,6 +1,5 @@
 var assert = require("assert");
 var BluebirdPromise = require('sequelize').Promise;
-var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var request = require('supertest-as-promised');
 var init = require('./init');
 
@@ -30,37 +29,8 @@ describe('idSite', function(){
         });
     });
     
-    function getJwtRequest(){
-        return signJwt(
-            {
-                cb_uri: callbackUrl
-            },
-            init.apiKey.secret,
-            {
-                issuer: init.apiKey.id,
-                subject: 'http://localhost:20020/v1/applications/'+application.id
-            }
-        );
-    };
-    
-    function getBearer(){
-        return getJwtRequest()
-            .then(function(jwtRequest){
-                    //send it it cloudpass, it should redirect to ID site
-                    return request(init.app).get('/sso')
-                       .query({ jwtRequest: jwtRequest})
-                       .expect(302)
-                       .toPromise();
-            })
-            .then(function(res){
-                var locationStart = idSiteUrl+'?jwt=';
-                assert(res.header.location.startsWith(locationStart));
-                return res.header.location.substring(locationStart.length);
-            });
-    };
-    
     it('login', function(){
-        return getBearer()
+        return init.getIdSiteBearer(application.id, callbackUrl)
             .then(function(bearer){
                 return request(init.app).post('/v1/applications/'+application.id+'/loginAttempts')
                     .set('authorization', 'Bearer '+bearer)
@@ -69,42 +39,43 @@ describe('idSite', function(){
                         value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
                     })
                     .expect(200)
-                    .then(function(res){
-                        //there should be a redirection URL in the headers
-                        assert(res.header['stormpath-sso-redirect-location']);
-                        return request(res.header['stormpath-sso-redirect-location']).get('')
-                                .expect(302)
-                                .toPromise();
-                    })
-                    .then(function(res){
-                        //cloudpass should redirect us back to the application
-                        //and set a cookie for subsequent logins
-                        assert(res.header.location);
-                        assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
-                        assert(res.header['set-cookie']);
-                        return BluebirdPromise.join(
-                                    getJwtRequest(),
-                                    res.header['set-cookie'][0].split(';')[0]
-                                );
-                    })
-                    .spread(function(jwtRequest, cookie){
-                        //send a a new request with the cookie
-                        return request(init.app).get('/sso')
-                            .query({ jwtRequest: jwtRequest})
-                            .set('Cookie', cookie)
-                            .expect(302)
-                            .toPromise();
-                    })
-                    .then(function(res){
-                        //cloudpass should redirect directly to the callback URL, not to the ID site
-                        assert(res.header.location);
-                        assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
-                    });
+                    .toPromise();
+            })
+            .then(function(res){
+                //there should be a redirection URL in the headers
+                assert(res.header['stormpath-sso-redirect-location']);
+                return request(res.header['stormpath-sso-redirect-location']).get('')
+                        .expect(302)
+                        .toPromise();
+            })
+            .then(function(res){
+                //cloudpass should redirect us back to the application
+                //and set a cookie for subsequent logins
+                assert(res.header.location);
+                assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                assert(res.header['set-cookie']);
+                return BluebirdPromise.join(
+                            init.getIdSiteJwtRequest(application.id, callbackUrl),
+                            res.header['set-cookie'][0].split(';')[0]
+                        );
+            })
+            .spread(function(jwtRequest, cookie){
+                //send a a new request with the cookie
+                return request(init.app).get('/sso')
+                    .query({ jwtRequest: jwtRequest})
+                    .set('Cookie', cookie)
+                    .expect(302)
+                    .toPromise();
+            })
+            .then(function(res){
+                //cloudpass should redirect directly to the callback URL, not to the ID site
+                assert(res.header.location);
+                assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
             });
     });
     
     it('logout', function(){
-        return getJwtRequest()
+        return init.getIdSiteJwtRequest(application.id, callbackUrl)
                 .then(function(jwtRequest){
                     return request(init.app).get('/sso/logout')
                             .query({ jwtRequest: jwtRequest})
@@ -120,8 +91,8 @@ describe('idSite', function(){
                 });
     });
     
-    it('request with bearer authorization must have a limited scope', function(){
-        return getBearer()
+    it('Requests with bearer authorization must have a limited scope', function(){
+        return init.getIdSiteBearer(application.id, callbackUrl)
                 .then(function(bearer){
                     return request(init.app).get('/v1/applications/'+application.id+'/accounts')
                         .set('authorization', 'Bearer '+bearer)
