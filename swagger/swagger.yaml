@@ -1298,6 +1298,81 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /groups/{id}/accounts:
+    x-swagger-router-controller: groupController
+    post:
+      summary: create a new account
+      description: create a new account in the specified group
+      operationId: createAccount
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - $ref: "#/parameters/RegistrationWorkflowEnabled"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - password
+              - givenName
+              - surname
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+              username:
+                type: string
+              givenName:
+                type: string
+              middleName:
+                type: string
+              surname:
+                type: string
+              status:
+                type: string
+                enum:
+                  - ENABLED
+                  - DISABLED
+                  - UNVERIFIED
+              customData:
+                type: object
+      responses:
+        "200":
+          description: account created
+          schema:
+            $ref: "#/definitions/Account"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: retrieve the group accounts
+      description: retrieve the group accounts
+      operationId: getAccounts
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/OrderBy"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /groups/{id}/customData:
     x-swagger-router-controller: groupController
     get:
