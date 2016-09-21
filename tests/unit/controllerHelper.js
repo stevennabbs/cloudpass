@@ -34,8 +34,8 @@ describe('controllerHelper', function () {
         
         it('should return a default ordering clause if none is provided', function(){
             assert.deepStrictEqual(
-                    getOrderClause(),
-                    ['id']
+                getOrderClause(),
+                [[ 'id', 'ASC' ]]
             );
         });
     });
