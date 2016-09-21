@@ -45,7 +45,7 @@ function getOrderClause(orderParam){
     } else {
         //if no order clause is specified, we must still order the results to ensure a consistent pagination
         //('id' is present and indexed in all tables)
-        return ['id'];
+        return  [[ 'id', 'ASC' ]];
     }
 }
 
