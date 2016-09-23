@@ -96,7 +96,7 @@ app.get('/', function(req, res){
                         path: '/sso'
                     };
                     if(apiKey.tenant.idSites[0].sessionCookiePersistent){
-                        cookieOptions.maxAge =  moment.duration(apiKey.tenant.idSites[0].sessionTtl).asSeconds();
+                        cookieOptions.maxAge =  moment.duration(apiKey.tenant.idSites[0].sessionTtl).asMilliseconds();
                     }
                     res.cookie(apiKey.tenant.id, cookieToken, cookieOptions);
                     res.status(302).location(addParamToUri(payload.cb_uri, 'jwtResponse', req.query.jwtResponse)).send();
