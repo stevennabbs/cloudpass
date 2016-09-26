@@ -1,0 +1,34 @@
+# These environments variables that can be used to override configuration values
+
+server:
+  rootUrl: SERVER_ROOT_URL
+  port: SERVER_PORT
+  clustering:
+    __name: SERVER_CLUSTERING
+    __format: json  
+  uiFolder: SERVER_UI_FOLDER
+
+email:
+  bcc: EMAIL_BCC
+  transport:
+    direct: EMAIL_TRANSPORT_DIRECT
+    host: EMAIL_TRANSPORT_HOST
+    port: EMAIL_TRANSPORT_PORT
+    auth:
+      user: EMAIL_TRANSPORT_AUTH_USER
+      pass: EMAIL_TRANSPORT_AUTH_PASS
+
+persistence:
+  database: PERSISTENCE_DATABASE
+  options:
+    dialect: PERSISTENCE_OPTIONS_DIALECT
+    storage: PERSISTENCE_OPTIONS_STORAGE
+    host: PERSISTENCE_OPTIONS_HOST
+    port: PERSISTENCE_OPTIONS_PORT
+    logging:
+      __name: PERSISTENCE_OPTIONS_LOGGING
+      __format: json
+    pool:
+      minConnections: PERSISTENCE_OPTIONS_POOL_MIN_CONNECTIONS
+      maxConnections: PERSISTENCE_OPTIONS_POOL_MAX_CONNECTIONS
+      maxIdleTime: PERSISTENCE_OPTIONS_POOL_MAX_IDLE_TIME

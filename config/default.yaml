@@ -1,6 +1,6 @@
-# Please do not modify this file !
-# Create instead a 'local.yaml' file in the same directory
-# and override the relevant values
+# Do not modify this file !
+# Create instead a 'local.yaml' file in the same directory and override the relevant values,
+# or alternatively set the relevant environment variables (c.f. custom-environment-variables.yaml)
 
 server:
   # URL of cloudpass, used to prefix hrefs. If null, hrefs will be relative paths
@@ -40,6 +40,7 @@ persistence:
       minConnections: 5
       maxConnections: 5
       maxIdleTime: 1000
+    logging: false
 # Or for SQLite:
 #persistence:
 #  options:
