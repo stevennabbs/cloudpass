@@ -49,11 +49,6 @@ You can see the logs with `sudo journaltcl -u cloudpass`.
 ### Docker
 
 An [image is available on docker hub](https://hub.docker.com/r/dhatim/cloudpass). It uses SQLite by default.
-You can easily override the default configuration with the NODE_CONFIG environment variable, e.g:
-```bash
-NODE_CONFIG='{"persistence":{"database":"cloudpass","username":"postgres","password":"postgres","options":{"host":"customerdb.prod","port":5432}}}'
-docker run -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
-```
 
 ### Other systems
 
@@ -65,9 +60,22 @@ docker run -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
 
 ## Configuration
 
-If you installed the debian package, the configuration directories are located in `/etc/cloudpass`. Else they simply are in the `config` folder of your installation directory.
+If you installed the debian package, the configuration files are located in `/etc/cloudpass`. Else they are in the `config` folder of your installation directory.
 
-The default configuration is in `default.yaml`. You should not modify this file. Instead, create a `local.yaml` file and override the values you need.
+The default configuration is in `default.yaml`. You should not modify this file, but either:
+- create a `local.yaml` file and override the values you need.
+- set an environment variable for each configuration value changed. The name of these environment variables can be found in the `custom-environment-variables.yaml` file.
+- use a single `NODE_CONFIG` environment variable containing all your configuration changes in JSON format:
+
+   ```bash
+   export NODE_CONFIG='{"persistence":{"database":"cloudpass","username":"postgres","password":"postgres","options": {"host":"customerdb.prod","port":5432}}}'
+   npm start
+   ```
+   Don't forget to escape the quotes if you pass this variable to `docker run`:
+   ```bash
+   export NODE_CONFIG='{\"persistence\":{\"database\":\"cloudpass\",\"username\":\"postgres\",\"password\":\"postgres\",\"options\":{\"host\":\"customerdb.prod\",\"port\":5432}}}'
+   docker run -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
+   ```
 
 There are three configuration sections: *server*, *persistence* and *email*.
 
@@ -81,13 +89,12 @@ There are three configuration sections: *server*, *persistence* and *email*.
       "href": "https://cloudpass.example.com/v1/tenants/foo/applications"
     }
   }
-```
-In this example, the `rootUrl` would be `https://cloudpass.example.com`. Cloudpass has no way of figuring this out on its own because he cannot know if it is being accessed directly or from behind a proxy.  
-If `rootUrl` is left null, all hrefs will be relatives (e.g `/tenants/foo`). This should be fine in most cases. However:
-  - this is not necessarily well supported by Stormpath clients. In particular, we had issue with `delete` operations on the Java client. If you are interested, there is a [fork](https://github.com/dhatim/stormpath-sdk-java) fixing this issue.
-  - if you mount Cloudpass after one or more path segments (e.g. `htpp://www.example.com/my/cloudpass/instance/`) and use [Sauthc1 authentication](https://github.com/stormpath/stormpath-sdk-spec/blob/master/specifications/algorithms/sauthc1.md) (which is the default method on Stormpath clients), then you must provide a rootUrl.
-    It is because Sauthc1 uses the request path to compute its hash.
-	
+  ```
+  In this example, the `rootUrl` would be `https://cloudpass.example.com`. Cloudpass has no way of figuring this out on its own because he cannot know if it is being accessed directly or from behind a proxy.  
+  If `rootUrl` is left null, all hrefs will be relatives (e.g `/tenants/foo`). This should be fine in most cases. However:
+    - this is not necessarily well supported by Stormpath clients. In particular, we had issues with `delete` operations on the Java client. If you are interested, there is a [fork](https://github.com/dhatim/stormpath-sdk-java) fixing this issue.
+    - if you mount Cloudpass after one or more path segments (e.g. `htpp://www.example.com/my/cloudpass/instance/`) and use [Sauthc1 authentication](https://github.com/stormpath/stormpath-sdk-spec/blob/master/specifications/algorithms/sauthc1.md) (which is the default method on Stormpath clients), then you must provide a rootUrl. It is because Sauthc1 uses the request path to compute its hash.
+
 - `server.port`: the port on which cloudpass listens.
 - `clustering`: Set to true to cluster the application in a number of procesess equals to the number of CPU cores (but not more than 4) to speed up response time.
 
