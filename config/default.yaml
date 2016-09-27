@@ -40,7 +40,6 @@ persistence:
       minConnections: 5
       maxConnections: 5
       maxIdleTime: 1000
-    logging: false
 # Or for SQLite:
 #persistence:
 #  options:
