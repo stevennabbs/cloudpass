@@ -1,4 +1,4 @@
-# These environments variables that can be used to override configuration values
+# These environments variables can be used to override configuration values
 
 server:
   rootUrl: SERVER_ROOT_URL
