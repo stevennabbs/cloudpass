@@ -11,7 +11,7 @@ RUN npm install sqlite3
 COPY swagger swagger/
 COPY migrations migrations/
 COPY src src/
-COPY config/default.yaml config/default-docker.yaml config/
+COPY config/default.yaml config/default-docker.yaml config/custom-environment-variables.yaml config/
 
 EXPOSE 10010
 
