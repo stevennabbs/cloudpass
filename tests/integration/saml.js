@@ -221,7 +221,7 @@ describe('SAML', function(){
                     assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
                     //an account should have been created from the SAML assertions
                     return init.getRequest('applications/'+applicationId+'/accounts')
-                            .query({expand: 'customData'})
+                            .query({expand: 'customData,providerData'})
                             .expect(200)
                             .toPromise();
                 })
@@ -231,6 +231,10 @@ describe('SAML', function(){
                     assert.strictEqual(res.body.items[0].givenName, 'John');
                     assert.strictEqual(res.body.items[0].surname, 'Doe');
                     assert.strictEqual(res.body.items[0].customData.company, 'some-company');
+                    assert.strictEqual(res.body.items[0].providerData.providerId, 'saml');
+                    assert.strictEqual(res.body.items[0].providerData.firstName, 'John');
+                    assert.strictEqual(res.body.items[0].providerData.lastName, 'Doe');
+                    assert.strictEqual(res.body.items[0].providerData.company, 'some-company');
                 });
         });
         

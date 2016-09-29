@@ -1,5 +1,6 @@
 "use strict";
 
+var _ = require('lodash');
 var util = require('util');
 var thr = require('throw');
 
@@ -33,5 +34,6 @@ ApiError.assert = function(condition){
          thr.apply(null, Array.prototype.slice.call(arguments, 1));
      }
 };
+ApiError.assertFound = _.partial(ApiError.assert, _, ApiError.NOT_FOUND);
 
 module.exports = ApiError;

@@ -16,7 +16,7 @@ module.exports = function (model, transactionalMethods) {
         get: function (req, res) {
             return model
                 .findById(req.swagger.params.id.value)
-                .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
+                .tap(ApiError.assertFound)
                 .then(_.partial(controllerHelper.expand, _, req))
                 .then(res.json.bind(res))
                 .catch(req.next);
@@ -29,10 +29,9 @@ module.exports = function (model, transactionalMethods) {
         getCustomData: function(req, res){
             return model
                 .findById(req.swagger.params.id.value)
-                .then(function(resource){
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
-                    res.json(resource.getCustomData());
-                })
+                .tap(ApiError.assertFound)
+                .call('getCustomData')
+                .then(res.json.bind(res))
                 .catch(req.next);
         },
         update: function(req, res){
@@ -40,8 +39,8 @@ module.exports = function (model, transactionalMethods) {
                 function(){
                    return model
                     .findById(req.swagger.params.id.value)
+                    .tap(ApiError.assertFound)
                     .then(function(resource){
-                        ApiError.assert(resource, ApiError.NOT_FOUND);
                         return resource.update(req.swagger.params.newAttributes.value, {fields:  model.getSettableAttributes()});
                     }); 
                 },
@@ -54,8 +53,8 @@ module.exports = function (model, transactionalMethods) {
         updateCustomData: function(req, res){
             return model
                 .findById(req.swagger.params.id.value)
+                .tap(ApiError.assertFound)
                 .then(function(resource){
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
                     resource.set('customData', req.swagger.params.newCustomData.value);
                     return resource.save();
                 })
@@ -75,7 +74,8 @@ module.exports = function (model, transactionalMethods) {
             .then(function(rowNb){
                 ApiError.assert(rowNb, ApiError.NOT_FOUND);
                 res.status(204).json();
-            }).catch(req.next);
+            })
+            .catch(req.next);
         },
         deleteCustomData: function(req, res){
             return model
@@ -83,22 +83,25 @@ module.exports = function (model, transactionalMethods) {
                 .spread(function(rowNb){
                     ApiError.assert(rowNb, ApiError.NOT_FOUND);
                     res.status(204).json();
-                }).catch(req.next);
+                })
+                .catch(req.next);
         },
         deleteCustomDataField: function(req, res){
             return model
                 .findById(req.swagger.params.id.value)
+                .tap(ApiError.assertFound)
                 .then(function(resource){
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
                     resource.deleteCustomDataField(req.swagger.params.fieldName.value);
                     return resource.save();
-                }).then(function(updatedResource){
+                })
+                .then(function(updatedResource){
                     if(updatedResource instanceof models.sequelize.ValidationError){
                         throw updatedResource;
                     } else {
                         res.status(204).json();
                     }
-                }).catch(req.next);
+                })
+                .catch(req.next);
         }
     };
 };

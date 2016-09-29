@@ -16,8 +16,8 @@ var controller = accountStoreController(models.application);
 function getSubResource(getter, req, res){
     models.application
         .findById(req.swagger.params.id.value)
+        .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
         .then(function(application){
-            ApiError.assert(application, ApiError.NOT_FOUND);
             return application[getter]();
         })
         .then(_.partial(controllerHelper.expand, _, req))

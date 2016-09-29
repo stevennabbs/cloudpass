@@ -79,4 +79,13 @@ controller.consumeEmailVerificationToken = function(req, res){
     .catch(req.next);
 };
 
+controller.getProviderData = function(req, res){
+    return models.account
+        .findById(req.swagger.params.id.value)
+        .tap(ApiError.assertFound)
+        .call('getProviderData')
+        .then(res.json.bind(res))
+        .catch(req.next);
+};
+
 module.exports = controller;

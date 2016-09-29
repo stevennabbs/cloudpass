@@ -1,5 +1,6 @@
 "use strict";
 
+var _ = require('lodash');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
 var bcrypt = require('sequelize').Promise.promisifyAll(require('bcryptjs'));
 
@@ -55,6 +56,16 @@ module.exports = function (sequelize, DataTypes) {
                 defaultValue: '',
                 validate: {len: [0, 255]}
             },
+            providerData: {
+                type: DataTypes.STRING(1024),
+                get: function(){
+                    return {href: this.href+'/providerData'};
+                },
+                set: function(val){
+                    this.setDataValue('providerData', JSON.stringify(val));
+                },
+                defaultValue: '{"providerId": "cloudpass"}'
+            },
             status:{
                 type: DataTypes.STRING(10),
                 validate: {isIn: [['ENABLED', 'DISABLED', 'UNVERIFIED']]},
@@ -99,6 +110,16 @@ module.exports = function (sequelize, DataTypes) {
                 verifyPassword: function(password){
                     var hash = this.get('password', {role: 'passwordHashing'});
                     return hash && bcrypt.compareAsync(password, hash);
+                },
+                getProviderData: function(){
+                    return _.assign(
+                        JSON.parse(this.getDataValue('providerData')),
+                        {
+                            href: this.href+'/providerData',
+                            createdAt: this.createdAt,
+                            modifiedAt: this.modifiedAt
+                        }
+                    );
                 }
             },
             classMethods: {

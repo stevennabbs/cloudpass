@@ -1653,6 +1653,25 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /accounts/{id}/providerData:
+    x-swagger-router-controller: accountController
+    get:
+      summary: retrieve account provider data
+      description: retrieve account provider data
+      operationId: getProviderData
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /accounts/{id}/customData:
     x-swagger-router-controller: accountController
     get:
@@ -3208,6 +3227,7 @@ definitions:
           - applications
           - organizations
           - customData
+          - providerData
         properties:
           email:
             type: string
@@ -3241,6 +3261,8 @@ definitions:
           organizations:
             $ref: "#/definitions/ResourceReference"
           customData:
+            $ref: "#/definitions/ResourceReference"
+          providerData:
             $ref: "#/definitions/ResourceReference"
   AccountStoreMapping:
     allOf:

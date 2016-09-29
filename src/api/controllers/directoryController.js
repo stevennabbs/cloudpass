@@ -91,16 +91,19 @@ controller.consumeSamlAssertion = function(req, res){
                 transaction: t
            })
            .spread(function(account, created){
+               var providerData = _.defaults({providerId: 'saml'}, _.mapValues(samlResponse.user.attributes, _.head));
                 return BluebirdPromise.join(
                     account.update(
-                    //'_.fromPairs' doesn't support  property paths (customData.xxx), so we use zipObjectDeep(zip) instead
+                    //'_.fromPairs' doesn't support property paths (customData.xxx), so we use zipObjectDeep(zip) instead
                      _.spread(_.zipObjectDeep)(_.spread(_.zip)(
-                     _(mappingRules.items)
-                        //get account attribute lists and their new value
-                        .map(_.over(_.property('accountAttributes'), _.flow(_.property('name'), _.propertyOf(samlResponse.user.attributes), _.head)))
-                        //make pairs of account attribute/value (obviously)
-                        .flatMap(_.spread(_.overArgs(_.map, [_.identity, _.flow(_.constant, _.partial(_.over, _.identity))])))
-                        .value()
+                        _(mappingRules.items)
+                           //get account attribute lists and their new value
+                           .map(_.over(_.property('accountAttributes'), _.flow(_.property('name'), _.propertyOf(providerData))))
+                           //make pairs of account attribute/value (obviously)
+                           .flatMap(_.spread(_.overArgs(_.map, [_.identity, _.flow(_.constant, _.partial(_.over, _.identity))])))
+                            //add provider data
+                           .tap(_.method('push', ['providerData', providerData]))
+                           .value()
                     )),
                      {transaction: t}
                     ),
