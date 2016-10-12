@@ -19,6 +19,7 @@ var ssoApp = require('./apps/sso');
 var _ = require('lodash');
 
 if(cluster.isMaster){
+    console.log('using configration:\n', JSON.stringify(config, null, 2));
     //run pending migrations and fork clusters
     var secret = randomstring.generate(50);
     module.exports = models
