@@ -9,14 +9,17 @@ server:
   uiFolder: SERVER_UI_FOLDER
 
 email:
-  bcc: EMAIL_BCC
+  fields:
+    __name: EMAIL_FIELDS
+    __format: json
   transport:
-    direct: EMAIL_TRANSPORT_DIRECT
-    host: EMAIL_TRANSPORT_HOST
-    port: EMAIL_TRANSPORT_PORT
-    auth:
-      user: EMAIL_TRANSPORT_AUTH_USER
-      pass: EMAIL_TRANSPORT_AUTH_PASS
+    options:
+      direct: EMAIL_TRANSPORT_DIRECT
+      host: EMAIL_TRANSPORT_HOST
+      port: EMAIL_TRANSPORT_PORT
+      auth:
+        user: EMAIL_TRANSPORT_AUTH_USER
+        pass: EMAIL_TRANSPORT_AUTH_PASS
 
 persistence:
   database: PERSISTENCE_DATABASE

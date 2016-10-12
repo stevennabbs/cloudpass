@@ -2004,6 +2004,8 @@ paths:
                 enum:
                   - text/plain
                   - text/html
+              mandrillTemplate:
+                type: string
               defaultModel:
                 type: object
                 required:
@@ -3295,6 +3297,7 @@ definitions:
       - htmlBody
       - textBody
       - mimeType
+      - mandrillTemplate
     properties:
       href:
         type: string
@@ -3314,6 +3317,8 @@ definitions:
         enum:
           - text/plain
           - text/html
+      mandrillTemplate:
+        type: string
       defaultModel:
         type: object
         required:

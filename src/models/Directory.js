@@ -165,7 +165,7 @@ function createNewAccount(attributes, registrationWorflowEnabled){
                             this,
                             template,
                             account.emailVerificationTokenId);
-                    });
+                    }.bind(this));
             } else if(account.status === 'ENABLED' && accountCreationPolicy.welcomeEmailStatus === 'ENABLED'){
                  //asynchronously send a welcome email
                 accountCreationPolicy
@@ -175,7 +175,7 @@ function createNewAccount(attributes, registrationWorflowEnabled){
                             account,
                             this,
                             template);
-                    });
+                    }.bind(this));
             }
         }.bind(this));
     }.bind(this));

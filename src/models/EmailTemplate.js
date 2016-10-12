@@ -56,8 +56,11 @@ module.exports = function (sequelize, DataTypes) {
                     type: DataTypes.STRING,
                     validate: {isUrl: true},
                     roles: { defaultModel : true }
+                },
+                mandrillTemplate: {
+                    type: DataTypes.STRING,
+                    allowNull: true
                 }
-                
             },
             {
                 indexes: [{ fields: ['policyId', 'tenantId'] }],
@@ -86,7 +89,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 classMethods: {
                     getSettableAttributes: function(){
-                        return ['fromEmailAddress', 'fromName', 'subject', 'htmlBody', 'textBody', 'mimeType', 'defaultModel', 'linkBaseUrl'];  
+                        return ['fromEmailAddress', 'fromName', 'subject', 'htmlBody', 'textBody', 'mimeType', 'defaultModel', 'linkBaseUrl', 'mandrillTemplate'];  
                      },
                      associate: function(models) {
                          models.emailTemplate.belongsTo(models.tenant, {onDelete: 'cascade'});

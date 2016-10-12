@@ -10,7 +10,7 @@ var config = require('config');
 var sendEmail = require('../../sendEmail');
 
 var invitationBaseUrl = Optional.ofNullable(config.get('server.rootUrl')).orElseGet(function(){return 'http://'+require('os').hostname()+':'+config.get('server.port');}) +'/ui/';
-var invitationSender =  config.has('email.transport.auth.user')?config.get('email.transport.auth.user'):'support@cloudpass.com';
+var invitationSender =  config.has('email.transport.options.auth.user')?config.get('email.transport.options.auth.user'):'support@cloudpass.com';
 
 //a user can only access its own tenant
 //check if the requested tenant is the right one before making any request

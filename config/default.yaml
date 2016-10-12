@@ -14,19 +14,34 @@ server:
   uiFolder: public
 
 email:
-  # List of address that will receive a copy of each email sent
-  bcc: null
   # configuration of email transport
   transport:
-    direct: true   
-# Or To use SMTP server:
+    name: null
+    options:
+      direct: true
+  # Optional E-mail message fields
+  fields: null
+# Or To use SMTP server and send carbon copies of each email:
 #  transport:
-#    direct: false
-#    host: smtp.example.com
-#    port: 587
-#    auth:
-#      user: mailer@example.com
-#      pass: xxxxxxx
+#    name: null    
+#    options:
+#      direct: false
+#      host: smtp.example.com
+#      port: 587
+#      auth:
+#        user: mailer@example.com
+#        pass: xxxxxxx
+#  fields:
+#    bcc:
+#      - foo@example.com
+#      - bar@example.com
+
+# Or to use mandrill:
+#  transport:
+#    name: nodemailer-mandrill-transport
+#    options:
+#      auth:
+#        apiKey: key
 
 # PostgreSQL persistence, UNIX socket connection using peer authentication
 # TO use TCP sockets, change the 'host' property and add username and password
