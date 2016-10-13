@@ -214,8 +214,6 @@ You can use in Mandrill templates the same Handlebars placeholders as when you d
 - `{{cptoken}}`
 - `{{cptokennamevaluepair}}`
 
-#### Other plugins
-
 
 ## Getting Started
 
