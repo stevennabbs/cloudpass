@@ -150,11 +150,14 @@ persistence:
 
 Cloudpass needs to send emails as parts of email addresses validation or password reset workflows.
 The default configuration uses direct transport, which is a very good way of getting emails rejected or marked as spam.
-- `bcc`: a list of e-mail adresses that will get a copy of every email sent. It can be either a comma separated list or an array.
-- `transport`: configuration of email transport. This object will be passed *as it is* to nodemailer. You can find available configuration options on [nodemailer page](https://github.com/nodemailer/nodemailer#set-up-smtp).
+You should use instead SMTP transport or any other supported Nodemailer transport.
+- `transport.name`: name of the transport method. Leave it to `null` to use SMTP.
+- `transport.options`: transport configuration
+- `fields`: Optional additional email message fields such as bcc (see the [nodemailer page](https://github.com/nodemailer/nodemailer#set-up-smtp))
 
-**Example:**
+#### SMTP
 
+Example of an SMTP configuration that will send a copy of each email to `foo@example.com` and `bar@example.com`:
 ```yaml
 email:
   bcc:
@@ -168,6 +171,51 @@ email:
       user: mailer@example.com
       pass: xxxxxxx
 ```
+
+#### Other transports
+
+See [here](https://nodemailer.com/2-0-0-beta/setup-transporter/) for a list of available Nodemailer transports.
+The following example will use [nodemailer-mandrill-transport](https://github.com/rebelmail/nodemailer-mandrill-transport).
+
+- Navigate to Cloudpass installation directory and install the transport method:
+  ```bash
+  npm install nodemailer-mandrill-transport
+  ```
+  
+- configure the transport (see the transport documentation for available configuration options):
+  ```yaml
+  email:
+    transport:
+      name: nodemailer-mandrill-transport
+      options:
+        auth:
+          apiKey: 0lh_FXQfROgL4ZZgn2U-uQ
+  ```
+
+
+#### Mandrill Templates
+
+Mandrill offers the possibility to define email templates.
+If you do so, you can you can pass your Mandrill template slug to Cloudpass, e.g:
+```
+POST /v1/emailTemplates/2da1a3ae-2dcf-4390-b256-d0e8e86a4642
+{
+  "mandrillTemplate" :"welcome-email"
+}
+```
+You can use in Mandrill templates the same Handlebars placeholders as when you define templates directly in Cloudpass, but they must be lowercased due to Mandrill limitations:
+- `{{account.givenname}}`
+- `{{account.surname}}`
+- `{{account.fullname}}`
+- `{{account.username}}`
+- `{{account.email}}`
+- `{{account.directory.name}}`
+- `{{url}}`
+- `{{cptoken}}`
+- `{{cptokennamevaluepair}}`
+
+#### Other plugins
+
 
 ## Getting Started
 
