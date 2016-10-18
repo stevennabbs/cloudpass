@@ -5,7 +5,9 @@ var nodemailer = require('nodemailer');
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var Optional = require('optional-js');
+var winston = require('winston');
 
+var logger = winston.loggers.get('email');
 var templateSettings = {interpolate : /\${([\w\.]+?)}/g};
 var accountFields = ['givenName', 'surname', 'fullName', 'username', 'email', 'directory'];
 var directoryFields = ['name'];
@@ -75,7 +77,6 @@ module.exports  = function(account, directory, template, cpToken, additionalPlac
     );
     
     return transporterSendEmail(emailFields)
-            .catch(function(e){
-                console.error('Could not send email: ', e.stack);
-            });
+            .tap(_.partial(logger.info, 'Email sent:'))
+            .catch(_.partial(logger.error, 'Could not send email:'));
 };

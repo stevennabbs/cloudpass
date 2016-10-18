@@ -2,9 +2,7 @@
 
 server:
   rootUrl: SERVER_ROOT_URL
-  port:
-    __name: SERVER_PORT
-    __format: json 
+  port: SERVER_PORT
   clustering:
     __name: SERVER_CLUSTERING
     __format: json  
@@ -18,9 +16,7 @@ email:
     options:
       direct: EMAIL_TRANSPORT_DIRECT
       host: EMAIL_TRANSPORT_HOST
-      port:
-        __name: EMAIL_TRANSPORT_PORT
-        __format: json  
+      port: EMAIL_TRANSPORT_PORT
       auth:
         user: EMAIL_TRANSPORT_AUTH_USER
         pass: EMAIL_TRANSPORT_AUTH_PASS
@@ -33,12 +29,7 @@ persistence:
     dialect: PERSISTENCE_OPTIONS_DIALECT
     storage: PERSISTENCE_OPTIONS_STORAGE
     host: PERSISTENCE_OPTIONS_HOST
-    port:
-      __name: PERSISTENCE_OPTIONS_PORT
-      __format: json  
-    logging:
-      __name: PERSISTENCE_OPTIONS_LOGGING
-      __format: json
+    port: PERSISTENCE_OPTIONS_PORT
     pool:
       minConnections: PERSISTENCE_OPTIONS_POOL_MIN_CONNECTIONS
       maxConnections: PERSISTENCE_OPTIONS_POOL_MAX_CONNECTIONS

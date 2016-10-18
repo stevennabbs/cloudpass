@@ -9,109 +9,109 @@ var Umzug = require('umzug');
 var Optional = require('optional-js');
 var ApiError = require('../ApiError');
 var hrefHelper = require('./helpers/hrefHelper');
+var winston = require('winston');
 
 
-var sequelizeConfig = _.merge(
+var persistenceOptions = _.merge(
     {
-        options: {
-            define: {
-                updatedAt: 'modifiedAt',
-                //add href to all resources
-                getterMethods: {
-                    href: function () {
-                        return this.Model.getHref(this.id);
-                    }
+        define: {
+            updatedAt: 'modifiedAt',
+            //add href to all resources
+            getterMethods: {
+                href: function () {
+                    return this.Model.getHref(this.id);
+                }
+            },
+            classMethods: {
+                getHref: function (id) {
+                    return  hrefHelper.baseUrl + this.options.name.plural + '/' + id;
                 },
-                classMethods: {
-                    getHref: function (id) {
-                        return  hrefHelper.baseUrl + this.options.name.plural + '/' + id;
-                    },
-                   getAclAttribute: function(){
-                       return 'tenantId';
-                   },
-                   getSearchableAttributes: function(){
-                        return [];  
-                   },
-                   getSettableAttributes: function(){
-                        return this.getSearchableAttributes();
-                   },
-                   isCustomizable: function(){
-                        return false;  
-                   },
-                   associatePriority: function(){
-                       return 0;
-                   },
-                   fromJSON: function(object){
-                       return _.transform(
-                            object,
-                            function(instance, v, k){
-                                if(v.href){
-                                    //turn hrefs into instances
-                                    var refInstance = resolveHref(v.href);
-                                    ApiError.assert(refInstance, ApiError, 400, 2002, '%s href has an invalid value', k);
-                                    //if the object corresponds to an association, set the corresponding foreign key
-                                    if(this.associations[k]){
-                                        instance.set(this.associations[k].foreignKey, refInstance.id);
-                                    } else {
-                                        instance.set(k, refInstance);
-                                    }
+               getAclAttribute: function(){
+                   return 'tenantId';
+               },
+               getSearchableAttributes: function(){
+                    return [];  
+               },
+               getSettableAttributes: function(){
+                    return this.getSearchableAttributes();
+               },
+               isCustomizable: function(){
+                    return false;  
+               },
+               associatePriority: function(){
+                   return 0;
+               },
+               fromJSON: function(object){
+                   return _.transform(
+                        object,
+                        function(instance, v, k){
+                            if(v.href){
+                                //turn hrefs into instances
+                                var refInstance = resolveHref(v.href);
+                                ApiError.assert(refInstance, ApiError, 400, 2002, '%s href has an invalid value', k);
+                                //if the object corresponds to an association, set the corresponding foreign key
+                                if(this.associations[k]){
+                                    instance.set(this.associations[k].foreignKey, refInstance.id);
                                 } else {
-                                    instance.set(k, v);
+                                    instance.set(k, refInstance);
                                 }
-                            }.bind(this),
-                            this.build({}));
-                   },
-                   addFindAndCount: function(target, transformOptions){
-                       //pseudo association defined by custom accessors
-                       var accessorTypes = {get: 'findAll', count: 'count'};
-                       _.set(
-                            this,
-                            'customAssociations.'+target.options.name.plural,
-                            {
-                                target: target,
-                                associationType: 'hasMany',
-                                accessors: _.mapValues(accessorTypes, function(v, k){return k+_.upperFirst(target.options.name.plural);})
+                            } else {
+                                instance.set(k, v);
                             }
-                       );
-                       Object.keys(accessorTypes).forEach(function(accessorType){
-                           this.Instance.prototype[this.customAssociations[target.options.name.plural].accessors[accessorType]] = function(options){
-                               return target[accessorTypes[accessorType]](transformOptions.call(this, options));
-                           };
-                       }.bind(this));
-                   }
-                },
-                //override toJSON
-                instanceMethods: {
-                    toJSON: function () {
-                        //"clean" the object to not expand unwanted associations
-                        this.dataValues = _.pick(this.dataValues, _.keys(this.Model.attributes));
-                        var values = this.get();
-                        [this.Model.associations, this.Model.customAssociations].forEach(function(associations){
-                            _.forOwn(
-                            associations,
-                            function (association, associationName) {
-                                if(!values[associationName]){
-                                    if(association.associationType === 'BelongsTo'){
-                                        values[associationName] =
-                                                Optional.ofNullable(this[association.foreignKey])
-                                                    .map(function(fk){return {'href': association.target.getHref(fk, this.id)};}.bind(this))
-                                                    .orElse(null);
-                                    } else {
-                                        values[associationName] = {'href': this.href + "/" + associationName};
-                                    }
+                        }.bind(this),
+                        this.build({}));
+               },
+               addFindAndCount: function(target, transformOptions){
+                   //pseudo association defined by custom accessors
+                   var accessorTypes = {get: 'findAll', count: 'count'};
+                   _.set(
+                        this,
+                        'customAssociations.'+target.options.name.plural,
+                        {
+                            target: target,
+                            associationType: 'hasMany',
+                            accessors: _.mapValues(accessorTypes, function(v, k){return k+_.upperFirst(target.options.name.plural);})
+                        }
+                   );
+                   Object.keys(accessorTypes).forEach(function(accessorType){
+                       this.Instance.prototype[this.customAssociations[target.options.name.plural].accessors[accessorType]] = function(options){
+                           return target[accessorTypes[accessorType]](transformOptions.call(this, options));
+                       };
+                   }.bind(this));
+               }
+            },
+            //override toJSON
+            instanceMethods: {
+                toJSON: function () {
+                    //"clean" the object to not expand unwanted associations
+                    this.dataValues = _.pick(this.dataValues, _.keys(this.Model.attributes));
+                    var values = this.get();
+                    [this.Model.associations, this.Model.customAssociations].forEach(function(associations){
+                        _.forOwn(
+                        associations,
+                        function (association, associationName) {
+                            if(!values[associationName]){
+                                if(association.associationType === 'BelongsTo'){
+                                    values[associationName] =
+                                            Optional.ofNullable(this[association.foreignKey])
+                                                .map(function(fk){return {'href': association.target.getHref(fk, this.id)};}.bind(this))
+                                                .orElse(null);
+                                } else {
+                                    values[associationName] = {'href': this.href + "/" + associationName};
                                 }
-                            }.bind(this));
+                            }
                         }.bind(this));
-                        return values;
-                    }
+                    }.bind(this));
+                    return values;
                 }
             }
-        }
+        },
+        logging: winston.loggers.get('sql').info
     },
-    config.get('persistence')
+    config.get('persistence.options')
 );
 
-var sequelize = new Sequelize(sequelizeConfig.database, sequelizeConfig.username, sequelizeConfig.password, sequelizeConfig.options);
+var sequelize = new Sequelize(config.persistence.database, config.persistence.username, config.persistence.password, persistenceOptions);
 
 //convenience method to start a transaction only if none is already started
 sequelize.requireTransaction = function(query){

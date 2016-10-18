@@ -60,3 +60,23 @@ persistence:
 #  options:
 #    dialect: sqlite
 #    storage: cloudpass.db
+
+logging:
+  sql: {}
+  http: {}
+  email: {}
+  default: {}
+# You can configure logging that way:
+#logging:
+#  sql:
+#    console:
+#      level: warn
+#      colorize: true
+#    file:
+#       level: err
+#       timestamp: true
+#       filename: logs/app.log,
+#       maxfiles: 5
+#       maxsize": 10485760
+
+  

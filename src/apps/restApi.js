@@ -13,6 +13,7 @@ var BasicStrategy = require('passport-http').BasicStrategy;
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
 var JwtCookieComboStrategy = require('passport-jwt-cookiecombo');
+var winston = require('winston');
 var idSiteHelper = require('./helpers/idSiteHelper');
 var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
@@ -20,6 +21,8 @@ var ApiError = require('../ApiError.js');
 var getApiKey = require('./helpers/getApiKey');
 
 module.exports = function(secret){
+    var logger = winston.loggers.get('http');
+    
     // register SAuthc1 authentication strategy
     passport.use(new SAuthc1Strategy(
         function(apiKeyId){
@@ -153,8 +156,7 @@ module.exports = function(secret){
                     error = ApiError.FROM_ERROR(err);
                 }
                 if(error.status === 500){
-                    console.error(JSON.stringify(err));
-                    console.error(err.stack);
+                    logger.error('Unexpected error:', err);
                 }
                 error.write(res);
             });
