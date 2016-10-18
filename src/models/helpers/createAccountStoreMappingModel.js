@@ -62,7 +62,7 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
                     },
                     getterMethods: {
                         accountStore: function() {
-                            return this.accountStoreType ? 
+                            return this.accountStoreType ?
                                 {href: this.sequelize.models[this.accountStoreType].getHref(this.accountStoreId)} :
                                 null;
                         }
@@ -89,7 +89,7 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
                             return 1;
                         },
                         mappedModelAssociation: function(){
-                            return this.associations[mappedModel];  
+                            return this.associations[mappedModel];
                         },
                         associate: function(models) {
                             models[mappingModel].belongsTo(models.tenant, {onDelete: 'cascade'});
@@ -132,28 +132,27 @@ function afterUpdateOrCreate(mapping){
     var promises = [];
     var newDefaultMapping = {};
     var mappingUpdate = {};
-    var storeTypes = ['Account', 'Group'];
-    for(var i in storeTypes){
-        var mappingAttribute = 'isDefault'+storeTypes[i]+'Store';
-        var mappedObjectAttribute = 'default'+storeTypes[i]+'StoreMappingId';
-        
+    ['Account', 'Group'].forEach(function(storeType){
+        var mappingAttribute = 'isDefault'+storeType+'Store';
+        var mappedObjectAttribute = 'default'+storeType+'StoreMappingId';
+
         if(mapping.changed(mappingAttribute)){
             //the default account or group mapping changed
             newDefaultMapping[mappedObjectAttribute] = mapping[mappingAttribute]?mapping.id:null;
-            
+
             if(mapping[mappingAttribute]){
                 //there can be only one default store
                 mappingUpdate[mappingAttribute] = false;
             }
         }
-    }
-    
+    });
+
     //update the mapped object with its default mappings
     if(!_.isEmpty(newDefaultMapping)){
         promises.push(mappedModel.update(
             newDefaultMapping,
             {where: {id: mapping[mappedModelFk]}}));
-        
+
         if(!_.isEmpty(mappingUpdate)){
             promises.push(
                 this.update(
@@ -172,12 +171,11 @@ function beforeDestroy(mapping){
     var mappedModel = this.mappedModelAssociation().target;
     var mappedModelFk = this.mappedModelAssociation().identifier;
     var newDefaultMapping = {};
-    var storeTypes = ['Account', 'Group'];
-    for(var i in storeTypes){
-        if(mapping['isDefault'+storeTypes[i]+'Store']){
-            newDefaultMapping['default'+storeTypes[i]+'StoreMappingId'] = null;
+    ['Account', 'Group'].forEach(function(storeType){
+        if(mapping['isDefault'+storeType+'Store']){
+            newDefaultMapping['default'+storeType+'StoreMappingId'] = null;
         }
-    }
+    });
     if(!_.isEmpty(newDefaultMapping)){
         return mappedModel.update(newDefaultMapping, {where: {id: mapping[mappedModelFk]}});
     }

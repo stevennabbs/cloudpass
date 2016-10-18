@@ -51,9 +51,8 @@ module.exports  = function(account, directory, template, cpToken, additionalPlac
         //custom fields
         additionalPlaceHolderValues
     );
-    
-    var emailFields = _.defaults
-    (
+
+    var emailFields = _.defaults (
         //configuration fields
         config.get('email.fields'),
         //mandrill fields
@@ -75,7 +74,7 @@ module.exports  = function(account, directory, template, cpToken, additionalPlac
             })
             .orElseGet(_.stubObject)
     );
-    
+
     return transporterSendEmail(emailFields)
             .tap(_.partial(logger.info, 'Email sent:'))
             .catch(_.partial(logger.error, 'Could not send email:'));
