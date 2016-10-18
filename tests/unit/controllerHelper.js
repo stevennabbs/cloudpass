@@ -47,6 +47,10 @@ describe('controllerHelper', function () {
                     controllerHelper.parseExpandParam(),
                     {}
             );
+            assert.deepStrictEqual(
+                    controllerHelper.parseExpandParam(''),
+                    {}
+            );
         });
 
         it('should correctly parse pagination options', function () {

@@ -49,7 +49,7 @@ module.exports = function(secret){
                 .catch(_.partial(done, _, false));
         }
     ));
-    
+
     //admins can be authenticated by a cookie set by the /login endpoint
     passport.use(new JwtCookieComboStrategy(
         {
@@ -67,13 +67,13 @@ module.exports = function(secret){
 
     // basic authentication with API key & secret
     passport.use(new BasicStrategy(
-        function(apiKeyId, secret, done){
+        function(apiKeyId, providedSecret, done){
             getApiKey(apiKeyId)
                     .then(function(apiKey){
                         done(
                             null,
                             Optional.ofNullable(apiKey)
-                               .filter(_.flow(_.property('secret'), _.partial(_.eq, secret)))
+                               .filter(_.flow(_.property('secret'), _.partial(_.eq, providedSecret)))
                                .orElse(false)
                         );
             })
@@ -137,21 +137,18 @@ module.exports = function(secret){
                 if (res.headersSent) {
                     return next(err);
                 }
-                var error = null;
+                var error;
                 if(err.allowedMethods){
                     //HTTP method not suported
                     error = new ApiError(405, 405, 'Request method \''+req.method+'\' not supported (supported method(s): '+err.allowedMethods.join()+')');
-                } else if(err.statusCode === 400){
-                    //ill-formed query
+                } else if(err.statusCode === 400 || _.startsWith(err.message, 'Validation error') || err.name === 'SequelizeValidationError'){
+                    //ill-formed query or sequelize validation error
                     error = ApiError.BAD_REQUEST(_.isEmpty(err.errors)?err.message:err.errors[0].message);
                 } else if (err.failedValidation){
                     //swagger validation errors, keep the first one
                     error = ApiError.BAD_REQUEST(_.isEmpty(err.results)?err.message:err.results.errors[0].message);
                 } else if(err.name === 'SequelizeUniqueConstraintError'){
                     error = new ApiError(400, 2001, err.errors.length > 0 ? err.errors[0].message+' ('+err.errors[0].value+')': err.message);
-                } else if (_.startsWith(err.message, 'Validation error') || err.name === 'SequelizeValidationError'){
-                    //sequelize validation error
-                     error = ApiError.BAD_REQUEST(_.isEmpty(err.errors)?err.message:err.errors[0].message);
                 } else {
                     error = ApiError.FROM_ERROR(err);
                 }

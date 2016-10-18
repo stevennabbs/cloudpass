@@ -4,6 +4,7 @@ var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
+var Optional = require('optional-js');
 
 var defaultPagination = {offset:0, limit:25};
 
@@ -71,7 +72,7 @@ function getWhereClause(query, target){
                 .value()
         });
     }
-        
+
     switch(whereClauses.length){
         case 0:
             return undefined;
@@ -94,35 +95,38 @@ function getCollectionQueryOptions(req, target){
 }
 
 function parseExpandParam(expandParam){
-    //get the expand parameter, e.g. 'tenant,groups(offset:0,limit:10)'
-    //and split the different parts: ['tenant', 'groups(offset:0,limit:10)']
-    var expands = {};
-    if(expandParam){
-        var expandStrings = expandParam.split(/,(?!offset|limit)/);
-        for(var i in expandStrings){
-            //separate the association name and the pagination parts
-            var expandParts = /^([^\(]*)\(([^\)]*)\)*$/.exec(expandStrings[i]);
-            var associationName = null, pagination = null;
-            if(expandParts){
-                //pagination (limit or offset) was specified
-                associationName = expandParts[1];
-                pagination = _(expandParts[2].split(','))
-                   .map(function(p){return p.split(':');})
-                   .fromPairs()
-                   .mapValues(parseInt)
-                   .defaults(defaultPagination)
-                   .value();
-                   ApiError.assert(_.keysIn(pagination).length === 2, ApiError, 400, 400, 'Invalid expansion pagination: %s', expandParts[2]);
-            } else {
-                //no option, the whole param is the association name
-                associationName =  expandStrings[i];
-                pagination = defaultPagination;
-            }
-            
-            expands[associationName] = pagination;
-        }
-    }
-    return expands;
+    return Optional.ofNullable(expandParam)
+            .filter(_.negate(_.isEmpty))
+            //split the different parts, e.g: 'tenant,groups(offset:0,limit:10)'
+            // ==> ['tenant', 'groups(offset:0,limit:10)']
+            .map(_.method('split', /,(?!offset|limit)/))
+            .map(function(expandStrings){
+                return _(expandStrings)
+                    .map(function(expandString){
+                        //separate the association name and the pagination parts
+                        var expandParts = /^([^\(]*)\(([^\)]*)\)*$/.exec(expandString);
+                        var associationName, pagination;
+                        if(expandParts){
+                            //pagination (limit or offset) was specified
+                            associationName = expandParts[1];
+                            pagination = _(expandParts[2].split(','))
+                               .map(_.method('split', ':'))
+                               .fromPairs()
+                               .mapValues(parseInt)
+                               .defaults(defaultPagination)
+                               .value();
+                               ApiError.assert(_.keysIn(pagination).length === 2, ApiError, 400, 400, 'Invalid expansion pagination: %s', expandParts[2]);
+                        } else {
+                            //no option, the whole param is the association name
+                            associationName =  expandString;
+                            pagination = defaultPagination;
+                        }
+                        return [associationName, pagination];
+                    })
+                    .fromPairs()
+                    .value();
+            })
+            .orElseGet(_.stubObject);
 }
 exports.parseExpandParam = parseExpandParam;
 
@@ -135,7 +139,7 @@ function performExpansion(resource, expands){
                     expands,
                     function(v, k){
                         var association = _.get(resource, 'Model.associations.'+k) || _.get(resource, 'Model.customAssociations.'+k);
-                        var promise = null;
+                        var promise;
                         if(association){
                             if(_.includes(['BelongsTo', 'HasOne'], association.associationType)){
                                 //obviously no pagination needed
@@ -150,7 +154,7 @@ function performExpansion(resource, expands){
                             ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', _.get(resource, 'Model.name', ''), k);
                             promise = BluebirdPromise.resolve(resource[getterName](v));
                         }
-                        
+
                         return promise.then(function(expandedResource){
                             if(expandedResource.count !== undefined && expandedResource.rows !== undefined){
                                 //it's a resource collection
@@ -217,11 +221,11 @@ exports.getCollection = function(model, collection, req, res){
     var instance = model.build({id: req.swagger.params.id.value});
     var association = model.associations[collection] || _.get(model, 'customAssociations.'+collection);
     ApiError.assert(association, ApiError.NOT_FOUND);
-    
+
     var target = association.target;
     var expands = parseExpandParam(_.get(req.swagger.params, 'expand.value', ''));
     var options = getCollectionQueryOptions(req, target);
-    
+
     return findAndCountAssociation(instance, association, options)
         .then(function(result){
             return BluebirdPromise

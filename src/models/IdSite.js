@@ -33,7 +33,7 @@ module.exports = function (sequelize, DataTypes) {
             {
                 classMethods: {
                     getSettableAttributes: function(){
-                        return ['url', 'logoUrl', 'sessionTtl', 'sessionCookiePersistent'];  
+                        return ['url', 'logoUrl', 'sessionTtl', 'sessionCookiePersistent'];
                     },
                     associate: function(models) {
                         models.group.belongsTo(models.tenant, {onDelete: 'cascade'});
