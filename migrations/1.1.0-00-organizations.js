@@ -34,7 +34,7 @@ module.exports = {
                     type: DataTypes.UUID
                 },
                 customData: {
-                    type: DataTypes.STRING(1024),
+                    type: DataTypes.STRING(10485760),
                     defaultValue: "{}"
                 },
                 createdAt: {

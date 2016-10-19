@@ -167,7 +167,7 @@ _.values(db)
     })
     .forEach(function(m){
         m.rawAttributes.customData = {
-            type: Sequelize.STRING(1024),
+            type: Sequelize.STRING(10485760),
             get: function(){
                 return {href: this.href+'/customData'};
             },

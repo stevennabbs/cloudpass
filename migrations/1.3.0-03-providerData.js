@@ -14,7 +14,7 @@ module.exports = {
             'accounts',
             'providerData',
             {
-              type: Sequelize.STRING(1024),
+              type: Sequelize.STRING(10485760),
               defaultValue: '{"providerId": "cloudpass"}',
               allowNull: false
             }
