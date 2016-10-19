@@ -303,6 +303,18 @@ First, make sure the devDependencies are installed: `npm install`
 
 This will produce coverage reports in `build/reports/coverage`.
 
+[Mocha's `spec` reporter](http://mochajs.org/#spec) is used by default. To use a different reporter, you can change the `mocha_reporter` npm config key.   
+For example to use [mocha-sonar-generic-test-coverage-file](https://github.com/qingguo-yu/mocha-sonar-generic-test-coverage-file):
+```bash
+#install & configure sonar generic test coverage reporter
+npm install mocha-sonar-generic-test-coverage-file
+npm config set cloudpass:mocha_reporter mocha-sonar-generic-test-coverage-file
+
+#run unit & integration tests separately to get distinct report files
+GUNIT_FILE=build/reports/ut_report.xml npm run test:unit
+GUNIT_FILE=build/reports/it_report.xml npm run test:integration
+```
+
 ### Debian packaging
 
 `npm run deb` will build a debian package in the `build` directory.
