@@ -1,8 +1,8 @@
 var assert = require("assert");
+var models = require('../../src/models');
 var addAccountStoreAccessors = require('rewire')('../../src/models/helpers/addAccountStoreAccessors');
 
 describe('addAccountStoreAccessors', function(){
-    var models = require('../../src/models');
     describe('findPaths', function(){
         var findPaths = addAccountStoreAccessors.__get__('findPaths');
         it('should correctly find how two account stores are connected', function(){
