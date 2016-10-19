@@ -303,8 +303,7 @@ First, make sure the devDependencies are installed: `npm install`
 
 This will produce coverage reports in `build/reports/coverage`.
 
-[Mocha's `spec` reporter](http://mochajs.org/#spec) is used by default. To use a different reporter, you can change the `mocha_reporter` npm config key.
-
+[Mocha's `spec` reporter](http://mochajs.org/#spec) is used by default. To use a different reporter, you can change the `mocha_reporter` npm config key.   
 For example to use [mocha-sonar-generic-test-coverage-file](https://github.com/qingguo-yu/mocha-sonar-generic-test-coverage-file):
 ```bash
 #install & configure sonar generic test coverage reporter
