@@ -1,5 +1,4 @@
 var assert = require("assert");
-var models = require('../../src/models');
 var addAccountStoreAccessors = require('rewire')('../../src/apps/sso');
 
 describe('sso', function(){

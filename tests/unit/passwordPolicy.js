@@ -1,8 +1,10 @@
 var assert = require("assert");
-var PasswordPolicy = require('../../src/models').passwordPolicy;
 var ApiError = require('../../src/ApiError');
 
 describe('Password policy', function(){
+    
+    var PasswordPolicy = require('../../src/models').passwordPolicy;
+    
     describe('Password validation', function(){
         
         it('Passwords length cannot exceed the maximum specified in the password policy', function(){

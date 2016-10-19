@@ -3,7 +3,6 @@ var randomstring = require("randomstring");
 var ms = require('smtp-tester');
 var BluebirdPromise = require('sequelize').Promise;
 var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
-var models = require('../../src/models');
 
 exports.postRequest = function(path){
     return request(exports.app).post('/v1/'+path)
@@ -121,5 +120,5 @@ before(function(){
 
 after(function(){
     exports.app.close();
-    models.sequelize.close();
+    require('../../src/models').sequelize.close();
 });
