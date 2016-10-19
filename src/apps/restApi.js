@@ -157,6 +157,8 @@ module.exports = function(secret){
                 }
                 if(error.status === 500){
                     logger.error('Unexpected error:', err.stack);
+                } else {
+                    logger.verbose('Request failed:', err.stack);
                 }
                 error.write(res);
             });
