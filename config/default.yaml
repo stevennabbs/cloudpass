@@ -65,7 +65,11 @@ logging:
   sql: {}
   http: {}
   email: {}
-  default: {}
+  # prints the configuration on startup
+  # disabled by default because it may contain passwords
+  config:
+    console:
+       level: error
 # You can configure logging that way:
 #logging:
 #  sql:
@@ -73,7 +77,7 @@ logging:
 #      level: warn
 #      colorize: true
 #    file:
-#       level: err
+#       level: error
 #       timestamp: true
 #       filename: logs/app.log,
 #       maxfiles: 5
