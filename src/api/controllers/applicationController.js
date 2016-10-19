@@ -91,7 +91,7 @@ controller.createPasswordResetToken = function(req, res){
             req.swagger.params.attributes.value.email,
             req.swagger.params.attributes.value.accountStore)
         .then(function(account){
-            ApiError.assert(account, ApiError, 400, 2016,  'The email property value %d does not match a known resource.', req.swagger.params.attributes.value.email);
+            ApiError.assert(account, ApiError, 400, 2016,  'The email property value %s does not match a known resource.', req.swagger.params.attributes.value.email);
             ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'The account is not enabled');
             //get the directory with its password policy and email templates
             return account.getDirectory({
