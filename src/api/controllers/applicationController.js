@@ -31,7 +31,7 @@ controller.create = function(req, res){
     var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
     attributes.tenantId = req.user.tenantId;
     
-    models.sequelize.requireTransaction(function () {
+    models.sequelize.requireTransaction(function (t) {
         //create the application
         return models.application
                 .create(attributes)
@@ -47,20 +47,23 @@ controller.create = function(req, res){
                         return models.directory
                                 .create({name: createDirectory, tenantId: req.user.tenantId})
                                 .then(function(directory){
-                                    return models.accountStoreMapping.create({
-                                       accountStoreId: directory.id,
-                                       accountStoreType: 'directory',
-                                       listIndex: 0,
-                                       isDefaultAccountStore: true,
-                                       isDefaultGroupStore: true,
-                                       applicationId: application.id,
-                                       tenantId: req.user.tenantId
-                                    });
+                                    return models.accountStoreMapping.create(
+                                        {
+                                           accountStoreId: directory.id,
+                                           accountStoreType: 'directory',
+                                           listIndex: 0,
+                                           isDefaultAccountStore: true,
+                                           isDefaultGroupStore: true,
+                                           applicationId: application.id,
+                                           tenantId: req.user.tenantId
+                                        },
+                                        {transaction: t}
+                                    );
                                 });
                     }
                 });
     })
-    .then(function(application){return controllerHelper.expand(application, req);})
+    .then(_.partial(controllerHelper.expand, _, req))
     .then(res.json.bind(res))
     .catch(req.next);
 };
