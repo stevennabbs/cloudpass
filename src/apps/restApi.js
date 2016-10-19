@@ -156,7 +156,7 @@ module.exports = function(secret){
                     error = ApiError.FROM_ERROR(err);
                 }
                 if(error.status === 500){
-                    logger.error('Unexpected error:', err);
+                    logger.error('Unexpected error:', err.stack);
                 }
                 error.write(res);
             });
