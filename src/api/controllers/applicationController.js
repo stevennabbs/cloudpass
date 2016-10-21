@@ -31,7 +31,7 @@ controller.create = function(req, res){
     var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
     attributes.tenantId = req.user.tenantId;
     
-    models.sequelize.requireTransaction(function (t) {
+    models.sequelize.requireTransaction(function () {
         //create the application
         return models.application
                 .create(attributes)
@@ -56,8 +56,7 @@ controller.create = function(req, res){
                                            isDefaultGroupStore: true,
                                            applicationId: application.id,
                                            tenantId: req.user.tenantId
-                                        },
-                                        {transaction: t}
+                                        }
                                     );
                                 });
                     }

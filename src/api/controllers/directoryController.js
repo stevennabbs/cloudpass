@@ -79,7 +79,7 @@ controller.consumeSamlAssertion = function(req, res){
         );
     })
     .spread(function(samlResponse, mappingRules){
-        return models.sequelize.requireTransaction(function (t) {
+        return models.sequelize.requireTransaction(function () {
            return models.account.findOrCreate({
                 where:{
                     email: samlResponse.user.name_id,
@@ -87,15 +87,14 @@ controller.consumeSamlAssertion = function(req, res){
                 },
                 defaults:{
                     tenantId: req.user.tenantId
-                },
-                transaction: t
+                }
            })
            .spread(function(account, created){
                var providerData = _.defaults({providerId: 'saml'}, _.mapValues(samlResponse.user.attributes, _.head));
                 return BluebirdPromise.join(
                     account.update(
                     //'_.fromPairs' doesn't support property paths (customData.xxx), so we use zipObjectDeep(zip) instead
-                     _.spread(_.zipObjectDeep)(_.spread(_.zip)(
+                      _.spread(_.zipObjectDeep)(_.spread(_.zip)(
                         _(mappingRules.items)
                            //get account attribute lists and their new value
                            .map(_.over(_.property('accountAttributes'), _.flow(_.property('name'), _.propertyOf(providerData))))
@@ -104,8 +103,7 @@ controller.consumeSamlAssertion = function(req, res){
                             //add provider data
                            .tap(_.method('push', ['providerData', providerData]))
                            .value()
-                    )),
-                     {transaction: t}
+                      ))
                     ),
                     created
               );
