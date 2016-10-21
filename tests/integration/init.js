@@ -67,7 +67,6 @@ exports.getIdSiteBearer = function(applicationId, callbackUrl){
 };
 
 before(function(){
-    this.timeout(0);
     return require('../../src/main')
         .then(function(app){
             //register (create a tenant)
