@@ -4,12 +4,12 @@ var _ = require('lodash');
 var util = require('util');
 var thr = require('throw');
 
-function ApiError(status, code) {
+function ApiError(status, code, message, ...messageParams) {
     Error.captureStackTrace(this, this.constructor);
     this.name = this.constructor.name;
     this.status = status;
     this.code = code;
-    this.message = util.format.apply(null, Array.prototype.slice.call(arguments, 2));
+    this.message = util.format(message, ...messageParams);
     this.developerMessage = this.message;
     this.moreInfo = '';
 }
@@ -29,10 +29,8 @@ ApiError.INVALID_TOKEN = new ApiError(400, 10017, 'Invalid token');
 ApiError.FROM_ERROR = function (error) {
     return (error instanceof ApiError) ? error : new ApiError(500, 500, error.message || 'error');
 };
-ApiError.assert = function(condition){
-     if(!condition){
-         thr.apply(null, Array.prototype.slice.call(arguments, 1));
-     }
+ApiError.assert = function(condition, error, ...errorParams){
+     return condition || thr(error, ...errorParams);
 };
 ApiError.assertFound = _.partial(ApiError.assert, _, ApiError.NOT_FOUND);
 
