@@ -43,7 +43,8 @@ gulp.task('deb', function () {
         architecture: 'all',
         depends: [
           'nodejs('+pkg.engines.node+')',
-          'postgresql'
+          'postgresql',
+          'openssl'
         ],
         section: 'misc',
         priority: 'extra',
