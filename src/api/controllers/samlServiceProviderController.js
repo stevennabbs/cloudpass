@@ -16,9 +16,12 @@ exports.get = function(req, res){
 };
 
 exports.generateDefaultRelayState = function(req, res){
+    //An API key is necessary to sign callback JWTs.
+    //But after cookie authentication (i.e. from the UI), no API key is
+    //associated to the request.
+    ApiError.assert(req.user.id, ApiError.FORBIDDEN);
     samlHelper.getRelayState(
-        req.app.get('secret'),
-        req.user.id, //TODO req.user.id is not set after cookie authentication
+        req.user,
         req.swagger.params.properties.value.callbackUri,
         req.swagger.params.properties.value.state,
         models.application.getHref(req.swagger.params.id.value)

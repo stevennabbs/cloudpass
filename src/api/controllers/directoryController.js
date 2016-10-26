@@ -2,10 +2,10 @@
 
 var _ = require('lodash');
 var BluebirdPromise = require('sequelize').Promise;
+var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var accountStoreController = require('../helpers/accountStoreController');
 var controllerHelper = require('../helpers/controllerHelper');
 var samlHelper = require('../helpers/samlHelper');
-var getJwtResponse = require('../../apps/helpers/idSiteHelper').getJwtResponse;
 var models = require('../../models');
 
 
@@ -111,7 +111,26 @@ controller.consumeSamlAssertion = function(req, res){
         });
     })
     .spread(function(account, created){
-        return getJwtResponse(req.user, req.authInfo.cb_uri, req.authInfo.init_jti, created, account.href, req.authInfo.state, req.authInfo.app_href);
+        return signJwt(
+            {
+                isNewSub: created,
+                status: "AUTHENTICATED",
+                cb_uri: req.authInfo.cb_uri,
+                irt: req.authInfo.init_jti,
+                state: req.authInfo.state
+            },
+            req.user.secret,
+            {
+                expiresIn: 60,
+                issuer: req.authInfo.app_href,
+                subject: account.href,
+                audience: req.user.id,
+                header: {
+                    kid: req.user.id,
+                    stt: 'assertion'
+                }
+            }
+        );
     })
     .then(function(jwtResponse){
         res.redirect('../../../../../sso?jwtResponse='+jwtResponse);

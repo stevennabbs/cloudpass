@@ -1,6 +1,7 @@
 var assert = require("assert");
 var init = require('./init');
 var BluebirdPromise = require('sequelize').Promise;
+var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var readFile = BluebirdPromise.promisify(require("fs").readFile);
 var request = require('supertest-as-promised');
 var url = require('url');
@@ -9,7 +10,7 @@ describe('SAML', function(){
     var idpSsoLoginUrl = 'http://idp.example.com/login';
     var idpSsoLogoutUrl = 'http://idp.example.com/logout';
     var directoryId;
-    describe('SAML directory creation', function(){
+    describe('directory creation', function(){
         it('specifying providerId = "saml" should creatte a SAML directory', function(){
             return readFile(__dirname + '/resources/saml/idp.crt', 'utf8')
                 .then(function(idpCertificate){
@@ -38,7 +39,7 @@ describe('SAML', function(){
         
     });
     
-    describe('SAML Service Provider Metadata', function(){
+    describe('Service Provider Metadata', function(){
         var samlServiceProviderMetadataId;
         before(function(){
             return init.getRequest('directories/' + directoryId + '/provider')
@@ -122,7 +123,7 @@ describe('SAML', function(){
         });
     });
     
-    describe('SAML application', function(){
+    describe('application', function(){
         var applicationId;
         before(function(){
             //create an application an map it the the SAML directory
@@ -178,64 +179,92 @@ describe('SAML', function(){
                 });
         });
         
-        it('SAML authentication via ID Site', function(){
+        describe('authentication', function(){
+            
             var callbackUrl = 'http://www.example.com/callback';
-            return init.getIdSiteBearer(applicationId, callbackUrl)
-                .then(function(bearer){
-                     return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
-                        .set('authorization', 'Bearer '+bearer)
-                        .expect(200)
-                        .toPromise();
-                })
-                .then(function(res){
-                    var redirectLocation = res.header['stormpath-sso-redirect-location'];
-                    assert(redirectLocation);
-                    assert(redirectLocation.startsWith(idpSsoLoginUrl));
-                    var parsed = url.parse(redirectLocation, true);
-                    assert(parsed.query.SAMLRequest);
-                    assert(parsed.query.RelayState);
-                    return parsed.query.RelayState;
-                })
-                .then(function(relayState){
-                    return readFile(__dirname + '/resources/saml/idpResponse', 'utf8')
+            
+            function mockIdPResponse(idPRequestUrl, responseFileName, expectedCompanyName){
+                assert(idPRequestUrl);
+                assert(idPRequestUrl.startsWith(idpSsoLoginUrl));
+                var parsed = url.parse(idPRequestUrl, true);
+                assert(parsed.query.SAMLRequest);
+                assert(parsed.query.RelayState);
+                var relayState = parsed.query.RelayState;
+                return readFile(__dirname + '/resources/saml/'+responseFileName, 'utf8')
                         .then(function(samlResponse){
+                            //mock an IdP response
                             return request(init.app)
                                 .post('/v1/directories/'+directoryId+'/saml/sso/post')
                                 .send('SAMLResponse='+encodeURIComponent(samlResponse))
                                 .send('RelayState='+encodeURIComponent(relayState))
                                 .expect(302)
                                 .toPromise();
+                        })
+                        .then(function(res){
+                            //cloudpass should redirect to its /sso enpoint with a jwtResponse query param to set a cookie
+                            var redirectLocationStart = '../../../../../sso';
+                            assert(res.headers.location.startsWith(redirectLocationStart));
+                            return request(init.app).get('/sso' + res.headers.location.substring(redirectLocationStart.length))
+                                .expect(302)
+                                .toPromise();
+                        })
+                        .then(function(res){
+                            //now we should be redirected to the callback URL
+                            assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                            //the account should have been updated from the SAML assertions
+                            return init.getRequest('applications/'+applicationId+'/accounts')
+                                    .query({expand: 'customData,providerData'})
+                                    .expect(200)
+                                    .toPromise();
+                        })
+                        .then(function(res){
+                            assert.strictEqual(res.body.size, 1);
+                            assert.strictEqual(res.body.items[0].email, 'test-saml@example.com');
+                            assert.strictEqual(res.body.items[0].givenName, 'John');
+                            assert.strictEqual(res.body.items[0].surname, 'Doe');
+                            assert.strictEqual(res.body.items[0].customData.company, expectedCompanyName);
+                            assert.strictEqual(res.body.items[0].providerData.providerId, 'saml');
+                            assert.strictEqual(res.body.items[0].providerData.firstName, 'John');
+                            assert.strictEqual(res.body.items[0].providerData.lastName, 'Doe');
+                            assert.strictEqual(res.body.items[0].providerData.company, expectedCompanyName);
                         });
-                    
-                })
-                .then(function(res){
-                    //cloudpass should redirect to its /sso enpoint with a jwtResponse query param to set a cookie
-                    var redirectLocationStart = '../../../../../sso';
-                    assert(res.headers.location.startsWith(redirectLocationStart));
-                    return request(init.app).get('/sso' + res.headers.location.substring(redirectLocationStart.length))
+            }
+            
+            it('via IdP redirect', function(){
+                return signJwt(
+                    {
+                        cb_uri: callbackUrl
+                    },
+                    init.apiKey.secret,
+                    {
+                        issuer: init.apiKey.id,
+                        subject: 'http://localhost:20020/v1/applications/'+applicationId,
+                        header: {kid: init.apiKey.id}
+                    }
+                )
+                .then(function(accessToken){
+                    return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
+                        .query({ accessToken: accessToken})
                         .expect(302)
                         .toPromise();
                 })
                 .then(function(res){
-                    //now we should be redirected to the callback URL
-                    assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
-                    //an account should have been created from the SAML assertions
-                    return init.getRequest('applications/'+applicationId+'/accounts')
-                            .query({expand: 'customData,providerData'})
+                    return mockIdPResponse(res.header.location, 'idpResponse1','some-company');
+                });
+            });
+        
+            it('via ID Site', function(){
+                return init.getIdSiteBearer(applicationId, callbackUrl)
+                    .then(function(bearer){
+                         return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
+                            .set('authorization', 'Bearer '+bearer)
                             .expect(200)
                             .toPromise();
-                })
-                .then(function(res){
-                    assert.strictEqual(res.body.size, 1);
-                    assert.strictEqual(res.body.items[0].email, 'test-saml@example.com');
-                    assert.strictEqual(res.body.items[0].givenName, 'John');
-                    assert.strictEqual(res.body.items[0].surname, 'Doe');
-                    assert.strictEqual(res.body.items[0].customData.company, 'some-company');
-                    assert.strictEqual(res.body.items[0].providerData.providerId, 'saml');
-                    assert.strictEqual(res.body.items[0].providerData.firstName, 'John');
-                    assert.strictEqual(res.body.items[0].providerData.lastName, 'Doe');
-                    assert.strictEqual(res.body.items[0].providerData.company, 'some-company');
-                });
+                    })
+                    .then(function(res){
+                        return mockIdPResponse(res.header['stormpath-sso-redirect-location'], 'idpResponse2','some-other-company');
+                    });
+            });
         });
         
     });

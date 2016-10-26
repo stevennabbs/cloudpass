@@ -736,6 +736,11 @@ paths:
           description: the account store where SAML was configured
           required: false
           type: string
+        - name: accessToken
+          in: query
+          description: JWT access token
+          required: false
+          type: string
       responses:
         "302":
           description: redirection to the Identity provider

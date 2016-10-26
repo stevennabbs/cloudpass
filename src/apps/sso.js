@@ -148,7 +148,7 @@ function redirectToIdSite(jwtPayload, application, apiKey, res){
             state: jwtPayload.state,
             sp_token: 'null' //only to not make stormpath.js crash
         },
-        res.app.get('secret'),
+        apiKey.secret,
         {
             expiresIn: 60,
             subject: jwtPayload.iss,
@@ -156,7 +156,7 @@ function redirectToIdSite(jwtPayload, application, apiKey, res){
         }
      )
      .then(function(token){
-        res.status(302).location(apiKey.tenant.idSites[0].url+'#'+_.defaultTo(jwtPayload.path, '')+'?jwt='+token).send();
+        res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send();
     })
     .catch(function(){
         res.status(500).end();

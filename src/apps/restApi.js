@@ -8,50 +8,55 @@ var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var passport = require('passport');
 var Optional = require('optional-js');
-var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
 var BasicStrategy = require('passport-http').BasicStrategy;
-var JwtStrategy = require('passport-jwt').Strategy;
-var ExtractJwt = require('passport-jwt').ExtractJwt;
 var JwtCookieComboStrategy = require('passport-jwt-cookiecombo');
+var authorization = require('auth-header');
 var winston = require('winston');
+var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
+var JwtStrategy = require('./authentication/JwtStrategy');
 var idSiteHelper = require('./helpers/idSiteHelper');
 var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
 var ApiError = require('../ApiError.js');
 var getApiKey = require('./helpers/getApiKey');
+var passportSsacl = require('./helpers/passportSsacl');
 
 module.exports = function(secret){
     var logger = winston.loggers.get('http');
     
     // register SAuthc1 authentication strategy
-    passport.use(new SAuthc1Strategy(
-        function(apiKeyId){
-            return getApiKey(apiKeyId)
-                    .then(function(apiKey){
-                        if(apiKey){
-                            return [apiKey, apiKey.secret];
-                        }
-                    });
-        },
-        config.get('server.rootUrl')
-    ));
+    passport.use(new SAuthc1Strategy(config.get('server.rootUrl')));
+    
+    //ID sites send request with a JWT in the authorization header
+    passport.use(
+        'bearer-jwt',
+        new JwtStrategy(
+            req => Optional.ofNullable(req.headers.authorization)
+                    .map(_.bindKey(authorization, 'parse'))
+                    .filter(auth => auth.scheme === 'Bearer')
+                    .map(_.property('token'))
+                    .orElse(null),
+            _.property('payload.sub')
+        )
+    );
 
-    passport.use(new JwtStrategy(
-        {
-            secretOrKey : secret,
-            jwtFromRequest: ExtractJwt.fromExtractors([
-                //ID sites send request with a JWT in the authorization header
-                ExtractJwt.fromAuthHeaderWithScheme('Bearer'),
-                //SAML identity providers use the 'RelayState' POST param
-                ExtractJwt.fromBodyField('RelayState')
-            ])
-        },
-        function(payload, done) {
-            BluebirdPromise.join(getApiKey(payload.sub), payload)
-                .spread(_.partial(done, null))
-                .catch(_.partial(done, _, false));
-        }
-    ));
+    //applications can redirect to their IdP with an access token in the 'accessToken' query parameter
+    passport.use(
+        'access-token-jwt',
+        new JwtStrategy(
+            _.property('query.accessToken'),
+            _.property('header.kid')
+        )
+    );
+    
+    //SAML identity providers use the 'RelayState' POST param
+    passport.use(
+        'relay-state-jwt',
+        new JwtStrategy(
+            _.property('body.RelayState'),
+            _.property('payload.sub')
+        )
+    );
 
     //admins can be authenticated by a cookie set by the /login endpoint
     passport.use(new JwtCookieComboStrategy(
@@ -103,28 +108,13 @@ module.exports = function(secret){
             app.use(passport.initialize());
             app.use(bodyParser.urlencoded({ extended: false }));
 
-            //authenticate the requests
-            app.use(function (req, res, next) {
-                //CORS 'OPTIONS' requests must not be authenticated
-                if(req.method === 'OPTIONS'){
-                    return next();
-                }
-                passport.authenticate(['sauthc1', 'jwt', 'jwt-cookiecombo', 'basic'], {session: false}, function (err, user, info) {
-                    if (err) {
-                        return next(err);
-                    }
-                    if (!user) {
-                        return ApiError.UNAUTHORIZED.write(res);
-                    }
-                    req.user = user;
-                    req.authInfo = info;
-                    var ssaclCls = req.app.get('ssaclCls');
-                    ssaclCls.run(function(){
-                        ssaclCls.set('actor', user.tenantId);
-                        next();
-                    });
-                })(req, res, next);
-            });
+            //redirects to SAML idP can either be initiated from the application (with an access token)
+            //or from the ID site (with an authorization bearer)
+            app.use('/applications/:id/saml/sso/idpRedirect', passportSsacl('access-token-jwt', 'bearer-jwt'));
+            //SAML SSO post endpoint can only be used by IdPs (with a 'relay state' post param)
+            app.use('/directories/:id/saml/sso/post', passportSsacl('relay-state-jwt'));
+            //use SAuthc1, bearer, cookie or basic authentication for all other requests
+            app.use(passportSsacl('sauthc1', 'bearer-jwt', 'jwt-cookiecombo', 'basic'));
 
             //check if the authorized request scope match the current request
             app.use(scopeChecker);

@@ -47,18 +47,18 @@ exports.getSamlResponse = function(provider, requestBody){
             );
 };
 
-exports.getRelayState = function(secret, apiKeyId, cb_uri, state, initialJti, appHref, expiration){
+exports.getRelayState = function(apiKey, cb_uri, state, appHref, jti, expiration){
     return signJwt(
         {
             cb_uri: cb_uri,
             state: state,
-            init_jti: initialJti,
+            init_jti: jti,
             app_href: appHref
         },
-        secret,
+        apiKey.secret,
         {
             expiresIn: expiration,
-            subject: apiKeyId,
+            subject: apiKey.id,
             audience: 'SamlIdp'
         }
     );

@@ -24,7 +24,7 @@ exports.idSiteHeaders = function(req, res){
         //re-send an updated token as Authorization header
         signJwt(
             _.omit(req.authInfo, ['jti', 'iat', 'exp']),
-            req.app.get('secret'),
+            req.user.secret,
             {expiresIn: '1h'}
         )
         .then(function(token){
@@ -40,7 +40,7 @@ exports.idSiteHeaders = function(req, res){
 };
 
 // returns an Jwt response that can be used by the application to authenticate a user
-function getJwtResponse(apiKey, cbUri, initialJwtId, isNewSub, accountHref, state, issuer){
+function getJwtResponse(apiKey, cbUri, initialJwtId, isNewSub, accountHref, state){
     //jwt to use in the redirection query
     return signJwt(
         {
@@ -53,8 +53,9 @@ function getJwtResponse(apiKey, cbUri, initialJwtId, isNewSub, accountHref, stat
         apiKey.secret,
         {
             expiresIn: 60,
-            issuer: issuer || apiKey.tenant.idSites[0].url,
+            issuer: apiKey.tenant.idSites[0].url,
             subject: accountHref,
+            audience: apiKey.id,
             header: {kid: apiKey.id}
         }
     );

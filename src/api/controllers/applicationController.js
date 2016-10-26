@@ -227,8 +227,10 @@ controller.resendVerificationEmail = function(req, res){
 };
 
 controller.samlIdpRedirect = function(req, res){
-    ApiError.assert(req.authInfo, ApiError.FORBIDDEN);
-    
+    //redirects to SAML idP can either be initiated from the application (with an access token)
+    //or from the ID site (with an authorization bearer).
+    //when using _.defaultTo here, the first param is found in ID Site bearer
+    //while the 2nd one is found in access token
     return BluebirdPromise.join(
         models.application.build({id: req.swagger.params.id.value})
            .getDirectories({
@@ -239,9 +241,14 @@ controller.samlIdpRedirect = function(req, res){
                        where: {providerId: 'saml'},
                        include: [models.samlServiceProviderMetadata]
                }],
-               where: Optional.ofNullable(req.swagger.params['accountStore.href'].value)
+               where: Optional.ofNullable(
+                            _.defaultTo(
+                                req.swagger.params['accountStore.href'].value, 
+                                req.authInfo.ash
+                            )
+                       )
                        .map(models.resolveHref)
-                       .map(function(directory){
+                       .map(directory => {
                            return { id: directory.id };
                        })
                        .orElse(undefined)
@@ -249,15 +256,12 @@ controller.samlIdpRedirect = function(req, res){
            .map(_.iteratee('provider'))
            .then(_.head)
            .tap(_.partial(ApiError.assert, _, ApiError, 404, 404, 'SAML provider not found')),
-        //if the request was made by the ID site, the cb_uri and state are in the authInfo
-        //TODO: get them from the 'jwt' query param for apps that don't use ID site
         samlHelper.getRelayState(
-            req.app.get('secret'),
-            req.user.id,
+            req.user,
             req.authInfo.cb_uri,
             req.authInfo.state,
-            req.authInfo.init_jti,
-            req.authInfo.app_href,
+            _.defaultTo(req.authInfo.app_href, req.authInfo.iss),
+            _.defaultTo(req.authInfo.init_jti, req.authInfo.jti),
             '1h'
         )
     )

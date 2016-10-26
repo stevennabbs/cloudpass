@@ -7,6 +7,7 @@ var _ = require('lodash');
 var crypto = require('crypto');
 var Optional = require('optional-js');
 var BluebirdPromise = require('sequelize').Promise;
+var getApiKey = require('../helpers/getApiKey');
 
 var AUTHENTICATION_SCHEME = "SAuthc1";
 var SAUTHC1_ID = "sauthc1Id";
@@ -16,9 +17,8 @@ var SAUTHC1_SIGNATURE = 'sauthc1Signature';
 var ALGORITHM = 'HMAC-SHA-256';
 var DATE_HEADER = 'x-stormpath-date';
 
-function SAuthc1Strategy(findUserAndSecret, rootUrl) {
+function SAuthc1Strategy(rootUrl) {
     this.name = 'sauthc1';
-    this.findUserAndSecret = findUserAndSecret;
     this.rootUrl = rootUrl;
 }
 
@@ -63,10 +63,10 @@ SAuthc1Strategy.prototype.authenticate = function (req) {
                 .map(function(nameValueArray){return nameValueArray[1];})
                 .orElseThrow(function(){return 'Invalid authorization signature: '+nameValuePairs[2];});
 
-        return this.findUserAndSecret(apiKeyId)
-                    .spread(function(user, secret){
-                        return Optional.ofNullable(user)
-                            .filter(function(){return signatureHex === computeSignature.call(this, req, signedHeadersString, apiKeyId, secret, dateStamp, nonce);}.bind(this))
+        return getApiKey(apiKeyId)
+                    .then(function(apiKey){
+                        return Optional.ofNullable(apiKey)
+                            .filter(function(){return signatureHex === computeSignature.call(this, req, signedHeadersString, apiKeyId, apiKey.secret, dateStamp, nonce);}.bind(this))
                             .orElseThrow(function(){return 'digest verification failed';});
                     }.bind(this));
     }.bind(this))

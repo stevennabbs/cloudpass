@@ -46,7 +46,8 @@ exports.getIdSiteJwtRequest = function(applicationId, callbackUrl){
         exports.apiKey.secret,
         {
             issuer: exports.apiKey.id,
-            subject: 'http://localhost:20020/v1/applications/'+applicationId
+            subject: 'http://localhost:20020/v1/applications/'+applicationId,
+            header: {kid: exports.apiKey.id}
         }
     );
 };
@@ -61,7 +62,7 @@ exports.getIdSiteBearer = function(applicationId, callbackUrl){
                    .toPromise();
         })
         .then(function(res){
-            var fragmentStart = '#?jwt=';
+            var fragmentStart = '/#/?jwt=';
             return res.header.location.substring(res.header.location.indexOf(fragmentStart) + fragmentStart.length);
         });
 };
