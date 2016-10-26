@@ -77,7 +77,7 @@ The default configuration is in `default.yaml`. You should not modify this file,
    docker run -e "NODE_CONFIG=$NODE_CONFIG" -P dhatim/cloudpass
    ```
 
-There are three configuration sections: *server*, *persistence* and *email*.
+There are four configuration sections: *server*, *persistence*, *email* and *logging*.
 
 ### Server
 
@@ -192,7 +192,6 @@ The following example will use [nodemailer-mandrill-transport](https://github.co
           apiKey: 0lh_FXQfROgL4ZZgn2U-uQ
   ```
 
-
 #### Mandrill Templates
 
 Mandrill offers the possibility to define email templates.
@@ -213,6 +212,16 @@ You can use in Mandrill templates the same Handlebars placeholders as when you d
 - `{{url}}`
 - `{{cptoken}}`
 - `{{cptokennamevaluepair}}`
+
+### Logging
+
+Four loggers can be configured in the *logging* section:
+- *sql*: logs the SQL queries before execution,
+- *http*: logs the HTTP requests via [morgan](https://github.com/expressjs/morgan),
+- *email*: logs when email are sent,
+- *config*: prints out the full configuration on startup.
+
+Cloudpass uses [winston-config](https://github.com/triplem/winston-config) to configure logging. Please refer to the module documentation for the accepted configuration options.
 
 
 ## Getting Started
@@ -246,6 +255,7 @@ For instance, if the id key is *e777909e-854b-4464-bd2c-55f951029c33* and the se
 ```bash
 curl -L -u e777909e-854b-4464-bd2c-55f951029c33:sFdJN5p2EbT5iSls76vt4x1yyHKAyIq4rvGlzn9mSnj8eYrx5B http://localhost:10010/v1/tenants/current
 ```
+
 
 ## Features
 
@@ -287,9 +297,11 @@ You can read more about ID sites on Stormpath's website.
 
 Cloudpass is a work in progress and these features are not yet available. Let us know if you need them !
 - A user interface
-- Social login
+- Social login (other than SAML)
 - Oauth token generation
 - password reset & account creation from ID sites
+- Account linking
+- Multi Factor authentication
 
 ## Development
 
