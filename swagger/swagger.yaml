@@ -357,7 +357,12 @@ paths:
               value:
                 type: string
               accountStore:
-                $ref: "#/definitions/ResourceReference"
+                type: object
+                properties:
+                  nameKey:
+                    type: string
+                  href:
+                    type: string
       responses:
         "200":
           description: login success
@@ -391,7 +396,12 @@ paths:
                 type: string
                 format: email
               accountStore:
-                $ref: "#/definitions/ResourceReference"
+                type: object
+                properties:
+                  nameKey:
+                    type: string
+                  href:
+                    type: string
       responses:
         "200":
           description: password reset initiated
@@ -614,7 +624,12 @@ paths:
               login:
                 type: string
               accountStore:
-                $ref: "#/definitions/ResourceReference"
+                type: object
+                properties:
+                  nameKey:
+                    type: string
+                  href:
+                    type: string
       responses:
         "204":
           description: email sent

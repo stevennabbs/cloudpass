@@ -21,7 +21,7 @@ controller.create = function(req, res){
                 true
             )
             .tap(function(newDirectory){
-                //'cloudpass' provider don't require storing additional data
+                //'cloudpass' provider doesn't require storing additional data
                 if(attributes.provider && attributes.provider.providerId !== 'cloudpass'){
                     return controllerHelper.create(
                         models.directoryProvider,

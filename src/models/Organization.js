@@ -1,6 +1,6 @@
 "use strict";
 
-var accountStoreWrapperHelper = require('./helpers/accountStoreWrapperHelper');
+var accountStoreWrapperMethods = require('./helpers/accountStoreWrapperMethods');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
 
 module.exports = function (sequelize, DataTypes) {
@@ -41,10 +41,7 @@ module.exports = function (sequelize, DataTypes) {
                     fields: ['name', 'tenantId']
                 }  
             ],
-            instanceMethods: {
-                createNewAccount: accountStoreWrapperHelper.createNewAccount,
-                createNewGroup: accountStoreWrapperHelper.createNewGroup
-            },
+            instanceMethods: accountStoreWrapperMethods,
             classMethods: {
                 getSearchableAttributes: function(){
                     return ['id', 'name', 'nameKey', 'description', 'status'];  
@@ -101,6 +98,13 @@ module.exports = function (sequelize, DataTypes) {
                 afterAssociate: function(models){
                     addAccountStoreAccessors(models.organization, models.account);
                     addAccountStoreAccessors(models.organization, models.group);
+                },
+                getIdSiteScope: function(){
+                    return [
+                        "read",
+                        { idSiteModel: [ "read" ] },
+                        { accounts: [ "create" ] }
+                    ];
                 }
             }
         }

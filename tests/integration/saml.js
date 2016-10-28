@@ -133,11 +133,11 @@ describe('SAML', function(){
                 .then(function(res){
                     applicationId = res.body.id;
                     return init.postRequest('accountStoreMappings')
-                            .send({
-                                application:{href: '/applications/'+applicationId},
-                                accountStore:{href: '/directories/'+directoryId}
-                            })
-                            .expect(200);
+                        .send({
+                            application:{href: '/applications/'+applicationId},
+                            accountStore:{href: '/directories/'+directoryId}
+                        })
+                        .expect(200);
                 });
         });
        
@@ -197,16 +197,14 @@ describe('SAML', function(){
                                 .post('/v1/directories/'+directoryId+'/saml/sso/post')
                                 .send('SAMLResponse='+encodeURIComponent(samlResponse))
                                 .send('RelayState='+encodeURIComponent(relayState))
-                                .expect(302)
-                                .toPromise();
+                                .expect(302);
                         })
                         .then(function(res){
                             //cloudpass should redirect to its /sso enpoint with a jwtResponse query param to set a cookie
                             var redirectLocationStart = '../../../../../sso';
                             assert(res.headers.location.startsWith(redirectLocationStart));
                             return request(init.app).get('/sso' + res.headers.location.substring(redirectLocationStart.length))
-                                .expect(302)
-                                .toPromise();
+                                .expect(302);
                         })
                         .then(function(res){
                             //now we should be redirected to the callback URL
@@ -214,8 +212,7 @@ describe('SAML', function(){
                             //the account should have been updated from the SAML assertions
                             return init.getRequest('applications/'+applicationId+'/accounts')
                                     .query({expand: 'customData,providerData'})
-                                    .expect(200)
-                                    .toPromise();
+                                    .expect(200);
                         })
                         .then(function(res){
                             assert.strictEqual(res.body.size, 1);
@@ -232,9 +229,7 @@ describe('SAML', function(){
             
             it('via IdP redirect', function(){
                 return signJwt(
-                    {
-                        cb_uri: callbackUrl
-                    },
+                    {cb_uri: callbackUrl},
                     init.apiKey.secret,
                     {
                         issuer: init.apiKey.id,
@@ -245,12 +240,50 @@ describe('SAML', function(){
                 .then(function(accessToken){
                     return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                         .query({ accessToken: accessToken})
-                        .expect(302)
-                        .toPromise();
+                        .expect(302);
                 })
                 .then(function(res){
                     return mockIdPResponse(res.header.location, 'idpResponse1','some-company');
                 });
+            });
+            
+            it('with organization name', function(){
+                //create an organization an map it the the SAML application
+                var organizationName = init.randomName();
+                return init.postRequest('organizations')
+                    .send({
+                        name: organizationName,
+                        nameKey: organizationName
+                    })
+                    .expect(200)
+                    .then(function(res){
+                        return init.postRequest('accountStoreMappings')
+                            .send({
+                                application:{href: '/applications/'+applicationId},
+                                accountStore:{href: '/organizations/'+res.body.id}
+                            })
+                            .expect(200);
+                    })
+                    .then(function(){
+                        return signJwt(
+                            {
+                                cb_uri: callbackUrl,
+                                onk: organizationName
+                            },
+                            init.apiKey.secret,
+                            {
+                                issuer: init.apiKey.id,
+                                subject: 'http://localhost:20020/v1/applications/'+applicationId,
+                                header: {kid: init.apiKey.id}
+                            }
+                        );
+                    })
+                    .then(function(accessToken){
+                        //we should get a 404 because Cloudpass cannot find a SAML provider associated to the organization
+                        return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
+                            .query({ accessToken: accessToken})
+                            .expect(404);
+                    });
             });
         
             it('via ID Site', function(){
@@ -258,8 +291,7 @@ describe('SAML', function(){
                     .then(function(bearer){
                          return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                             .set('authorization', 'Bearer '+bearer)
-                            .expect(200)
-                            .toPromise();
+                            .expect(200);
                     })
                     .then(function(res){
                         return mockIdPResponse(res.header['stormpath-sso-redirect-location'], 'idpResponse2','some-other-company');

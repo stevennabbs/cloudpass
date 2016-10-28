@@ -38,10 +38,11 @@ exports.getEmailPromise = function (mailServer, address) {
 
 exports.randomName = randomstring.generate;
 
-exports.getIdSiteJwtRequest = function(applicationId, callbackUrl){
+exports.getIdSiteJwtRequest = function(applicationId, callbackUrl, organizationName){
     return signJwt(
         {
-            cb_uri: callbackUrl
+            cb_uri: callbackUrl,
+            onk: organizationName
         },
         exports.apiKey.secret,
         {
@@ -52,8 +53,8 @@ exports.getIdSiteJwtRequest = function(applicationId, callbackUrl){
     );
 };
 
-exports.getIdSiteBearer = function(applicationId, callbackUrl){
-    return exports.getIdSiteJwtRequest(applicationId, callbackUrl)
+exports.getIdSiteBearer = function(applicationId, callbackUrl, organizationName){
+    return exports.getIdSiteJwtRequest(applicationId, callbackUrl, organizationName)
         .then(function(jwtRequest){
                 //send it it cloudpass, it should redirect to ID site
                 return request(exports.app).get('/sso')

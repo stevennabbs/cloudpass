@@ -15,6 +15,52 @@ var scope = {
 };
 
 describe('scope', function () {
+    
+    describe('scopeHelper.getIdSiteScope', function(){
+        it('should merge correctly the scopes of the provided instances', function(){
+            assert.deepStrictEqual(
+                scopeHelper.getIdSiteScope(
+                    {
+                        id: 'application1',
+                        Model: {
+                            getIdSiteScope: () => 'application1-scope',
+                            options: {name: {plural: 'applications'}}
+                        }
+                    },
+                    {
+                        id: 'application1',
+                        Model: {
+                             getIdSiteScope: () => 'application1-scope',
+                            options: {name: {plural: 'applications'}}
+                        }
+                    },
+                    {
+                        id: 'application2',
+                        Model: {
+                             getIdSiteScope: () => 'application2-scope',
+                            options: {name: {plural: 'applications'}}
+                        }
+                    },
+                    {
+                        id: 'organization1',
+                        Model: {
+                            getIdSiteScope: () => 'organization1-scope',
+                            options: {name: {plural: 'organizations'}}
+                        }
+                    }
+                ),
+                {
+                    applications: {
+                        application1: 'application1-scope',
+                        application2: 'application2-scope'
+                    },
+                    organizations: {
+                        organization1: 'organization1-scope'
+                    }
+                }
+            );
+       });
+    });
 
     describe('scopeHelper.scopeToPaths', function () {
         it('should correctly converts bearer scopes into API endpoint paths', function () {

@@ -4,7 +4,7 @@ var request = require('supertest-as-promised');
 var init = require('./init');
 
 describe('idSite', function(){
-    var application;
+    var applicationId;
     var idSiteUrl = 'http://www.example.com';
     var callbackUrl = 'http://www.example.com/callback';
     
@@ -24,58 +24,92 @@ describe('idSite', function(){
                 .query({ name: 'Cloudpass', limit: 1})
                 .expect(200)
                 .then(function(res){
-                    application = res.body.items[0];
+                    applicationId = res.body.items[0].id;
                 });
         });
     });
     
-    it('login', function(){
-        return init.getIdSiteBearer(application.id, callbackUrl)
-            .then(function(bearer){
-                return request(init.app).post('/v1/applications/'+application.id+'/loginAttempts')
-                    .set('authorization', 'Bearer '+bearer)
-                    .send({
-                        type: 'basic',
-                        value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
-                    })
-                    .expect(200)
-                    .toPromise();
-            })
-            .then(function(res){
-                //there should be a redirection URL in the headers
-                assert(res.header['stormpath-sso-redirect-location']);
-                return request(res.header['stormpath-sso-redirect-location']).get('')
-                        .expect(302)
+    describe('login', function(){
+        it('in application', function(){
+            return init.getIdSiteBearer(applicationId, callbackUrl)
+                .then(function(bearer){
+                    return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                        .set('authorization', 'Bearer '+bearer)
+                        .send({
+                            type: 'basic',
+                            value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
+                        })
+                        .expect(200)
                         .toPromise();
-            })
-            .then(function(res){
-                //cloudpass should redirect us back to the application
-                //and set a cookie for subsequent logins
-                assert(res.header.location);
-                assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
-                assert(res.header['set-cookie']);
-                return BluebirdPromise.join(
-                            init.getIdSiteJwtRequest(application.id, callbackUrl),
+                })
+                .then(function(res){
+                    //there should be a redirection URL in the headers
+                    assert(res.header['stormpath-sso-redirect-location']);
+                    return request(res.header['stormpath-sso-redirect-location']).get('')
+                            .expect(302)
+                            .toPromise();
+                })
+                .then(function(res){
+                    //cloudpass should redirect us back to the application
+                    //and set a cookie for subsequent logins
+                    assert(res.header.location);
+                    assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                    assert(res.header['set-cookie']);
+                    return BluebirdPromise.join(
+                            init.getIdSiteJwtRequest(applicationId, callbackUrl),
                             res.header['set-cookie'][0].split(';')[0]
                         );
-            })
-            .spread(function(jwtRequest, cookie){
-                //send a a new request with the cookie
-                return request(init.app).get('/sso')
-                    .query({ jwtRequest: jwtRequest})
-                    .set('Cookie', cookie)
-                    .expect(302)
-                    .toPromise();
-            })
-            .then(function(res){
-                //cloudpass should redirect directly to the callback URL, not to the ID site
-                assert(res.header.location);
-                assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                })
+                .spread(function(jwtRequest, cookie){
+                    //send a a new request with the cookie
+                    return request(init.app).get('/sso')
+                        .query({ jwtRequest: jwtRequest})
+                        .set('Cookie', cookie)
+                        .expect(302)
+                        .toPromise();
+                })
+                .then(function(res){
+                    //cloudpass should redirect directly to the callback URL, not to the ID site
+                    assert(res.header.location);
+                    assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                });
+            });
+            
+            it('in organization', function(){
+                //create an organization an map it the the application
+                var organizationName = init.randomName();
+                return init.postRequest('organizations')
+                    .send({
+                        name: organizationName,
+                        nameKey: organizationName
+                    })
+                    .expect(200)
+                    .then(function(res){
+                        return init.postRequest('accountStoreMappings')
+                            .send({
+                                application:{href: '/applications/'+applicationId},
+                                accountStore:{href: '/organizations/'+res.body.id}
+                            })
+                            .expect(200);
+                    })
+                    .then(function(){
+                        return init.getIdSiteBearer(applicationId, callbackUrl, organizationName);
+                    })
+                    .then(function(bearer){
+                        //Cloudpass should return a 4000 because the account is not in this organization
+                        return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                            .set('authorization', 'Bearer '+bearer)
+                            .send({
+                                type: 'basic',
+                                value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
+                            })
+                            .expect(400);
+                    });
             });
     });
     
     it('logout', function(){
-        return init.getIdSiteJwtRequest(application.id, callbackUrl)
+        return init.getIdSiteJwtRequest(applicationId, callbackUrl)
                 .then(function(jwtRequest){
                     return request(init.app).get('/sso/logout')
                             .query({ jwtRequest: jwtRequest})
@@ -92,9 +126,9 @@ describe('idSite', function(){
     });
     
     it('Requests with bearer authorization must have a limited scope', function(){
-        return init.getIdSiteBearer(application.id, callbackUrl)
+        return init.getIdSiteBearer(applicationId, callbackUrl)
                 .then(function(bearer){
-                    return request(init.app).get('/v1/applications/'+application.id+'/accounts')
+                    return request(init.app).get('/v1/applications/'+applicationId+'/accounts')
                         .set('authorization', 'Bearer '+bearer)
                         .expect(403)
                         .toPromise();
@@ -102,7 +136,7 @@ describe('idSite', function(){
     });
     
     it('ID site model must be exposed by applications', function(){
-        return init.getRequest('applications/'+application.id+'/idSiteModel')
+        return init.getRequest('applications/'+applicationId+'/idSiteModel')
                 .expect(200)
                 .then(function(res){
                     assert(res.body.hasOwnProperty('providers'));

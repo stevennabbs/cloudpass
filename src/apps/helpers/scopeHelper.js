@@ -3,17 +3,14 @@
 var _ = require('lodash');
 
 //get the scope of requests an ID site is allowed to make with its bearer token
-exports.getIdSiteScope = function(applicationId){
-    var applicationScope = {};
-    applicationScope[applicationId] = [
-        "read",
-        { idSiteModel: [ "read" ] },
-        { loginAttempts: [ "create" ] },
-        { accounts: [ "create" ] },
-        { passwordResetTokens: [ "create" ] },
-        { saml: {sso : {idpRedirect: ['read'] } } }
-    ];
-    return {applications: applicationScope};
+exports.getIdSiteScope = function(...modelInstances){
+    return _(modelInstances)
+            .map(i => ({
+                [i.Model.options.name.plural]: {
+                    [i.id]: i.Model.getIdSiteScope()
+                }
+            }))
+            .reduce(_.merge, {});
 };
 
 exports.scopeToPaths = function(scope, baseUrl){
@@ -21,9 +18,9 @@ exports.scopeToPaths = function(scope, baseUrl){
     if(_.isString(scope)){
         //the scope is simply a permission (read, create etc.)
         //map the URL to the corresponding HTTP method
-        var result = {};
-        result[baseUrl] = [scopePermissionToHttpMethod(scope)];
-        return result;
+        return {
+            [baseUrl]: [scopePermissionToHttpMethod(scope)]
+        };
     }
     if(_.isArray(scope)){
         //find the paths associated with each of the array item and merge them

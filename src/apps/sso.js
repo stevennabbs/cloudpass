@@ -11,6 +11,7 @@ var models = require('../models');
 var scopeHelper = require('./helpers/scopeHelper');
 var getApiKey = require('./helpers/getApiKey');
 var idSiteHelper = require('./helpers/idSiteHelper');
+var ApiError = require('../ApiError');
 
 var app = express();
 app.use(cookieParser());
@@ -54,20 +55,18 @@ app.get('/', function(req, res){
                             return application.getAccounts({where: {id: accountId}, limit:1, actor: apiKey.tenantId});
                         })
                         .spread(function(account){
-                            if(account){
-                                return idSiteHelper.getJwtResponse(apiKey, payload.cb_uri, payload.jti, false, account.href, payload.state)
+                            ApiError.assert(account, 'account not found in application');
+                            return idSiteHelper.getJwtResponse(apiKey, payload.cb_uri, payload.jti, false, account.href, payload.state)
                                 .then(function(redirectUrl){
                                     res.status(302).location(addParamToUri(payload.cb_uri, 'jwtResponse', redirectUrl)).send();
                                 });
-                            }
-                            throw 'account not found in application';
                         })
                         .catch(function(){
                             // jwt expired or the account does not belong to the application => re-authentication required
-                            redirectToIdSite(payload, application, apiKey, res);
+                            return redirectToIdSite(payload, application, apiKey, res);
                         });
                 }
-                redirectToIdSite(payload, application, apiKey, res);
+                return redirectToIdSite(payload, application, apiKey, res);
             })
             .catch(res.next);
 
@@ -139,27 +138,30 @@ function addParamToUri(uri, paramName, paramValue){
 }
 
 function redirectToIdSite(jwtPayload, application, apiKey, res){
-    jwt.signAsync(
-        {
-            init_jti: jwtPayload.jti,
-            scope: scopeHelper.getIdSiteScope(application.id),
-            app_href: jwtPayload.sub,
-            cb_uri: jwtPayload.cb_uri,
-            state: jwtPayload.state,
-            sp_token: 'null' //only to not make stormpath.js crash
-        },
-        apiKey.secret,
-        {
-            expiresIn: 60,
-            subject: jwtPayload.iss,
-            audience: 'idSite'
-        }
-     )
-     .then(function(token){
-        res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send();
-    })
-    .catch(function(){
-        res.status(500).end();
+    //TODO use passortSsacl
+    var ssaclCls = res.app.get('ssaclCls');
+    return ssaclCls.run(function(){
+        ssaclCls.set('actor', apiKey.tenantId);
+        return application.getLookupAccountStore(jwtPayload.onk)
+            .then( as => jwt.signAsync(
+                {
+                    init_jti: jwtPayload.jti,
+                    scope: scopeHelper.getIdSiteScope(application, as),
+                    app_href: jwtPayload.sub,
+                    cb_uri: jwtPayload.cb_uri,
+                    state: jwtPayload.state,
+                    asnk: jwtPayload.onk,
+                    ash: as.href,
+                    sp_token: 'null' //only to not make stormpath.js crash
+                },
+                apiKey.secret,
+                {
+                    expiresIn: 60,
+                    subject: jwtPayload.iss,
+                    audience: 'idSite'
+                }
+            ))
+            .then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send());
     });
 }
 

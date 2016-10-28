@@ -14,12 +14,7 @@ module.exports = function (model, transactionalMethods) {
         },
         //get a resource by id (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb)
         get: function (req, res) {
-            return model
-                .findById(req.swagger.params.id.value)
-                .tap(ApiError.assertFound)
-                .then(_.partial(controllerHelper.expand, _, req))
-                .then(res.json.bind(res))
-                .catch(req.next);
+            return controllerHelper.queryAndExpand(() => model.findById(req.swagger.params.id.value), req, res);
         },
         //get a collection associated to a resource (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb/accounts)
         getCollection: function(req, res){

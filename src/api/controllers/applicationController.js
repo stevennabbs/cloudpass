@@ -2,7 +2,6 @@
 
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
-var Optional = require('optional-js');
 var controllerHelper = require('../helpers/controllerHelper');
 var accountStoreController = require('../helpers/accountStoreController');
 var accountHelper = require('../helpers/accountHelper');
@@ -14,12 +13,10 @@ var ApiError = require('../../ApiError');
 var controller = accountStoreController(models.application);
 
 function getSubResource(getter, req, res){
-    models.application
+    return models.application
         .findById(req.swagger.params.id.value)
-        .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
-        .then(function(application){
-            return application[getter]();
-        })
+        .tap(ApiError.assertFound)
+        .then(application => application[getter]())
         .then(_.partial(controllerHelper.expand, _, req))
         .then(res.json.bind(res))
         .catch(req.next);
@@ -69,14 +66,19 @@ controller.create = function(req, res){
 
 controller.authenticate = function(req, res){
     var attempt = req.swagger.params.attempt.value;
-    ApiError.assert(attempt.type === 'basic', ApiError, 400, 400, 'Unsupported type');
     var decodedValue = new Buffer(attempt.value, 'base64').toString('utf8');
     var delimiterIndex = decodedValue.indexOf(':');
     ApiError.assert(delimiterIndex > 0, ApiError, 400, 400, 'Invalid value');
     var login = decodedValue.substring(0, delimiterIndex);
     var password = decodedValue.substring((delimiterIndex + 1));
     
-    accountHelper.authenticateAccount(req.swagger.params.id.value, login, password, attempt.accountStore)
+    accountHelper.authenticateAccount(
+            login,
+            password,
+            req.swagger.params.id.value,
+            _.defaultTo(_.get(req.authInfo, 'asnk'), _.get(attempt.accountStore, 'nameKey')),
+            _.get(attempt.accountStore, 'href')
+        )
         .then(function(account){
             res.json(expandAccountActionResult(account, req.swagger.params.expand.value));
         })
@@ -84,11 +86,12 @@ controller.authenticate = function(req, res){
 };
 
 controller.createPasswordResetToken = function(req, res){
-    
     accountHelper.findAccount(
-            req.swagger.params.id.value,
             req.swagger.params.attributes.value.email,
-            req.swagger.params.attributes.value.accountStore)
+            req.swagger.params.id.value,
+            _.defaultTo(_.get(req.authInfo, 'onk'), _.get(req.swagger.params.attributes.value.accountStore, 'nameKey')),
+            _.get(req.swagger.params.attributes.value.accountStore, 'href')
+        )
         .then(function(account){
             ApiError.assert(account, ApiError, 400, 2016,  'The email property value %s does not match a known resource.', req.swagger.params.attributes.value.email);
             ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'The account is not enabled');
@@ -197,9 +200,11 @@ controller.consumePasswordResetToken = function(req, res){
 
 controller.resendVerificationEmail = function(req, res){
     accountHelper.findAccount(
-            req.swagger.params.id.value,
             req.swagger.params.attributes.value.login,
-            req.swagger.params.attributes.value.accountStore)
+            req.swagger.params.id.value,
+            _.defaultTo(_.get(req.authInfo, 'onk'), _.get(req.swagger.params.attributes.value.accountStore, 'nameKey')),
+            _.get(req.swagger.params.attributes.value.accountStore, 'href')
+        )
         .then(function(account){
             ApiError.assert(account, ApiError.NOT_FOUND);
             if(account.emailVerificationTokenId){
@@ -233,29 +238,9 @@ controller.samlIdpRedirect = function(req, res){
     //while the 2nd one is found in access token
     return BluebirdPromise.join(
         models.application.build({id: req.swagger.params.id.value})
-           .getDirectories({
-               attributes: [],
-               include: [{
-                       model: models.directoryProvider,
-                       as: 'provider',
-                       where: {providerId: 'saml'},
-                       include: [models.samlServiceProviderMetadata]
-               }],
-               where: Optional.ofNullable(
-                            _.defaultTo(
-                                req.swagger.params['accountStore.href'].value, 
-                                req.authInfo.ash
-                            )
-                       )
-                       .map(models.resolveHref)
-                       .map(directory => {
-                           return { id: directory.id };
-                       })
-                       .orElse(undefined)
-           })
-           .map(_.iteratee('provider'))
-           .then(_.head)
-           .tap(_.partial(ApiError.assert, _, ApiError, 404, 404, 'SAML provider not found')),
+            .getLookupAccountStore(req.authInfo.onk)
+            .then(as => accountHelper.getSubAccountStore(as, _.defaultTo(req.swagger.params['accountStore.href'].value, req.authInfo.ash)))
+            .then(getSamlDirectoryProvider),
         samlHelper.getRelayState(
             req.user,
             req.authInfo.cb_uri,
@@ -269,6 +254,27 @@ controller.samlIdpRedirect = function(req, res){
     .then(_.bindKey(res, 'redirect'))
     .catch(req.next);
 };
+
+function getSamlDirectoryProvider(accountStore){
+    if(accountStore instanceof models.directory.Instance){
+        ApiError.assert(accountStore.providerId === 'saml', ApiError, 400, 2014, 'The directory %s is not a SAML directory', accountStore.id);
+        return accountStore.getProvider({include: [models.samlServiceProviderMetadata]});
+    }
+    ApiError.assert(accountStore.getDirectories, ApiError, 400, 2014, 'SAML login in %s is not supported', accountStore.Model.options.name.plural);
+    return accountStore.getDirectories({
+                attributes: [],
+                include: [{
+                    model: models.directoryProvider,
+                    as: 'provider',
+                    where: {providerId: 'saml'},
+                    include: [models.samlServiceProviderMetadata]
+                }],
+                limit: 1
+            })
+            .then(_.head)
+            .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'No SAML provider found in %s %s', accountStore.Model.name, accountStore.id))
+            .get('provider');
+}
 
 function expandAccountActionResult(account, expand){
     //return the account only if the expand paramter was set

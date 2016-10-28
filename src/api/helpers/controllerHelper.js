@@ -133,43 +133,42 @@ exports.parseExpandParam = parseExpandParam;
 function performExpansion(resource, expands){
     //convert to JSON to make sure the expanded resources will not be overriden by custom getters
     var resourceJson = _.defaultTo(resource.toJSON, _.constant(resource)).call(resource);
-    return BluebirdPromise
-            .all(
-                _.map(
-                    expands,
-                    function(v, k){
-                        var association = _.get(resource, 'Model.associations.'+k) || _.get(resource, 'Model.customAssociations.'+k);
-                        var promise;
-                        if(association){
-                            if(_.includes(['BelongsTo', 'HasOne'], association.associationType)){
-                                //obviously no pagination needed
-                                promise = resource[association.accessors.get]();
-                            } else {
-                                //the expanded is a collection
-                                promise = findAndCountAssociation(resource, association, v);
-                            }
+    return BluebirdPromise.all(
+            _.map(
+                expands,
+                function(v, k){
+                    var association = _.get(resource, 'Model.associations.'+k) || _.get(resource, 'Model.customAssociations.'+k);
+                    var promise;
+                    if(association){
+                        if(_.includes(['BelongsTo', 'HasOne'], association.associationType)){
+                            //obviously no pagination needed
+                            promise = resource[association.accessors.get]();
                         } else {
-                            //the resource must be expanded via a custom getter
-                            var getterName = 'get'+_.upperFirst(k);
-                            ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', _.get(resource, 'Model.name', ''), k);
-                            promise = BluebirdPromise.resolve(resource[getterName](v));
+                            //the expanded is a collection
+                            promise = findAndCountAssociation(resource, association, v);
                         }
-
-                        return promise.then(function(expandedResource){
-                            if(expandedResource.count !== undefined && expandedResource.rows !== undefined){
-                                //it's a resource collection
-                                resourceJson[k] = createCollectionResource(
-                                        resource.href+ "/" + k,
-                                        v,
-                                        expandedResource.count,
-                                        expandedResource.rows);
-                            } else {
-                                //it's a single resource
-                                resourceJson[k] = expandedResource;
-                            }
-                        });
+                    } else {
+                        //the resource must be expanded via a custom getter
+                        var getterName = 'get'+_.upperFirst(k);
+                        ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', _.get(resource, 'Model.name', ''), k);
+                        promise = BluebirdPromise.resolve(resource[getterName](v));
                     }
-                )
+
+                    return promise.then(function(expandedResource){
+                        if(expandedResource.count !== undefined && expandedResource.rows !== undefined){
+                            //it's a resource collection
+                            resourceJson[k] = createCollectionResource(
+                                    resource.href+ "/" + k,
+                                    v,
+                                    expandedResource.count,
+                                    expandedResource.rows);
+                        } else {
+                            //it's a single resource
+                            resourceJson[k] = expandedResource;
+                        }
+                    });
+                }
+            )
          )
         .then(function(){
             return resourceJson;
@@ -180,6 +179,20 @@ function expand(resource, req){
     return performExpansion(resource, parseExpandParam(_.get(req.swagger.params, 'expand.value', '')));
 }
 exports.expand = expand;
+
+function queryAndExpand(query, req, res, inTransaction){
+    var expands =  parseExpandParam(_.get(req.swagger.params, 'expand.value', ''));
+    //if expansion must be performed, execute all queries in a REPETABLE-READ transaction
+    return execute(
+                () => query()
+                    .tap(ApiError.assertFound)
+                    .then(_.partial(performExpansion, _, expands)),
+                inTransaction || !_.isEmpty(expands)
+            )
+            .then(res.json.bind(res))
+            .catch(req.next);
+}
+exports.queryAndExpand = queryAndExpand;
 
 function execute(query, inTransaction){
     return inTransaction ?
