@@ -164,7 +164,7 @@
                     </tr>
                     <tr>
                         <td><a href="#operation--applications--id--idSiteModel-get">GET /applications/{id}/idSiteModel</a></td>
-                        <td><p>retrieve a password strength policy from its ID</p>
+                        <td><p>retrieve an application ID site model</p>
         </td>
                     </tr>
                     <tr>
@@ -363,6 +363,21 @@
         </td>
                     </tr>
                     <tr>
+                        <td><a href="#operation--organizations--id--accounts-post">POST /organizations/{id}/accounts</a></td>
+                        <td><p>create a new account</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--organizations--id--accounts-get">GET /organizations/{id}/accounts</a></td>
+                        <td><p>retrieve the organization accounts</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--organizations--id--idSiteModel-get">GET /organizations/{id}/idSiteModel</a></td>
+                        <td><p>retrieve an organization ID site model</p>
+        </td>
+                    </tr>
+                    <tr>
                         <td><a href="#operation--organizations--id--customData-get">GET /organizations/{id}/customData</a></td>
                         <td><p>retrieve custom data</p>
         </td>
@@ -380,29 +395,6 @@
                     <tr>
                         <td><a href="#operation--organizations--id---collection--get">GET /organizations/{id}/{collection}</a></td>
                         <td><p>retrieve a collection sub-resource from the organization</p>
-        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <h3 id="tag-organization" class="swagger-summary-tag">Tag: organization</h3>
-            
-        
-            <table class="table table-bordered table-condensed swagger--summary">
-                <thead>
-                <tr>
-                    <th>Operation</th>
-                    <th>Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><a href="#operation--organizations--id--accounts-post">POST /organizations/{id}/accounts</a></td>
-                        <td><p>create a new account</p>
-        </td>
-                    </tr>
-                    <tr>
-                        <td><a href="#operation--organizations--id--accounts-get">GET /organizations/{id}/accounts</a></td>
-                        <td><p>retrieve the organization accounts</p>
         </td>
                     </tr>
                 </tbody>
@@ -499,34 +491,6 @@
                     </tr>
                 </tbody>
             </table>
-            <h3 id="tag-ID-sites" class="swagger-summary-tag">Tag: ID sites</h3>
-            
-        
-            <table class="table table-bordered table-condensed swagger--summary">
-                <thead>
-                <tr>
-                    <th>Operation</th>
-                    <th>Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><a href="#operation--applications--id--idSiteModel-get">GET /applications/{id}/idSiteModel</a></td>
-                        <td><p>retrieve a password strength policy from its ID</p>
-        </td>
-                    </tr>
-                    <tr>
-                        <td><a href="#operation--idSites--id--get">GET /idSites/{id}</a></td>
-                        <td><p>retrieve an ID site from its ID</p>
-        </td>
-                    </tr>
-                    <tr>
-                        <td><a href="#operation--idSites--id--post">POST /idSites/{id}</a></td>
-                        <td><p>update an ID site</p>
-        </td>
-                    </tr>
-                </tbody>
-            </table>
             <h3 id="tag-saml-service-provider" class="swagger-summary-tag">Tag: saml service provider</h3>
             
         
@@ -546,6 +510,39 @@
                     <tr>
                         <td><a href="#operation--samlServiceProviders--id--defaultRelayStates-post">POST /samlServiceProviders/{id}/defaultRelayStates</a></td>
                         <td><p>generate a default relay state</p>
+        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3 id="tag-ID-sites" class="swagger-summary-tag">Tag: ID sites</h3>
+            
+        
+            <table class="table table-bordered table-condensed swagger--summary">
+                <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="#operation--applications--id--idSiteModel-get">GET /applications/{id}/idSiteModel</a></td>
+                        <td><p>retrieve an application ID site model</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--organizations--id--idSiteModel-get">GET /organizations/{id}/idSiteModel</a></td>
+                        <td><p>retrieve an organization ID site model</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--idSites--id--get">GET /idSites/{id}</a></td>
+                        <td><p>retrieve an ID site from its ID</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--idSites--id--post">POST /idSites/{id}</a></td>
+                        <td><p>update an ID site</p>
         </td>
                     </tr>
                 </tbody>
@@ -5524,7 +5521,7 @@
         <span id="path--applications--id--idSiteModel"></span>
             <div id="operation--applications--id--idSiteModel-get" class="swagger--panel-operation-get panel">
                 <div class="panel-heading">
-                    <div class="operation-summary">retrieve a password strength policy from its ID</div>
+                    <div class="operation-summary">retrieve an application ID site model</div>
                     <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/applications/{id}/idSiteModel</strong></h3>
                         Tags:
                             <a href="#tag-applications">applications</a>, 
@@ -5532,7 +5529,7 @@
                 </div>
                 <div class="panel-body">
                     <section class="sw-operation-description">
-                        <p>retrieve a password strength policy from its ID</p>
+                        <p>retrieve an application ID site model</p>
             
                     </section>
                     
@@ -12935,7 +12932,7 @@
                     <div class="operation-summary">retrieve the organization accounts</div>
                     <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/organizations/{id}/accounts</strong></h3>
                         Tags:
-                            <a href="#tag-organization">organization</a>
+                            <a href="#tag-organizations">organizations</a>
                 </div>
                 <div class="panel-body">
                     <section class="sw-operation-description">
@@ -13089,7 +13086,7 @@
                     <div class="operation-summary">create a new account</div>
                     <h3 class="panel-title"><span class="operation-name">POST</span> <strong>/organizations/{id}/accounts</strong></h3>
                         Tags:
-                            <a href="#tag-organization">organization</a>
+                            <a href="#tag-organizations">organizations</a>
                 </div>
                 <div class="panel-body">
                     <section class="sw-operation-description">
@@ -14048,6 +14045,104 @@
                                                 <div  class="panel panel-definition">
                                                     <div class="panel-body">
                                                                 <a class="json-schema-ref" href="#/definitions/Group">Group</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-default">
+                                        default 
+                                    
+                                    </dt>
+                                    <dd class="sw-response-default">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>error</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/Error">Error</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                </div>
+            </div>    
+        <span id="path--organizations--id--idSiteModel"></span>
+            <div id="operation--organizations--id--idSiteModel-get" class="swagger--panel-operation-get panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">retrieve an organization ID site model</div>
+                    <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/organizations/{id}/idSiteModel</strong></h3>
+                        Tags:
+                            <a href="#tag-organizations">organizations</a>, 
+                            <a href="#tag-ID-sites">ID sites</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        <p>retrieve an organization ID site model</p>
+            
+                    </section>
+                    
+                        <section class="sw-request-params">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-param-name"></th>
+                                    <th class="sw-param-description"></th>
+                                    <th class="sw-param-type"></th>
+                                    <th class="sw-param-data-type"></th>
+                                    <th class="sw-param-annotation"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td>
+                                                id
+                                            <td><p>Resource ID</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td><span class="json-property-type">string</span>    <span class="json-property-format">(uuid)</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Id">#/parameters/Id</a></span>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    
+                        <section class="sw-responses">
+                                <p><a href="#sw-default-produces">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> 
+                                </p>
+                            
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>ID site model found</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/IdSiteModel">IdSiteModel</a>
                                                     </div>
                                                 </div></div>
                                             
