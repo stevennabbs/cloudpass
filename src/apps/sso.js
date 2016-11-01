@@ -38,7 +38,7 @@ function verifyApiKeySignedJwt(token, apiKey){
 }
 
 app.get('/', function(req, res){
-    
+
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
         //the api key is the JWT issuer
@@ -87,7 +87,7 @@ app.get('/', function(req, res){
                         ),
                         payload,
                         apiKey
-                    ); 
+                    );
                 })
                 .spread(function(cookieToken, payload, apiKey){
                     var cookieOptions = {
@@ -151,6 +151,7 @@ function redirectToIdSite(jwtPayload, application, apiKey, res){
                     cb_uri: jwtPayload.cb_uri,
                     state: jwtPayload.state,
                     asnk: jwtPayload.onk,
+                    sof: jwtPayload.sof,
                     ash: as.href,
                     sp_token: 'null' //only to not make stormpath.js crash
                 },
