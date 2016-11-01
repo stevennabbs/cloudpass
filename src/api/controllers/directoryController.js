@@ -13,8 +13,8 @@ var controller = accountStoreController(models.directory, ['create', 'delete']);
 
 controller.create = function(req, res){
     var attributes = req.swagger.params.attributes.value;
-    return models.sequelize.requireTransaction(function(){
-        return controllerHelper.create(
+    controllerHelper.queryAndExpand(
+      () => controllerHelper.create(
                 models.directory,
                 {tenantId: req.user.tenantId},
                 attributes,
@@ -34,31 +34,32 @@ controller.create = function(req, res){
                         true
                     );
                 }
-            });
-        })
-        .then(_.partial(controllerHelper.expand, _, req))
-        .then(res.json.bind(res))
-        .catch(req.next);
+            }),
+      req,
+      res,
+      true
+    );
 };
 
 controller.getProvider = _.partial(controller.getSubResource, 'getProvider');
 
 controller.updateProvider = function(req, res) {
-    models.directory.build({id: req.swagger.params.id.value, tenantId: req.user.tenantId})
-            .getProvider()
-            .tap(function(provider){
-                //'cloudpass' provider is not persited in database and cannot be updated
-                if(provider.providerId !== 'cloudpass'){
-                    return provider.update(
-                        req.swagger.params.newAttributes.value,
-                        //the providerId cannot be changed
-                        {fields:  _.without(models.directoryProvider.getSettableAttributes(), 'providerId')}
-                    );
-                }
-            })
-            .then(_.partial(controllerHelper.expand, _, req))
-            .then(res.json.bind(res))
-            .catch(req.next);
+    controllerHelper.queryAndExpand(
+      () => models.directory.build({id: req.swagger.params.id.value, tenantId: req.user.tenantId})
+                .getProvider()
+                .tap(provider => {
+                    //'cloudpass' provider is not persited in database and cannot be updated
+                    if(provider.providerId !== 'cloudpass'){
+                        return provider.update(
+                            req.swagger.params.newAttributes.value,
+                            //the providerId cannot be changed
+                            {fields:  _.without(models.directoryProvider.getSettableAttributes(), 'providerId')}
+                        );
+                    }
+                }),
+      req,
+      res
+    );
 };
 
 controller.consumeSamlAssertion = function(req, res){

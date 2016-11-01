@@ -175,10 +175,12 @@ function performExpansion(resource, expands){
         });
 }
 
-function expand(resource, req){
-    return performExpansion(resource, parseExpandParam(_.get(req.swagger.params, 'expand.value', '')));
+function execute(query, inTransaction){
+    return inTransaction ?
+            models.sequelize.requireTransaction(query):
+            query();
 }
-exports.expand = expand;
+exports.execute = execute;
 
 function queryAndExpand(query, req, res, inTransaction){
     var expands =  parseExpandParam(_.get(req.swagger.params, 'expand.value', ''));
@@ -194,28 +196,22 @@ function queryAndExpand(query, req, res, inTransaction){
 }
 exports.queryAndExpand = queryAndExpand;
 
-function execute(query, inTransaction){
-    return inTransaction ?
-            models.sequelize.requireTransaction(query):
-            query();
-}
-exports.execute = execute;
-
-function create(model, foreignKeys, attributes, inTransaction){
-    var newInstance = model.fromJSON(
-             _(attributes)
-                .pick(model.getSettableAttributes())
-                .defaults(foreignKeys)
-                .value());
-    return execute(_.ary(newInstance.save.bind(newInstance), 0), inTransaction);
+function create(model, foreignKeys, attributes){
+    return model.fromJSON(
+        _(attributes)
+          .pick(model.getSettableAttributes())
+          .defaults(foreignKeys)
+          .value()
+      )
+      .save();
 }
 exports.create = create;
 
 exports.createAndExpand = function(model, foreignKeys, req, res, inTransaction){
-   return create(model, foreignKeys, req.swagger.params.attributes.value, inTransaction)
-            .then(_.partial(expand, _, req))
-            .then(res.json.bind(res))
-            .catch(req.next);
+  return queryAndExpand(
+      () => create(model, foreignKeys, req.swagger.params.attributes.value),
+      req, res, inTransaction
+   );
 };
 
 function findAndCountAssociation(instance, association, options){

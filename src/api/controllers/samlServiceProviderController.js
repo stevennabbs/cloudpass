@@ -8,10 +8,10 @@ exports.get = function(req, res){
     // SAML service provider ID = application ID
     models.application
         .findById(req.swagger.params.id.value)
-        .then(function(application){
-            ApiError.assert(application, ApiError.NOT_FOUND);
-            res.json(application.getSamlPolicy().getServiceProvider());
-        })
+        .tap(ApiError.assertFound)
+        .call('getSamlPolicy')
+        .call('getServiceProvider')
+        .then(res.json.bind(res))
         .catch(req.next);
 };
 

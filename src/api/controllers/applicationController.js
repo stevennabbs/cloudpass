@@ -19,9 +19,8 @@ controller.create = function(req, res){
     var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
     attributes.tenantId = req.user.tenantId;
 
-    models.sequelize.requireTransaction(function () {
-        //create the application
-        return models.application
+    controllerHelper.queryAndExpand(
+      () => models.application
                 .create(attributes)
                 .tap(function(application){
                     //create a directory if requested
@@ -48,11 +47,10 @@ controller.create = function(req, res){
                                     );
                                 });
                     }
-                });
-    })
-    .then(_.partial(controllerHelper.expand, _, req))
-    .then(res.json.bind(res))
-    .catch(req.next);
+                }),
+      req, res, true
+    );
+
 };
 
 controller.authenticate = function(req, res){
@@ -77,69 +75,68 @@ controller.authenticate = function(req, res){
 };
 
 controller.createPasswordResetToken = function(req, res){
-    accountHelper.findAccount(
-            req.swagger.params.attributes.value.email,
-            req.swagger.params.id.value,
-            _.defaultTo(_.get(req.authInfo, 'onk'), _.get(req.swagger.params.attributes.value.accountStore, 'nameKey')),
-            _.get(req.swagger.params.attributes.value.accountStore, 'href')
-        )
-        .then(function(account){
-            ApiError.assert(account, ApiError, 400, 2016,  'The email property value %s does not match a known resource.', req.swagger.params.attributes.value.email);
-            ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'The account is not enabled');
-            //get the directory with its password policy and email templates
-            return account.getDirectory({
-                include: [{
-                    model: models.passwordPolicy,
-                    include: [{
-                        model: models.emailTemplate,
-                        as: 'resetEmailTemplates'
-                    }]
-                }]
-            })
-            .then(function(directory){
-                ApiError.assert(directory.passwordPolicy.resetEmailStatus === 'ENABLED', ApiError, 400, 400, 'the password reset workflow is not enabled');
+    controllerHelper.queryAndExpand(
+      () => accountHelper.findAccount(
+              req.swagger.params.attributes.value.email,
+              req.swagger.params.id.value,
+              _.defaultTo(_.get(req.authInfo, 'onk'), _.get(req.swagger.params.attributes.value.accountStore, 'nameKey')),
+              _.get(req.swagger.params.attributes.value.accountStore, 'href')
+          )
+          .then(function(account){
+              ApiError.assert(account, ApiError, 400, 2016,  'The email property value %s does not match a known resource.', req.swagger.params.attributes.value.email);
+              ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'The account is not enabled');
+              //get the directory with its password policy and email templates
+              return account.getDirectory({
+                  include: [{
+                      model: models.passwordPolicy,
+                      include: [{
+                          model: models.emailTemplate,
+                          as: 'resetEmailTemplates'
+                      }]
+                  }]
+              })
+              .then(function(directory){
+                  ApiError.assert(directory.passwordPolicy.resetEmailStatus === 'ENABLED', ApiError, 400, 400, 'the password reset workflow is not enabled');
 
-                //create a new token
-                var tokenExpiryDate = new Date();
-                tokenExpiryDate.setHours(tokenExpiryDate.getHours() + directory.passwordPolicy.resetTokenTtl);
+                  //create a new token
+                  var tokenExpiryDate = new Date();
+                  tokenExpiryDate.setHours(tokenExpiryDate.getHours() + directory.passwordPolicy.resetTokenTtl);
 
-                return models.passwordResetToken.create({
-                    tenantId: req.user.tenantId,
-                    applicationId: req.swagger.params.id.value,
-                    accountId: account.id,
-                    email: account.email,
-                    expires: tokenExpiryDate
-                })
-                .tap(function(token){
-                    //asynchronously send an email with the token
-                    sendEmail(
-                        account,
-                        directory,
-                        directory.passwordPolicy.resetEmailTemplates[0],
-                        token.id,
-                        {expirationWindow: directory.passwordPolicy.resetTokenTtl});
-                });
-            });
+                  return models.passwordResetToken.create({
+                      tenantId: req.user.tenantId,
+                      applicationId: req.swagger.params.id.value,
+                      accountId: account.id,
+                      email: account.email,
+                      expires: tokenExpiryDate
+                  })
+                  .tap(function(token){
+                      //asynchronously send an email with the token
+                      sendEmail(
+                          account,
+                          directory,
+                          directory.passwordPolicy.resetEmailTemplates[0],
+                          token.id,
+                          {expirationWindow: directory.passwordPolicy.resetTokenTtl});
+                  });
+              });
 
-        })
-        .then(function(token){
-           return controllerHelper.expand(token, req);
-        })
-        .then(_.bindKey(res, 'json'))
-        .catch(req.next);
+          }),
+          req,
+          res
+        );
 };
 
 controller.getPasswordResetToken = function(req, res){
-    models.passwordResetToken.findOne({
-        where: {
-            id: req.swagger.params.tokenId.value,
-            applicationId: req.swagger.params.id.value
-        }
-    })
-    .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
-    .then(_.partial(controllerHelper.expand, _, req))
-    .then(_.bindKey(res, 'json'))
-    .catch(req.next);
+    controllerHelper.queryAndExpand(
+      () => models.passwordResetToken.findOne({
+                where: {
+                    id: req.swagger.params.tokenId.value,
+                    applicationId: req.swagger.params.id.value
+                }
+            }),
+      req,
+      res
+    );
 };
 
 controller.consumePasswordResetToken = function(req, res){
