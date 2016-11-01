@@ -12,22 +12,13 @@ var ApiError = require('../../ApiError');
 
 var controller = accountStoreController(models.application);
 
-function getSubResource(getter, req, res){
-    return models.application
-        .findById(req.swagger.params.id.value)
-        .tap(ApiError.assertFound)
-        .then(application => application[getter]())
-        .then(_.partial(controllerHelper.expand, _, req))
-        .then(res.json.bind(res))
-        .catch(req.next);
-}
-controller.getIdSiteModel = _.partial(getSubResource, 'getIdSiteModel');
-controller.getSamlPolicy = _.partial(getSubResource, 'getSamlPolicy');
+controller.getIdSiteModel = _.partial(controller.getComputedSubResource, 'getIdSiteModel');
+controller.getSamlPolicy = _.partial(controller.getComputedSubResource, 'getSamlPolicy');
 
 controller.create = function(req, res){
     var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
     attributes.tenantId = req.user.tenantId;
-    
+
     models.sequelize.requireTransaction(function () {
         //create the application
         return models.application
@@ -40,7 +31,7 @@ controller.create = function(req, res){
                             //TODO pick a name that does not already exist
                             createDirectory = req.swagger.params.attributes.value.name;
                         }
-                        
+
                         return models.directory
                                 .create({name: createDirectory, tenantId: req.user.tenantId})
                                 .then(function(directory){
@@ -71,7 +62,7 @@ controller.authenticate = function(req, res){
     ApiError.assert(delimiterIndex > 0, ApiError, 400, 400, 'Invalid value');
     var login = decodedValue.substring(0, delimiterIndex);
     var password = decodedValue.substring((delimiterIndex + 1));
-    
+
     accountHelper.authenticateAccount(
             login,
             password,
@@ -107,11 +98,11 @@ controller.createPasswordResetToken = function(req, res){
             })
             .then(function(directory){
                 ApiError.assert(directory.passwordPolicy.resetEmailStatus === 'ENABLED', ApiError, 400, 400, 'the password reset workflow is not enabled');
-                
+
                 //create a new token
                 var tokenExpiryDate = new Date();
                 tokenExpiryDate.setHours(tokenExpiryDate.getHours() + directory.passwordPolicy.resetTokenTtl);
-                
+
                 return models.passwordResetToken.create({
                     tenantId: req.user.tenantId,
                     applicationId: req.swagger.params.id.value,
@@ -129,7 +120,7 @@ controller.createPasswordResetToken = function(req, res){
                         {expirationWindow: directory.passwordPolicy.resetTokenTtl});
                 });
             });
-                
+
         })
         .then(function(token){
            return controllerHelper.expand(token, req);
@@ -195,7 +186,7 @@ controller.consumePasswordResetToken = function(req, res){
         res.json(expandAccountActionResult(account, req.swagger.params.expand.value));
     })
     .catch(req.next);
-    
+
 };
 
 controller.resendVerificationEmail = function(req, res){
@@ -223,7 +214,7 @@ controller.resendVerificationEmail = function(req, res){
                         account,
                         directory,
                         directory.accountCreationPolicy.verificationEmailTemplates[0],
-                        account.emailVerificationTokenId); 
+                        account.emailVerificationTokenId);
                 });
             }
         })

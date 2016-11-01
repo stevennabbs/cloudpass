@@ -41,13 +41,7 @@ controller.create = function(req, res){
         .catch(req.next);
 };
 
-controller.getProvider = function(req, res){
-    models.directory.build({id: req.swagger.params.id.value, tenantId: req.user.tenantId})
-            .getProvider()
-            .then(_.partial(controllerHelper.expand, _, req))
-            .then(res.json.bind(res))
-            .catch(req.next);
-};
+controller.getProvider = _.partial(controller.getSubResource, 'getProvider');
 
 controller.updateProvider = function(req, res) {
     models.directory.build({id: req.swagger.params.id.value, tenantId: req.user.tenantId})

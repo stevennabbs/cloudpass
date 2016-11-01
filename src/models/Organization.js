@@ -39,18 +39,23 @@ module.exports = function (sequelize, DataTypes) {
                 {
                     unique: true,
                     fields: ['name', 'tenantId']
-                }  
+                }
             ],
+            getterMethods: {
+              idSiteModel: function(){
+                    return {href: this.href+'/idSiteModel'};
+              },
+            },
             instanceMethods: accountStoreWrapperMethods,
             classMethods: {
                 getSearchableAttributes: function(){
-                    return ['id', 'name', 'nameKey', 'description', 'status'];  
+                    return ['id', 'name', 'nameKey', 'description', 'status'];
                 },
                 getSettableAttributes: function(){
-                    return ['name', 'nameKey', 'description', 'status', 'customData'];  
+                    return ['name', 'nameKey', 'description', 'status', 'customData'];
                 },
                 isCustomizable: function(){
-                    return true;  
+                    return true;
                 },
                 associate: function(models) {
                     models.organization.belongsTo(models.tenant, {onDelete: 'cascade'});

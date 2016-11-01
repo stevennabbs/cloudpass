@@ -223,7 +223,7 @@ paths:
       parameters:
         - name: attributes
           description: new application attributes
-          in: body          
+          in: body
           required: true
           schema:
             type: object
@@ -239,7 +239,7 @@ paths:
                 enum:
                   - ENABLED
                   - DISABLED
-        - name: createDirectory 
+        - name: createDirectory
           in: query
           description: either the name of the directory to create and map to the application, or 'true' (then directory name = application name)
           required: false
@@ -367,7 +367,7 @@ paths:
         "200":
           description: login success
           schema:
-            type: object            
+            type: object
         "default":
           description: error
           schema:
@@ -406,7 +406,7 @@ paths:
         "200":
           description: password reset initiated
           schema:
-            $ref: "#/definitions/PasswordResetToken"            
+            $ref: "#/definitions/PasswordResetToken"
         "default":
           description: error
           schema:
@@ -427,7 +427,7 @@ paths:
         "200":
           description: token found
           schema:
-            $ref: "#/definitions/PasswordResetToken"            
+            $ref: "#/definitions/PasswordResetToken"
         "default":
           description: error
           schema:
@@ -640,8 +640,8 @@ paths:
   /applications/{id}/idSiteModel:
     x-swagger-router-controller: applicationController
     get:
-      summary: retrieve a password strength policy from its ID
-      description: retrieve a password strength policy from its ID
+      summary: retrieve an application ID site model
+      description: retrieve an application ID site model
       operationId: getIdSiteModel
       tags:
         - applications
@@ -1082,7 +1082,7 @@ paths:
         "default":
           description: error
           schema:
-            $ref: "#/definitions/Error"    
+            $ref: "#/definitions/Error"
   /directories/{id}/groups:
     x-swagger-router-controller: directoryController
     post:
@@ -1471,7 +1471,7 @@ paths:
         "default":
           description: error
           schema:
-            $ref: "#/definitions/Error"   
+            $ref: "#/definitions/Error"
   /groups/{id}/{collection}:
     x-swagger-router-controller: groupController
     get:
@@ -1770,7 +1770,7 @@ paths:
         "default":
           description: error
           schema:
-            $ref: "#/definitions/Error"   
+            $ref: "#/definitions/Error"
   /accounts/{id}/{collection}:
     x-swagger-router-controller: accountController
     get:
@@ -2334,7 +2334,7 @@ paths:
       parameters:
         - name: attributes
           description: new organization attributes
-          in: body          
+          in: body
           required: true
           schema:
             type: object
@@ -2501,7 +2501,7 @@ paths:
       description: create a new account
       operationId: createAccount
       tags:
-        - organization
+        - organizations
       parameters:
         - $ref: "#/parameters/Id"
         - $ref: "#/parameters/Expand"
@@ -2553,7 +2553,7 @@ paths:
       description: retrieve the organization accounts
       operationId: getAccounts
       tags:
-        - organization
+        - organizations
       parameters:
         - $ref: "#/parameters/Id"
         - $ref: "#/parameters/Offset"
@@ -2565,6 +2565,26 @@ paths:
           description: found
           schema:
             $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /organizations/{id}/idSiteModel:
+    x-swagger-router-controller: organizationController
+    get:
+      summary: retrieve an organization ID site model
+      description: retrieve an organization ID site model
+      operationId: getIdSiteModel
+      tags:
+        - organizations
+        - ID sites
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: ID site model found
+          schema:
+            $ref: "#/definitions/IdSiteModel"
         "default":
           description: error
           schema:
@@ -3703,4 +3723,3 @@ parameters:
     required: false
     type: boolean
     default: true
-   

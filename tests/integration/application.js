@@ -20,7 +20,7 @@ describe('Application', function() {
                 directoryId = res.body.directories.items[0].id;
             });
     });
-    
+
     it('POST to /applications with createDirectory=*name* should create an application and a directory with the provided name', function () {
         var applicationName = init.randomName();
         var directoryName = init.randomName();
@@ -35,7 +35,7 @@ describe('Application', function() {
                 assert.strictEqual(res.body.directories.items[0].name, directoryName);
             });
     });
-    
+
     it('POST to /applications without createDirectory parameter should create an application but no directory', function () {
         var name = init.randomName();
         return init.postRequest('applications')
@@ -48,9 +48,9 @@ describe('Application', function() {
                 assert.strictEqual(res.body.directories.size, 0);
             });
     });
-    
+
   });
-  
+
   describe('Account Store', function(){
     var otherDirectoryId, groupId;
     it('Mapping', function(){
@@ -89,7 +89,7 @@ describe('Application', function() {
                 assert.strictEqual(res.body.groups.items[0].id, groupId);
             });
     });
-    
+
     it('Account creation', function(){
        return init.postRequest('applications/'+applicationId+'/accounts')
             .query({expand: 'directory,groups'})
@@ -107,7 +107,7 @@ describe('Application', function() {
                 assert.strictEqual(res.body.groups.items[0].id, groupId);
             });
     });
-    
+
     it('Group creation', function(){
         return init.postRequest('applications/'+applicationId+'/groups')
             .query({expand: 'directory'})
@@ -118,19 +118,19 @@ describe('Application', function() {
             });
     });
   });
-  
+
   describe('Login attempts', function () {
-     var applicationId;
-     before(function(){
-        return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
-            .query({ name: 'Cloudpass', limit: 1})
-            .expect(200)
-            .then(function(res){
-                applicationId = res.body.items[0].id;
-            });
-     });
-     
-     it('Login attempts must succeed if username and password are correct', function(){
+//      var applicationId;
+//      before(function(){
+//         return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
+//             .query({ name: 'Cloudpass', limit: 1})
+//             .expect(200)
+//             .then(function(res){
+//                 applicationId = res.body.items[0].id;
+//             });
+//      });
+
+     it('Must succeed if username and password are correct', function(){
          return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({
                     type: 'basic',
@@ -142,8 +142,8 @@ describe('Application', function() {
                     assert(res.body.account.href);
                 });
      });
-     
-     it('Login attempt must fail if username or password are incorrect', function(){
+
+     it('Must fail if username or password are incorrect', function(){
         return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({
                     type: 'basic',
@@ -155,8 +155,8 @@ describe('Application', function() {
                     assert.strictEqual(res.body.code, 7100);
                 });
      });
-     
-     it('Login attempt must return the expanded account if requested', function(){
+
+     it('Must return the expanded account if requested', function(){
          return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .query({expand: 'account'})
                 .send({
@@ -166,11 +166,9 @@ describe('Application', function() {
                 .expect(200)
                 .then(function(res){
                     assert.strictEqual(res.body.email, 'test@example.com');
-                    assert.strictEqual(res.body.givenName, 'test');
-                    assert.strictEqual(res.body.surname, 'test');
                 });
      });
-     
+
      it('The specified account store must be taken into account', function(){
         return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({

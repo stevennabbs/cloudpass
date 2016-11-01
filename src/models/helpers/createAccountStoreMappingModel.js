@@ -156,9 +156,16 @@ function afterUpdateOrCreate(mapping){
         if(!_.isEmpty(mappingUpdate)){
             promises.push(
                 this.update(
-                        mappingUpdate,
-                        {where: sequelize.where(sequelize.col(mappedModelFk), mapping[mappedModelFk])}
-                    )
+                  mappingUpdate,
+                  {
+                    where: {
+                      $and: {
+                        id: {$ne: mapping.id},
+                        [mappedModelFk]: mapping[mappedModelFk]
+                      }
+                    }
+                  }
+                )
             );
         }
     }

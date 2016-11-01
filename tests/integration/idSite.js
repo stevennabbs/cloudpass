@@ -7,7 +7,7 @@ describe('idSite', function(){
     var applicationId;
     var idSiteUrl = 'http://www.example.com';
     var callbackUrl = 'http://www.example.com/callback';
-    
+
     before(function(){
         //set the ID site URL
         return init.getRequest('tenants/'+init.apiKey.tenantId+'/idSites')
@@ -28,7 +28,7 @@ describe('idSite', function(){
                 });
         });
     });
-    
+
     describe('login', function(){
         it('in application', function(){
             return init.getIdSiteBearer(applicationId, callbackUrl)
@@ -74,10 +74,11 @@ describe('idSite', function(){
                     assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
                 });
             });
-            
+
             it('in organization', function(){
                 //create an organization an map it the the application
                 var organizationName = init.randomName();
+                var organizationId;
                 return init.postRequest('organizations')
                     .send({
                         name: organizationName,
@@ -85,6 +86,7 @@ describe('idSite', function(){
                     })
                     .expect(200)
                     .then(function(res){
+                        organizationId = res.body.id;
                         return init.postRequest('accountStoreMappings')
                             .send({
                                 application:{href: '/applications/'+applicationId},
@@ -94,6 +96,19 @@ describe('idSite', function(){
                     })
                     .then(function(){
                         return init.getIdSiteBearer(applicationId, callbackUrl, organizationName);
+                    })
+                    .tap(function(bearer){
+                       //the bearer should give access to the organization & its ID site model
+                       return request(init.app).get('/v1/organizations/'+organizationId)
+                                .set('authorization', 'Bearer '+bearer)
+                                .query({ expand: 'idSiteModel'})
+                                .expect(200)
+                                .then(res => {
+                                   assert.strictEqual(res.body.name, organizationName);
+                                   assert(res.body.idSiteModel.hasOwnProperty('providers'));
+                                   assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
+                                   assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
+                                 })
                     })
                     .then(function(bearer){
                         //Cloudpass should return a 4000 because the account is not in this organization
@@ -107,7 +122,7 @@ describe('idSite', function(){
                     });
             });
     });
-    
+
     it('logout', function(){
         return init.getIdSiteJwtRequest(applicationId, callbackUrl)
                 .then(function(jwtRequest){
@@ -124,7 +139,7 @@ describe('idSite', function(){
                     assert.strictEqual(res.header['set-cookie'][0].split(';')[0].split('=')[1], '');
                 });
     });
-    
+
     it('Requests with bearer authorization must have a limited scope', function(){
         return init.getIdSiteBearer(applicationId, callbackUrl)
                 .then(function(bearer){
@@ -134,7 +149,7 @@ describe('idSite', function(){
                         .toPromise();
                 });
     });
-    
+
     it('ID site model must be exposed by applications', function(){
         return init.getRequest('applications/'+applicationId+'/idSiteModel')
                 .expect(200)

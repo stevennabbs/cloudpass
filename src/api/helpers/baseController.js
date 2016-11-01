@@ -1,6 +1,7 @@
 "use strict";
 
 var _ = require('lodash');
+var Optional = require('optional-js');
 var controllerHelper = require('./controllerHelper');
 var ApiError = require('../../ApiError');
 var models = require('../../models');
@@ -8,9 +9,12 @@ var models = require('../../models');
 module.exports = function (model, transactionalMethods) {
     return {
         create: function(req, res){
-            var foreignKeys = {};
-            foreignKeys[model.getAclAttribute()] = req.user.tenantId;
-            return controllerHelper.createAndExpand(model, foreignKeys, req, res, _.includes(transactionalMethods, 'create'));
+           return controllerHelper.createAndExpand(
+             model,
+             {[model.getAclAttribute()]: req.user.tenantId},
+             req,
+             res,
+             _.includes(transactionalMethods, 'create'));
         },
         //get a resource by id (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb)
         get: function (req, res) {
@@ -30,20 +34,22 @@ module.exports = function (model, transactionalMethods) {
                 .catch(req.next);
         },
         update: function(req, res){
-            return controllerHelper.execute(
-                function(){
-                   return model
-                    .findById(req.swagger.params.id.value)
-                    .tap(ApiError.assertFound)
-                    .then(function(resource){
-                        return resource.update(req.swagger.params.newAttributes.value, {fields:  model.getSettableAttributes()});
-                    }); 
-                },
-                _.includes(transactionalMethods, 'update')
-            )
-            .then(_.partial(controllerHelper.expand, _, req))
-            .then(res.json.bind(res))
-            .catch(req.next);
+            return controllerHelper.queryAndExpand(
+                      () => model.findById(req.swagger.params.id.value)
+                              .tap(ApiError.assertFound)
+                              .then(resource =>
+                                  resource.update(
+                                    _.mapValues(
+                                       req.swagger.params.newAttributes.value,
+                                       v => Optional.ofNullable(v).map(_.property('href')).map(models.resolveHref).orElse(v)
+                                    ),
+                                    {fields:  model.getSettableAttributes()}
+                                  )
+                              ),
+                      req,
+                      res,
+                      _.includes(transactionalMethods, 'update')
+                   );
         },
         updateCustomData: function(req, res){
             return model
@@ -97,6 +103,26 @@ module.exports = function (model, transactionalMethods) {
                     }
                 })
                 .catch(req.next);
+        },
+        //get a sub resource whose computation depends on attributes of the resource
+        //(e.g. idSiteModel)
+        getComputedSubResource: function(getter, req, res){
+          return controllerHelper.queryAndExpand(
+             () => model.findById(req.swagger.params.id.value)
+                          .tap(ApiError.assertFound)
+                          .then(instance => instance[getter]()),
+             req,
+             res
+          );
+        },
+        //get a sub resource wich can be queried only from the ID of the resource
+        //(e.g. directory providers)
+        getSubResource: function(getter, req, res){
+          return  controllerHelper.queryAndExpand(
+            () => model.build({id: req.swagger.params.id.value, tenantId: req.user.tenantId})[getter](),
+            req,
+            res
+          );
         }
     };
 };
