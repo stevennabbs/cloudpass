@@ -77,13 +77,13 @@ function redirectAfterLoginAttempts(req, res){
             if(_.has(result, 'account.href')){
                 getApiKey(
                     req.authInfo.sub,
-                    [{
+                    {
                         model: models.tenant,
                         include: [{
                             model: models.idSite,
                             limit: 1
                         }]
-                    }]
+                    }
                 )
                 .then(function(apiKey){
                     return getJwtResponse(

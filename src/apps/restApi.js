@@ -19,7 +19,7 @@ var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
 var ApiError = require('../ApiError.js');
 var getApiKey = require('./helpers/getApiKey');
-var passportSsacl = require('./helpers/passportSsacl');
+var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
 
 module.exports = function(secret){
     var logger = winston.loggers.get('http');
@@ -105,16 +105,16 @@ module.exports = function(secret){
                     req.rawBody = buf;
                 }
             }));
-            app.use(passport.initialize());
             app.use(bodyParser.urlencoded({ extended: false }));
+            app.use(passport.initialize());
 
             //redirects to SAML idP can either be initiated from the application (with an access token)
             //or from the ID site (with an authorization bearer)
-            app.use('/applications/:id/saml/sso/idpRedirect', passportSsacl('access-token-jwt', 'bearer-jwt'));
+            app.use('/applications/:id/saml/sso/idpRedirect', ssaclAuthenticate('access-token-jwt', 'bearer-jwt'));
             //SAML SSO post endpoint can only be used by IdPs (with a 'relay state' post param)
-            app.use('/directories/:id/saml/sso/post', passportSsacl('relay-state-jwt'));
+            app.use('/directories/:id/saml/sso/post', ssaclAuthenticate('relay-state-jwt'));
             //use SAuthc1, bearer, cookie or basic authentication for all other requests
-            app.use(passportSsacl('sauthc1', 'bearer-jwt', 'jwt-cookiecombo', 'basic'));
+            app.use(ssaclAuthenticate('sauthc1', 'bearer-jwt', 'jwt-cookiecombo', 'basic'));
 
             //check if the authorized request scope match the current request
             app.use(scopeChecker);
