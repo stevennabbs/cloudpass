@@ -12,6 +12,7 @@ var scopeHelper = require('./helpers/scopeHelper');
 var idSiteHelper = require('./helpers/idSiteHelper');
 var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
 var sendJwtResponse = require('./helpers/sendJwtResponse');
+var errorHandler = require('./helpers/errorHandler');
 var ApiError = require('../ApiError');
 var JwtStrategy = require('./authentication/JwtStrategy');
 
@@ -67,7 +68,7 @@ app.get('/', function(req, res){
                 }
                 return redirectToIdSite(req.authInfo, application, accountStore, req.user, res);
             })
-            .catch(res.next);
+            .catch(req.next);
 
     } else if (req.query.jwtResponse) {
         //the user was redirected from the ID site to here, and we must redirect it back to the application
@@ -104,25 +105,27 @@ app.get('/logout', function(req, res){
       .send();
 });
 
+app.use(errorHandler);
+
 function redirectToIdSite(jwtPayload, application, accountStore, apiKey, res){
-    jwt.signAsync(
-          {
-              init_jti: jwtPayload.jti,
-              scope: scopeHelper.getIdSiteScope(application, accountStore),
-              app_href: jwtPayload.sub,
-              cb_uri: jwtPayload.cb_uri,
-              state: jwtPayload.state,
-              asnk: jwtPayload.onk,
-              sof: jwtPayload.sof,
-              ash: accountStore.href,
-              sp_token: 'null' //only to not make stormpath.js crash
-          },
-          apiKey.secret,
-          {
-              expiresIn: 60,
-              subject: jwtPayload.iss,
-              audience: 'idSite'
-          }
+    return jwt.signAsync(
+        {
+            init_jti: jwtPayload.jti,
+            scope: scopeHelper.getIdSiteScope(application, accountStore),
+            app_href: jwtPayload.sub,
+            cb_uri: jwtPayload.cb_uri,
+            state: jwtPayload.state,
+            asnk: jwtPayload.onk,
+            sof: jwtPayload.sof,
+            ash: accountStore.href,
+            sp_token: 'null' //only to not make stormpath.js crash
+        },
+        apiKey.secret,
+        {
+            expiresIn: 60,
+            subject: jwtPayload.iss,
+            audience: 'idSite'
+        }
     )
     .then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send());
 }
