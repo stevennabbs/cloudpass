@@ -17,12 +17,11 @@ var JwtStrategy = require('./authentication/JwtStrategy');
 var idSiteHelper = require('./helpers/idSiteHelper');
 var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
-var ApiError = require('../ApiError.js');
 var getApiKey = require('./helpers/getApiKey');
 var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
+var errorHandler = require('./helpers/errorHandler');
 
 module.exports = function(secret){
-    var logger = winston.loggers.get('http');
     
     // register SAuthc1 authentication strategy
     passport.use(new SAuthc1Strategy(config.get('server.rootUrl')));
@@ -98,7 +97,7 @@ module.exports = function(secret){
         .then(function(swaggerExpress){
 
             var app = express();
-            app.use(morgan("tiny", { stream: {write: _.flow(_.nthArg(0), logger.info)}}));
+            app.use(morgan("tiny", { stream: {write: _.flow(_.nthArg(0), winston.loggers.get('http').info)}}));
             //Sauthc1 needs the raw body
             app.use(bodyParser.json({
                 verify: function(req, res, buf) {
@@ -126,32 +125,7 @@ module.exports = function(secret){
             swaggerExpress.register(app);
 
             // Custom error handler that return JSON errors
-            app.use(function (err, req, res, next) {
-                if (res.headersSent) {
-                    return next(err);
-                }
-                var error;
-                if(err.allowedMethods){
-                    //HTTP method not suported
-                    error = new ApiError(405, 405, 'Request method \''+req.method+'\' not supported (supported method(s): '+err.allowedMethods.join()+')');
-                } else if(err.statusCode === 400 || _.startsWith(err.message, 'Validation error') || err.name === 'SequelizeValidationError'){
-                    //ill-formed query or sequelize validation error
-                    error = ApiError.BAD_REQUEST(_.isEmpty(err.errors)?err.message:err.errors[0].message);
-                } else if (err.failedValidation){
-                    //swagger validation errors, keep the first one
-                    error = ApiError.BAD_REQUEST(_.isEmpty(err.results)?err.message:err.results.errors[0].message);
-                } else if(err.name === 'SequelizeUniqueConstraintError'){
-                    error = new ApiError(400, 2001, err.errors.length > 0 ? err.errors[0].message+' ('+err.errors[0].value+')': err.message);
-                } else {
-                    error = ApiError.FROM_ERROR(err);
-                }
-                if(error.status === 500){
-                    logger.error('Unexpected error:', err.stack);
-                } else {
-                    logger.verbose('Request failed:', err.stack);
-                }
-                error.write(res);
-            });
+            app.use(errorHandler);
 
             return app;
     });

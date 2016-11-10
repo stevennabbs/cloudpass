@@ -1,7 +1,7 @@
 var assert = require("assert");
 var init = require('./init');
 var BluebirdPromise = require('sequelize').Promise;
-var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
+var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
 var readFile = BluebirdPromise.promisify(require("fs").readFile);
 var request = require('supertest-as-promised');
 var url = require('url');
@@ -200,14 +200,7 @@ describe('SAML', function(){
                                 .expect(302);
                         })
                         .then(function(res){
-                            //cloudpass should redirect to its /sso enpoint with a jwtResponse query param to set a cookie
-                            var redirectLocationStart = '../../../../../sso';
-                            assert(res.headers.location.startsWith(redirectLocationStart));
-                            return request(init.app).get('/sso' + res.headers.location.substring(redirectLocationStart.length))
-                                .expect(302);
-                        })
-                        .then(function(res){
-                            //now we should be redirected to the callback URL
+                            //we should be redirected to the callback URL
                             assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
                             //the account should have been updated from the SAML assertions
                             return init.getRequest('applications/'+applicationId+'/accounts')
@@ -228,7 +221,7 @@ describe('SAML', function(){
             }
             
             it('via IdP redirect', function(){
-                return signJwt(
+                return jwt.signAsync(
                     {cb_uri: callbackUrl},
                     init.apiKey.secret,
                     {
@@ -265,7 +258,7 @@ describe('SAML', function(){
                             .expect(200);
                     })
                     .then(function(){
-                        return signJwt(
+                        return jwt.signAsync(
                             {
                                 cb_uri: callbackUrl,
                                 onk: organizationName
@@ -279,10 +272,21 @@ describe('SAML', function(){
                         );
                     })
                     .then(function(accessToken){
-                        //we should get a 404 because Cloudpass cannot find a SAML provider associated to the organization
+                        //cloudpass should redirect stracight to the callback_uri with an error
+                        // because it cannot find a SAML provider associated to the organization
                         return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                             .query({ accessToken: accessToken})
-                            .expect(404);
+                            .expect(302);
+                    })
+                    .then(function(res){
+                        var locationStart = callbackUrl+'?jwtResponse=';
+                        assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                        var jwtResponse = res.header.location.substring(locationStart.length);
+                        return jwt.verifyAsync(jwtResponse, init.apiKey.secret);
+                    })
+                    .then(function(payload){
+                        assert(payload.err);
+                        assert.strictEqual(payload.err.status, 404);
                     });
             });
         

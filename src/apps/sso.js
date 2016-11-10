@@ -5,13 +5,13 @@ var cookieParser = require('cookie-parser');
 var moment = require('moment');
 var BluebirdPromise = require('sequelize').Promise;
 var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
-var url = require('url');
 var _ = require('lodash');
 var passport = require('passport');
 var models = require('../models');
 var scopeHelper = require('./helpers/scopeHelper');
 var idSiteHelper = require('./helpers/idSiteHelper');
 var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
+var sendJwtResponse = require('./helpers/sendJwtResponse');
 var ApiError = require('../ApiError');
 var JwtStrategy = require('./authentication/JwtStrategy');
 
@@ -58,9 +58,7 @@ app.get('/', function(req, res){
                         .spread(function(account){
                             ApiError.assert(account, 'account not found in account store');
                             return idSiteHelper.getJwtResponse(req.user, req.authInfo.cb_uri, req.authInfo.jti, false, account.href, req.authInfo.state)
-                                .then(function(redirectUrl){
-                                    res.status(302).location(addParamToUri(req.authInfo.cb_uri, 'jwtResponse', redirectUrl)).send();
-                                });
+                                    .then(sendJwtResponse(res, req.authInfo.cb_uri));
                         })
                         .catch(function(){
                             // jwt expired or the account does not belong to the account store => re-authentication required
@@ -83,7 +81,6 @@ app.get('/', function(req, res){
             }
         )
         .then(function(cookieToken){
-          console.log('cccccc');
             var cookieOptions = {
                 httpOnly: true,
                 path: '/sso'
@@ -92,7 +89,7 @@ app.get('/', function(req, res){
                 cookieOptions.maxAge =  moment.duration(req.user.tenant.idSites[0].sessionTtl).asMilliseconds();
             }
             res.cookie(req.user.tenant.id, cookieToken, cookieOptions);
-            res.status(302).location(addParamToUri(req.authInfo.cb_uri, 'jwtResponse', req.query.jwtResponse)).send();
+            sendJwtResponse(res, req.authInfo.cb_uri)(req.query.jwtResponse);
         })
         .catch(req.next);
     } else {
@@ -106,23 +103,6 @@ app.get('/logout', function(req, res){
       .location(req.authInfo.cb_uri)
       .send();
 });
-
-function addParamToUri(uri, paramName, paramValue){
-    //just replace the placeholder if it exists
-    var placeHolder = '${'+paramName+'}';
-    if(uri.includes(placeHolder)){
-        return uri.replace(placeHolder, paramValue);
-    }
-    //else, either add the param to existing params
-    //or add a query string to the uri if no param exist
-    var parsed = url.parse(uri);
-    if(parsed.search){
-        parsed.search+='&'+paramName+'='+paramValue;
-    } else {
-        parsed.search='?'+paramName+'='+paramValue;
-    }
-    return url.format(parsed);
-}
 
 function redirectToIdSite(jwtPayload, application, accountStore, apiKey, res){
     jwt.signAsync(

@@ -108,10 +108,10 @@ describe('idSite', function(){
                                    assert(res.body.idSiteModel.hasOwnProperty('providers'));
                                    assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
                                    assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
-                                 })
+                                 });
                     })
                     .then(function(bearer){
-                        //Cloudpass should return a 4000 because the account is not in this organization
+                        //Cloudpass should return a 400 because the account is not in this organization
                         return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
                             .set('authorization', 'Bearer '+bearer)
                             .send({

@@ -7,6 +7,7 @@ var accountStoreController = require('../helpers/accountStoreController');
 var controllerHelper = require('../helpers/controllerHelper');
 var samlHelper = require('../helpers/samlHelper');
 var models = require('../../models');
+var sendJwtResponse = require('../../apps/helpers/sendJwtResponse');
 
 
 var controller = accountStoreController(models.directory, ['create', 'delete']);
@@ -127,12 +128,7 @@ controller.consumeSamlAssertion = function(req, res){
             }
         );
     })
-    .then(function(jwtResponse){
-        res.redirect('../../../../../sso?jwtResponse='+jwtResponse);
-    })
-    .catch(function(){
-        res.redirect(req.authInfo.cb_uri);
-    });
+    .then(sendJwtResponse(res, req.authInfo.cb_uri));
 };
 
 module.exports = controller;
