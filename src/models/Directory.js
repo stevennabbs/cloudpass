@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
-var sendEmail = require('../sendEmail');
+var sendEmail = require('../helpers/sendEmail');
 var Optional = require('optional-js');
 
 module.exports = function (sequelize, DataTypes) {

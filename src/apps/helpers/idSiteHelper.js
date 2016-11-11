@@ -5,7 +5,7 @@ var _ = require('lodash');
 var shimmer = require('shimmer');
 var getApiKey = require('./getApiKey');
 var models = require('../../models');
-var hrefHelper = require('../../models/helpers/hrefHelper');
+var hrefHelper = require('../../helpers/hrefHelper');
 
 
 exports.idSiteHeaders = function(req, res){

@@ -8,7 +8,7 @@ var _ = require('lodash');
 var Umzug = require('umzug');
 var Optional = require('optional-js');
 var ApiError = require('../ApiError');
-var hrefHelper = require('./helpers/hrefHelper');
+var hrefHelper = require('../helpers/hrefHelper');
 var winston = require('winston');
 
 
@@ -226,14 +226,12 @@ db.useSsacl = function(ssacl, cls){
         if(value.getAclAttribute){
             var aclAttribute = value.getAclAttribute();
             ssacl(
-                    value,
-                    {
-                        cls: cls,
-                        //paranoia: false,
-                        read: {attribute: aclAttribute},
-                        write: {attribute: aclAttribute}
-                    }
-                    
+                value,
+                {
+                    cls: cls,
+                    read: {attribute: aclAttribute},
+                    write: {attribute: aclAttribute}
+                }
             );
         }
     });

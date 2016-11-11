@@ -4,7 +4,7 @@ var _ = require('lodash');
 var Optional = require('optional-js');
 var accountStoreWrapperMethods = require('./helpers/accountStoreWrapperMethods');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
-var hrefHelper = require('./helpers/hrefHelper');
+var hrefHelper = require('../helpers/hrefHelper');
 var ApiError = require('../ApiError');
 
 module.exports = function (sequelize, DataTypes) {

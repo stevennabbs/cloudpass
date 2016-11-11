@@ -1,6 +1,5 @@
 var assert = require("assert");
 var models = require('../../src/models');
-var hrefHelper = require('../../src/models/helpers/hrefHelper');
 
 describe('models', function(){
    it('resolveHref', function(){

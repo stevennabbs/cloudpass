@@ -15,6 +15,7 @@ var sendJwtResponse = require('./helpers/sendJwtResponse');
 var errorHandler = require('./helpers/errorHandler');
 var ApiError = require('../ApiError');
 var JwtStrategy = require('./authentication/JwtStrategy');
+var hrefHelper = require('../helpers/hrefHelper');
 
 
 function ssoStrategy(queryParameter, apiKeyIdPath){
@@ -117,8 +118,10 @@ function redirectToIdSite(jwtPayload, application, accountStore, apiKey, res){
             state: jwtPayload.state,
             asnk: jwtPayload.onk,
             sof: jwtPayload.sof,
-            ash: accountStore.href,
-            sp_token: 'null' //only to not make stormpath.js crash
+            //qualify the account store href
+            ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
+            //only to not make stormpath.js crash
+            sp_token: 'null'
         },
         apiKey.secret,
         {

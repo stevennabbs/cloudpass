@@ -7,7 +7,7 @@ var baseController = require('../helpers/baseController');
 var ApiError = require('../../ApiError');
 var models = require('../../models');
 var config = require('config');
-var sendEmail = require('../../sendEmail');
+var sendEmail = require('../../helpers/sendEmail');
 
 var invitationBaseUrl = Optional.ofNullable(config.get('server.rootUrl')).orElseGet(function(){return 'http://'+require('os').hostname()+':'+config.get('server.port');}) +'/ui/';
 var invitationSender =  config.has('email.transport.options.auth.user')?config.get('email.transport.options.auth.user'):'support@cloudpass.com';

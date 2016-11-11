@@ -5,7 +5,7 @@ var controllerHelper = require('../helpers/controllerHelper');
 var baseController = require('../helpers/baseController');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
-var sendEmail = require('../../sendEmail');
+var sendEmail = require('../../helpers/sendEmail');
 
 var controller = baseController(models.account);
 

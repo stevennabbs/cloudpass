@@ -1,5 +1,5 @@
 var assert = require("assert");
-var getMandrillFields = require('rewire')('../../src/sendEmail').__get__('getMandrillFields');
+var getMandrillFields = require('rewire')('../../src/helpers/sendEmail').__get__('getMandrillFields');
 
 describe('sendEmail', function(){
     it('getMandrillFields', function(){

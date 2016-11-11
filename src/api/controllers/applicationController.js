@@ -6,7 +6,7 @@ var controllerHelper = require('../helpers/controllerHelper');
 var accountStoreController = require('../helpers/accountStoreController');
 var accountHelper = require('../helpers/accountHelper');
 var samlHelper = require('../helpers/samlHelper');
-var sendEmail = require('../../sendEmail');
+var sendEmail = require('../../helpers/sendEmail');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
 
