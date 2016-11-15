@@ -1,6 +1,6 @@
 'use strict';
 
-var scopeHelper = require('./scopeHelper');
+var scopeHelper = require('../../helpers/scopeHelper');
 var parseExpandParam = require('../../api/helpers/controllerHelper').parseExpandParam;
 
 function isPathAllowed(path, method, allowedPaths) {

@@ -2024,8 +2024,9 @@ paths:
                 enum:
                   - text/plain
                   - text/html
-              mandrillTemplate:
-                type: string
+# commented out because swagger doesn't allow null values                  
+#              mandrillTemplate:
+#                type: string
               defaultModel:
                 type: object
                 required:
@@ -3337,7 +3338,6 @@ definitions:
       - htmlBody
       - textBody
       - mimeType
-      - mandrillTemplate
     properties:
       href:
         type: string

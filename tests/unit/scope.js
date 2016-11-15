@@ -1,15 +1,15 @@
 var assert = require("assert");
-var scopeHelper = require('../../src/apps/helpers/scopeHelper');
+var scopeHelper = require('../../src/helpers/scopeHelper');
 var isRequestAllowed = require('rewire')('../../src/apps/helpers/scopeChecker').__get__('isRequestAllowed');
 
 var scope = {
     applications: {
         $id: [
-            'read',
-            'write',
-            {'loginAttempts': 'create'},
-            {'idSiteModel': 'read'},
-            {'accounts': 'delete'}
+            'get',
+            'post',
+            {'loginAttempts': ['post']},
+            {'idSiteModel': ['get']},
+            {'accounts': ['delete']}
         ]
     }
 };
@@ -63,20 +63,31 @@ describe('scope', function () {
     });
 
     describe('scopeHelper.scopeToPaths', function () {
-        it('should correctly converts bearer scopes into API endpoint paths', function () {
-
-
-            var paths = scopeHelper.scopeToPaths(scope);
+        it('should converts bearer scopes into API endpoint paths', function () {
             assert.deepStrictEqual(
-                    paths,
-                    {
-                        '/applications/$id': ['get', 'post'],
-                        '/applications/$id/loginAttempts': ['post'],
-                        '/applications/$id/idSiteModel': ['get'],
-                        '/applications/$id/accounts': ['delete']
-                    }
+                scopeHelper.scopeToPaths(scope),
+                {
+                    '/applications/$id': ['get', 'post'],
+                    '/applications/$id/loginAttempts': ['post'],
+                    '/applications/$id/idSiteModel': ['get'],
+                    '/applications/$id/accounts': ['delete']
+                }
             );
         });
+    });
+
+    describe('scopeHelper.pathsToScope', function(){
+      it('should converts API enpoint paths into bearer scopes', function(){
+        assert.deepStrictEqual(
+              scopeHelper.pathsToScope({
+                  '/applications/$id': ['get', 'post'],
+                  '/applications/$id/loginAttempts': ['post'],
+                  '/applications/$id/idSiteModel': ['get'],
+                  '/applications/$id/accounts': ['delete']
+              }),
+              scope
+          );
+      })
     });
 
     describe('scopeChecker', function () {

@@ -68,6 +68,9 @@ exports.getIdSiteBearer = function(applicationId, callbackUrl, organizationName)
         });
 };
 
+exports.adminUser = 'test@example.com';
+exports.adminPassword = 'Aa123456';
+
 before(function(){
     return require('../../src/main')
         .then(function(app){
@@ -76,10 +79,10 @@ before(function(){
             return request(app)
                 .post('/registration')
                 .send('tenantNameKey=test-tenant')
-                .send('email=test@example.com')
+                .send('email='+exports.adminUser)
                 .send('givenName=test')
                 .send('surname=test')
-                .send('password=Aa123456')
+                .send('password='+exports.adminPassword)
                 .expect(204)
                 .toPromise();
         })

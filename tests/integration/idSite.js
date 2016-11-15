@@ -1,5 +1,8 @@
+'use strict';
+
 var assert = require("assert");
 var BluebirdPromise = require('sequelize').Promise;
+var jwt = require('jsonwebtoken');
 var request = require('supertest-as-promised');
 var init = require('./init');
 
@@ -7,8 +10,11 @@ describe('idSite', function(){
     var applicationId;
     var idSiteUrl = 'http://www.example.com';
     var callbackUrl = 'http://www.example.com/callback';
+    var mailServer;
 
     before(function(){
+         //start the SMTP server
+        mailServer = init.getMailServer();
         //set the ID site URL
         return init.getRequest('tenants/'+init.apiKey.tenantId+'/idSites')
             .query({limit: 1})
@@ -21,12 +27,26 @@ describe('idSite', function(){
         }).then(function(){
             //get the admin application
             return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
-                .query({ name: 'Cloudpass', limit: 1})
+                .query({ name: 'Cloudpass', limit: 1, expand: 'defaultAccountStoreMapping'})
                 .expect(200)
                 .then(function(res){
                     applicationId = res.body.items[0].id;
+                    return init.getRequest('directories/'+res.body.items[0].defaultAccountStoreMapping.accountStoreId)
+                              .query({expand: 'passwordPolicy'})
+                              .expect(200);
+                })
+                .then(function(res){
+                  //enable password reset workflow
+                  return init.postRequest('passwordPolicies/' + res.body.passwordPolicy.id)
+                    .send({resetEmailStatus: 'ENABLED'})
+                    .expect(200);
                 });
         });
+    });
+  
+    after(function () {
+      //stop the SMTP server
+      mailServer.stop();
     });
 
     describe('login', function(){
@@ -37,7 +57,7 @@ describe('idSite', function(){
                         .set('authorization', 'Bearer '+bearer)
                         .send({
                             type: 'basic',
-                            value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
+                            value: new Buffer(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
                         })
                         .expect(200)
                         .toPromise();
@@ -138,6 +158,29 @@ describe('idSite', function(){
                     //cookie should be empty
                     assert.strictEqual(res.header['set-cookie'][0].split(';')[0].split('=')[1], '');
                 });
+    });
+  
+    it('password reset', function(){
+      return init.getIdSiteBearer(applicationId, callbackUrl)
+        .then(function(bearer){
+           return BluebirdPromise.join(
+              init.getEmailPromise(mailServer, init.adminUser),
+              request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens')
+                  .set('authorization', 'Bearer '+bearer)
+                  .send({email: init.adminUser})
+                  .expect(200)
+           ).spread(function(email){
+              let jwtParam = /\/#\/reset\?jwt=(.*?)\n/.exec(email.body)[1];
+              assert(jwtParam);
+              let spToken = jwt.decode(jwtParam).sp_token;
+              assert(spToken);
+              return request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+spToken)
+                  .set('authorization', 'Bearer '+jwtParam)
+                  .send({password: init.adminPassword})
+                  .expect(200)
+                  .toPromise()
+           });
+       });
     });
 
     it('Requests with bearer authorization must have a limited scope', function(){

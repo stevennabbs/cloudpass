@@ -14,11 +14,11 @@ var authorization = require('auth-header');
 var winston = require('winston');
 var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
 var JwtStrategy = require('./authentication/JwtStrategy');
-var idSiteHelper = require('./helpers/idSiteHelper');
 var scopeChecker = require('./helpers/scopeChecker');
 var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
 var getApiKey = require('./helpers/getApiKey');
 var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
+var applyIdSiteMiddleware = require('./helpers/applyIdSiteMiddleware');
 var errorHandler = require('./helpers/errorHandler');
 
 module.exports = function(secret){
@@ -118,8 +118,8 @@ module.exports = function(secret){
             //check if the authorized request scope match the current request
             app.use(scopeChecker);
 
-            //add some custom headers for ID sites
-            app.use(idSiteHelper.idSiteHeaders);
+            //apply special behaviour for ID sites
+            applyIdSiteMiddleware(app);
 
             // register swagger API
             swaggerExpress.register(app);

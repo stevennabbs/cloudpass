@@ -106,9 +106,9 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 getIdSiteScope: function(){
                     return [
-                        "read",
-                        { idSiteModel: [ "read" ] },
-                        { accounts: [ "create" ] }
+                        "get",
+                        { idSiteModel: [ "get" ] },
+                        { accounts: [ "post" ] }
                     ];
                 }
             }
