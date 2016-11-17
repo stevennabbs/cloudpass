@@ -299,8 +299,8 @@ Cloudpass is a work in progress and these features are not yet available. Let us
 - A user interface
 - Social login (other than SAML)
 - Oauth token generation
-- password reset & account creation from ID sites
 - Account linking
+- Email white & black listing
 - Multi Factor authentication
 
 ## Development
