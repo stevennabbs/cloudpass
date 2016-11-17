@@ -94,6 +94,7 @@ There are four configuration sections: *server*, *persistence*, *email* and *log
   If `rootUrl` is left null, all hrefs will be relatives (e.g `/tenants/foo`). This should be fine in most cases. However:
     - this is not necessarily well supported by Stormpath clients. In particular, we had issues with `delete` operations on the Java client. If you are interested, there is a [fork](https://github.com/dhatim/stormpath-sdk-java) fixing this issue.
     - if you mount Cloudpass after one or more path segments (e.g. `htpp://www.example.com/my/cloudpass/instance/`) and use [Sauthc1 authentication](https://github.com/stormpath/stormpath-sdk-spec/blob/master/specifications/algorithms/sauthc1.md) (which is the default method on Stormpath clients), then you must provide a rootUrl. It is because Sauthc1 uses the request path to compute its hash.
+    - ID Sites makes queries on `href`s so you must also provide a rootUrl if you use it.
 
 - `server.port`: the port on which cloudpass listens.
 - `clustering`: Set to true to cluster the application in a number of procesess equals to the number of CPU cores (but not more than 4) to speed up response time.
