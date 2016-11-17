@@ -1,7 +1,7 @@
 var assert = require("assert");
-var getMandrillFields = require('rewire')('../../src/helpers/sendEmail').__get__('getMandrillFields');
+var getMandrillFields = require('rewire')('../../src/helpers/email').__get__('getMandrillFields');
 
-describe('sendEmail', function(){
+describe('send', function(){
     it('getMandrillFields', function(){
         var templateName = 'template-name';
         assert.deepStrictEqual(

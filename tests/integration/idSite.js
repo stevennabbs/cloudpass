@@ -22,8 +22,7 @@ describe('idSite', function(){
             .then(function(res){
                 return init.postRequest('idSites/'+res.body.items[0].id)
                         .send({url: idSiteUrl})
-                        .expect(200)
-                        .toPromise();
+                        .expect(200);
         }).then(function(){
             //get the admin application
             return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
@@ -32,14 +31,19 @@ describe('idSite', function(){
                 .then(function(res){
                     applicationId = res.body.items[0].id;
                     return init.getRequest('directories/'+res.body.items[0].defaultAccountStoreMapping.accountStoreId)
-                              .query({expand: 'passwordPolicy'})
+                              .query({expand: 'passwordPolicy,accountCreationPolicy'})
                               .expect(200);
                 })
                 .then(function(res){
                   //enable password reset workflow
                   return init.postRequest('passwordPolicies/' + res.body.passwordPolicy.id)
                     .send({resetEmailStatus: 'ENABLED'})
-                    .expect(200);
+                    .expect(200)
+                    .then(function(){
+                      return init.postRequest('accountCreationPolicies/' + res.body.accountCreationPolicy.id)
+                        .send({verificationEmailStatus: 'ENABLED'})
+                        .expect(200)
+                    });
                 });
         });
     });
@@ -59,15 +63,13 @@ describe('idSite', function(){
                             type: 'basic',
                             value: new Buffer(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
                         })
-                        .expect(200)
-                        .toPromise();
+                        .expect(200);
                 })
                 .then(function(res){
                     //there should be a redirection URL in the headers
                     assert(res.header['stormpath-sso-redirect-location']);
                     return request(res.header['stormpath-sso-redirect-location']).get('')
-                            .expect(302)
-                            .toPromise();
+                            .expect(302);
                 })
                 .then(function(res){
                     //cloudpass should redirect us back to the application
@@ -85,8 +87,7 @@ describe('idSite', function(){
                     return request(init.app).get('/sso')
                         .query({ jwtRequest: jwtRequest})
                         .set('Cookie', cookie)
-                        .expect(302)
-                        .toPromise();
+                        .expect(302);
                 })
                 .then(function(res){
                     //cloudpass should redirect directly to the callback URL, not to the ID site
@@ -148,8 +149,7 @@ describe('idSite', function(){
                 .then(function(jwtRequest){
                     return request(init.app).get('/sso/logout')
                             .query({ jwtRequest: jwtRequest})
-                            .expect(302)
-                            .toPromise();
+                            .expect(302);
                 })
                 .then(function(res){
                     assert(res.header.location);
@@ -172,15 +172,43 @@ describe('idSite', function(){
            ).spread(function(email){
               let jwtParam = /\/#\/reset\?jwt=(.*?)\n/.exec(email.body)[1];
               assert(jwtParam);
-              let spToken = jwt.decode(jwtParam).sp_token;
-              assert(spToken);
-              return request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+spToken)
+              let tokenId = jwt.decode(jwtParam).sp_token;
+              assert(tokenId);
+              return request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+tokenId)
                   .set('authorization', 'Bearer '+jwtParam)
                   .send({password: init.adminPassword})
-                  .expect(200)
-                  .toPromise()
+                  .expect(200);
            });
        });
+    });
+  
+    it('email verification', function(){
+      const address = init.randomName() + '@example.com';
+      return init.getIdSiteBearer(applicationId, callbackUrl)
+        .then(function(bearer){
+          return BluebirdPromise.join(
+                init.getEmailPromise(mailServer, address.toLowerCase()),
+                request(init.app).post('/v1/applications/'+applicationId+'/accounts')
+                  .set('authorization', 'Bearer '+bearer)
+                  .send({
+                      email: address,
+                      password: 'Aa123456',
+                      givenName: init.randomName(),
+                      surname: init.randomName()
+                  })
+                  .expect(200)
+            )
+            .spread(function(email, res){
+                  assert.strictEqual(res.body.status, 'UNVERIFIED');
+                  const jwtParam = /\/#\/verify\?jwt=(.*?)\n/.exec(email.body)[1];
+                  assert(jwtParam);
+                  const tokenId = jwt.decode(jwtParam).sp_token;
+                  assert(tokenId);
+                  return request(init.app).post('/v1/accounts/emailVerificationTokens/'+tokenId)
+                    .set('authorization', 'Bearer '+jwtParam)
+                    .expect(200);
+              });
+        })
     });
 
     it('Requests with bearer authorization must have a limited scope', function(){

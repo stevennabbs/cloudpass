@@ -1,5 +1,6 @@
 "use strict";
 
+var _ = require('lodash');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
 
 module.exports = function (sequelize, DataTypes) {
@@ -40,15 +41,9 @@ module.exports = function (sequelize, DataTypes) {
                     createNewAccount: createNewAccount
                 },
                 classMethods: {
-                    getSearchableAttributes: function(){
-                        return ['id', 'name', 'description', 'status'];  
-                    },
-                    getSettableAttributes: function(){
-                        return ['name', 'description', 'status', 'customData'];  
-                    },
-                    isCustomizable: function(){
-                        return true;  
-                    },
+                    getSearchableAttributes: _.constant(['id', 'name', 'description', 'status']),
+                    getSettableAttributes:  _.constant(['name', 'description', 'status', 'customData']),  
+                    isCustomizable: _.stubTrue,
                     associate: function(models) {
                         models.group.belongsTo(models.tenant, {onDelete: 'cascade'});
                         models.group.belongsTo(models.directory, {onDelete: 'cascade'});
@@ -104,13 +99,10 @@ module.exports = function (sequelize, DataTypes) {
     );
 };
 
-function createNewAccount(attributes, registrationWorflowEnabled){
+function createNewAccount(attributes, registrationWorflowEnabled, authInfo, apiKey){
     return this.getDirectory()
-               .then(function(directory){
-                   //create an account in the group's directory
-                    return directory.createNewAccount(attributes, registrationWorflowEnabled);
-               }).tap(function(account){
-                   //add the account into this group
-                    return this.addAccount(account, {tenantId: this.tenantId});
-               }.bind(this));
+             //create an account in the group's directory
+            .then(_.method('createNewAccount', attributes, registrationWorflowEnabled, authInfo, apiKey))
+             //add the account in the group
+            .tap(account => this.addAccount(account, {tenantId: this.tenantId}));
 }

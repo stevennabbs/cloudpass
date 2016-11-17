@@ -14,7 +14,7 @@ describe('admin invitation', function(){
         mailServer.stop();
     });
     
-    it('invitation workflow', function(){
+    it('workflow', function(){
         var invitedEmail = 'invited@example.com';
         
         return BluebirdPromise.join(

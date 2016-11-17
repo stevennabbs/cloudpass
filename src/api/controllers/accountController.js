@@ -5,7 +5,7 @@ var controllerHelper = require('../helpers/controllerHelper');
 var baseController = require('../helpers/baseController');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
-var sendEmail = require('../../helpers/sendEmail');
+var email = require('../../helpers/email');
 
 var controller = baseController(models.account);
 
@@ -43,11 +43,10 @@ controller.consumeEmailVerificationToken = function(req, res){
             return models.sequelize.Promise.join(
                         token.account.update({status: 'ENABLED'}),
                         token.destroy()
-                    )
-                    .get(0);
+                    );
         });
     })
-    .then(function(account){
+    .spread(function(account){
         account.directory.getAccountCreationPolicy()
                 .then(function(policy){
                     //send verification success & welcome emails if they are enabled
@@ -55,7 +54,7 @@ controller.consumeEmailVerificationToken = function(req, res){
                         policy
                             .getVerificationSuccessEmailTemplates({limit: 1})
                             .spread(function(template){
-                                sendEmail(
+                                email.send(
                                     account,
                                     account.directory,
                                     template);
@@ -65,7 +64,7 @@ controller.consumeEmailVerificationToken = function(req, res){
                         policy
                             .getWelcomeEmailTemplates({limit : 1})
                             .spread(function(template){
-                                sendEmail(
+                                email.send(
                                     account,
                                     account.directory,
                                     template);

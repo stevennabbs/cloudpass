@@ -106,7 +106,7 @@ var persistenceOptions = _.merge(
                 }
             }
         },
-        logging: function(log){winston.loggers.get('sql').info(log);}
+        logging: function(log){winston.loggers.get('sql').debug(log);}
     },
     config.get('persistence.options')
 );

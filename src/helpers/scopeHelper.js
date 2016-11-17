@@ -64,7 +64,7 @@ exports.pathsToScope = function(paths) {
       //merge the scopes
       return _.mergeWith(result, scope, function(scope1, scope2) {
         if (_.isArray(scope1) || _.isArray(scope2)) {
-          return _.concat(scope1, scope2);
+          return _.compact(_.concat(scope1, scope2));
         }
       });
     });

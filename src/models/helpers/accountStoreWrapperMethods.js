@@ -93,18 +93,18 @@ function getDefaultPasswordPolicy(accountStoreWrapper){
             });
 }
 
-function createNewAccount(attributes, registrationWorflowEnabled){
+function createNewAccount(attributes, registrationWorflowEnabled, authInfo, apiKey){
     return this.getDefaultAccountStoreMapping()
             .tap(ApiError.assertOrError(400, 5101, 'The account storage location is unspecified'))
-            .then(m => m.getAccountStore())
-            .then(as => as.createNewAccount(attributes, registrationWorflowEnabled));
+            .then(_.method('getAccountStore'))
+            .then(_.method('createNewAccount', attributes, registrationWorflowEnabled, authInfo, apiKey));
 }
 
 function createNewGroup(attributes){
     return this.getDefaultGroupStoreMapping()
         .tap(ApiError.assertOrError(400, 5102,  'The group storage location is unspecified.'))
-        .then(m => m.getAccountStore())
-        .then(as => as.createNewGroup(attributes));
+        .then(_.method('getAccountStore'))
+        .then(_.method('createNewGroup', attributes));
 }
 
 function getIdSiteModel(){

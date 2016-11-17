@@ -14,7 +14,12 @@ module.exports = function(model, transactionalMethods){
           controllerHelper.queryAndExpand(
             () => model.findById(req.swagger.params.id.value)
                 .tap(ApiError.assertFound)
-                .then(_.method('createNewAccount', req.swagger.params.attributes.value, req.swagger.params.registrationWorkflowEnabled.value)),
+                .then(_.method(
+                  'createNewAccount',
+                  req.swagger.params.attributes.value,
+                  req.swagger.params.registrationWorkflowEnabled.value,
+                  req.authInfo, req.user
+                )),
             req,
             res
           );

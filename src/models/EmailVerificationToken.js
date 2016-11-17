@@ -13,6 +13,9 @@ module.exports = function (sequelize, DataTypes) {
         },
         {
             timestamps: false,
+            instanceMethods:{
+              getIdSitePath: () => '/#/verify'
+            },
             classMethods: {
                 getHref: function(id){
                     return this.sequelize.models.account.getHref('emailVerificationTokens') + '/' + id;

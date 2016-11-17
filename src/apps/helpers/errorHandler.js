@@ -45,7 +45,7 @@ module.exports = function (err, req, res, next) {
     if(apiError.status === 500){
         logger.error('Unexpected error:', err.stack);
     } else {
-        logger.verbose('Request failed:', err.stack);
+        logger.debug('Request failed:', err.stack);
     }
     
     if(_.has(req, 'authInfo.cb_uri') && _.get(req, 'authInfo.aud') !== 'idSite'){

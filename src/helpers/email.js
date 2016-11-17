@@ -3,9 +3,12 @@
 var config = require('config');
 var nodemailer = require('nodemailer');
 var BluebirdPromise = require('sequelize').Promise;
+var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var _ = require('lodash');
 var Optional = require('optional-js');
 var winston = require('winston');
+var scopeHelper = require('./scopeHelper');
+var hrefHelper = require('./hrefHelper');
 
 var logger = winston.loggers.get('email');
 var templateSettings = {interpolate : /\${([\w\.]+?)}/g};
@@ -42,12 +45,12 @@ function getMandrillFields(mandrillTemplate, placeHolderValues){
     };
 }
 
-module.exports  = function(account, directory, template, cpToken, additionalPlaceHolderValues){
+exports.send  = function(account, directory, template, tokenId, additionalPlaceHolderValues){
     var placeHolderValues = _.merge(
         //selection of account & directory fields
         {account: _.pick(_.defaults(account, {directory: _.pick(directory, directoryFields)}), accountFields)},
         //token related fields (url, name value pair...)
-        Optional.ofNullable(cpToken).map(_.bindKey(template, 'getUrlTokens')).orElseGet(_.stubObject),
+        Optional.ofNullable(tokenId).map(_.bindKey(template, 'getUrlTokens')).orElseGet(_.stubObject),
         //custom fields
         additionalPlaceHolderValues
     );
@@ -78,4 +81,45 @@ module.exports  = function(account, directory, template, cpToken, additionalPlac
     return transporterSendEmail(emailFields)
             .tap(_.partial(logger.info, 'Email sent:'))
             .catch(_.partial(logger.error, 'Could not send email:'));
+};
+
+exports.sendWithToken = function(account, directory, template, token, authInfo, apiKey, additionalPlaceHolderValues){
+  return BluebirdPromise.try(function() {
+      if (_.get(authInfo, 'aud') === 'idSite') {
+        return signJwt(
+            _.merge(
+              _.omit(authInfo, ['jti', 'iat', 'exp']), {
+                scope: scopeHelper.pathsToScope(_.merge(
+                  scopeHelper.scopeToPaths(authInfo.scope),
+                  //allow get & post on to the token
+                  {[hrefHelper.unqualifyHref(token.href)]: ['get', 'post']}
+                )),
+                sp_token: token.id
+              }
+            ),
+            apiKey.secret,
+            {}
+          )
+          .then(function(jwt) {
+            return account.sequelize.models.idSite.findOne({
+                where: {
+                  tenantId: apiKey.tenantId
+                }
+              })
+              .then(function(idSite) {
+                return idSite.url + token.getIdSitePath() + '?jwt=' + jwt;
+              });
+          });
+      }
+    })
+    .then(function(url) {
+      //asynchronously send an email with the token
+      exports.send(
+        account,
+        directory,
+        template,
+        token.id,
+        _.merge({url},additionalPlaceHolderValues)
+      );
+    });
 };

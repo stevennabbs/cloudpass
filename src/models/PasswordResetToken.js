@@ -27,6 +27,12 @@ module.exports = function (sequelize, DataTypes) {
                     return this.Model.getHref(this.id, this.applicationId);
                 }
             },
+            instanceMethods:{
+              isExpired: function(){
+                return this.expires <= new Date();
+              },
+              getIdSitePath: () => '/#/reset'
+            },
             classMethods: {
                 getHref: function (id, applicationId) {
                     return this.sequelize.models.application.getHref(applicationId)+'/passwordResetTokens/'+id;

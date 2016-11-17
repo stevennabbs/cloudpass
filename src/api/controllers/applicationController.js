@@ -2,16 +2,13 @@
 
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
-var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 var controllerHelper = require('../helpers/controllerHelper');
 var accountStoreController = require('../helpers/accountStoreController');
 var accountHelper = require('../helpers/accountHelper');
 var samlHelper = require('../helpers/samlHelper');
-var sendEmail = require('../../helpers/sendEmail');
+var email = require('../../helpers/email');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
-var scopeHelper = require('../../helpers/scopeHelper');
-var hrefHelper = require('../../helpers/hrefHelper');
 
 var controller = accountStoreController(models.application);
 
@@ -114,7 +111,15 @@ controller.createPasswordResetToken = function(req, res) {
               expires: tokenExpiryDate
             })
             .tap(function(token) {
-              return sendPasswordResetEmail(account, directory, token, req);
+              return email.sendWithToken(
+                account,
+                directory,
+                directory.passwordPolicy.resetEmailTemplates[0],
+                token,
+                req.authInfo,
+                req.user,
+                {expirationWindow: directory.passwordPolicy.resetTokenTtl}
+              );
             });
         });
     }),
@@ -123,56 +128,24 @@ controller.createPasswordResetToken = function(req, res) {
   );
 };
 
-function sendPasswordResetEmail(account, directory, token, req) {
-  return BluebirdPromise.try(function() {
-      if (_.get(req.authInfo, 'aud') === 'idSite') {
-        return signJwt(
-          _.merge(
-            _.omit(req.authInfo, ['jti', 'iat', 'exp']),
-            {
-              scope: scopeHelper.pathsToScope(_.merge(
-                scopeHelper.scopeToPaths(req.authInfo.scope),
-                //allow get & post on to the token
-                {[hrefHelper.unqualifyHref(token.href)]: ['get', 'post']}
-              )),
-              sp_token: token.id
-            }
-          ),
-          req.user.secret,
-          {expiresIn: directory.passwordPolicy.resetTokenTtl+'h'}
-        )
-        .then(function(jwt){
-          return models.idSite.findOne({
-              where: {tenantId: directory.tenantId}
-          })
-          .then(function(idSite){
-            return idSite.url + '/#/reset?jwt='+jwt;
-          });
-        });
-      }
-    })
-    .then(function(url) {
-      //asynchronously send an email with the token
-      return sendEmail(
-        account,
-        directory,
-        directory.passwordPolicy.resetEmailTemplates[0],
-        token.id, {
-          url,
-          expirationWindow: directory.passwordPolicy.resetTokenTtl
-        }
-      );
+function validatePasswordResetToken(token) {
+  ApiError.assert(token, ApiError.NOT_FOUND);
+  if (token.isExpired()) {
+    return token.destroy().then(() => {
+      throw new ApiError(400, 400, 'The token has expired');
     });
+  }
 }
 
 controller.getPasswordResetToken = function(req, res) {
   controllerHelper.queryAndExpand(
-    () => models.passwordResetToken.findOne({
-      where: {
-        id: req.swagger.params.tokenId.value,
-        applicationId: req.swagger.params.id.value
-      }
-    }),
+    () => models.passwordResetToken.findById(
+      req.swagger.params.tokenId.value, {
+        where: {
+          applicationId: req.swagger.params.id.value
+        }
+      })
+    .tap(validatePasswordResetToken),
     req,
     res
   );
@@ -197,9 +170,8 @@ controller.consumePasswordResetToken = function(req, res) {
             }]
           }
         )
+        .tap(validatePasswordResetToken)
         .then(function(token) {
-          ApiError.assert(token, ApiError.NOT_FOUND);
-          ApiError.assert(token.expires >= new Date(), ApiError, 400, 400, 'the token has expired');
           //update the account and delete the token
           return BluebirdPromise.join(
               token.account.update({
@@ -211,14 +183,14 @@ controller.consumePasswordResetToken = function(req, res) {
         });
     })
     .then(function(account) {
-      //asynchronously send a confirmation email (if it is enabled)
+      //asynchronously send a confirmation email if it is enabled
       if (account.directory.passwordPolicy.resetSuccessEmailStatus === 'ENABLED') {
         account.directory.passwordPolicy
           .getResetSuccessEmailTemplates({
             limit: 1
           })
           .spread(function(template) {
-            sendEmail(
+            email.send(
               account,
               account.directory,
               template);
@@ -251,7 +223,7 @@ controller.resendVerificationEmail = function(req, res) {
             }]
           })
           .then(function(directory) {
-            sendEmail(
+            email.send(
               account,
               directory,
               directory.accountCreationPolicy.verificationEmailTemplates[0],
