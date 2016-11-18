@@ -39,7 +39,7 @@ module.exports = function (sequelize, DataTypes) {
                 {
                     unique: true,
                     fields: ['name', 'tenantId']
-                }  
+                }
             ],
             getterMethods: {
                 loginAttempts: function(){
@@ -96,10 +96,10 @@ module.exports = function (sequelize, DataTypes) {
             ),
             classMethods: {
                 getSearchableAttributes: function(){
-                    return ['id', 'name', 'description', 'status'];  
+                    return ['id', 'name', 'description', 'status'];
                 },
                 getSettableAttributes: function(){
-                    return ['name', 'description', 'status', 'customData'];  
+                    return ['name', 'description', 'status', 'customData'];
                 },
                 isCustomizable: function(){
                     return true;
@@ -131,6 +131,7 @@ module.exports = function (sequelize, DataTypes) {
                 getIdSiteScope: function(){
                     return [
                         "get",
+                        { customData: [ "get" ] },
                         { idSiteModel: [ "get" ] },
                         { loginAttempts: [ "post" ] },
                         { accounts: [ "post" ] },
