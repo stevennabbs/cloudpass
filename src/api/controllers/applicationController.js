@@ -61,22 +61,23 @@ controller.authenticate = function(req, res) {
   var decodedValue = new Buffer(attempt.value, 'base64').toString('utf8');
   var delimiterIndex = decodedValue.indexOf(':');
   ApiError.assert(delimiterIndex > 0, ApiError, 400, 400, 'Invalid value');
+  var applicationId = req.swagger.params.id.value;
   var login = decodedValue.substring(0, delimiterIndex);
   var password = decodedValue.substring((delimiterIndex + 1));
 
   accountHelper.authenticateAccount(
       login,
       password,
-      req.swagger.params.id.value,
+      applicationId,
       _.defaultTo(_.get(req.authInfo, 'asnk'), _.get(attempt.accountStore, 'nameKey')),
       _.get(attempt.accountStore, 'href')
     )
     .then(function(account) {
       res.json(expandAccountActionResult(account, req.swagger.params.expand.value));
     })
-    .tap(() => logger.info('Login attempt successful: %s', login))
+    .tap(() => logger.info('%s successfully logged in to application %s', login, applicationId))
     .catch(e => {
-        logger.info('Login attempt failed: %s (reason: %s)', login, e.message);
+        logger.info('%s failed to log in to application %s (reason: %s)', login, applicationId, e.message);
         req.next(e);
     });
 };
