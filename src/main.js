@@ -9,13 +9,11 @@ var config = require('config');
 var ssacl = require('ssacl');
 var randomstring = require('randomstring');
 var _ = require('lodash');
-var winston = require('winston');
 var loadLoggingConfig = require('sequelize').Promise.promisify(require('winston-config').fromJson);
 
 module.exports = loadLoggingConfig(config.get('logging'))
     .then(function(){
         if(cluster.isMaster){
-            winston.loggers.get('config').info('using configration:', JSON.stringify(config, null, 2));
             //run pending migrations and fork clusters
             var secret = randomstring.generate(50);
             return require('./models').migrate()
