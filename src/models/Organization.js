@@ -44,7 +44,7 @@ module.exports = function (sequelize, DataTypes) {
             getterMethods: {
               idSiteModel: function(){
                     return {href: this.href+'/idSiteModel'};
-              },
+              }
             },
             instanceMethods: accountStoreWrapperMethods,
             classMethods: {

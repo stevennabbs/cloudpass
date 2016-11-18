@@ -90,7 +90,7 @@ There are four configuration sections: *server*, *persistence*, *email* and *log
     }
   }
   ```
-  In this example, the `rootUrl` would be `https://cloudpass.example.com`. Cloudpass has no way of figuring this out on its own because he cannot know if it is being accessed directly or from behind a proxy.  
+  In this example, the `rootUrl` would be `https://cloudpass.example.com`. Cloudpass has no way of figuring this out on its own because he cannot know if it is being accessed directly or from behind a proxy.
   If `rootUrl` is left null, all hrefs will be relatives (e.g `/tenants/foo`). This should be fine in most cases. However:
     - this is not necessarily well supported by Stormpath clients. In particular, we had issues with `delete` operations on the Java client. If you are interested, there is a [fork](https://github.com/dhatim/stormpath-sdk-java) fixing this issue.
     - if you mount Cloudpass after one or more path segments (e.g. `htpp://www.example.com/my/cloudpass/instance/`) and use [Sauthc1 authentication](https://github.com/stormpath/stormpath-sdk-spec/blob/master/specifications/algorithms/sauthc1.md) (which is the default method on Stormpath clients), then you must provide a rootUrl. It is because Sauthc1 uses the request path to compute its hash.
@@ -182,7 +182,7 @@ The following example will use [nodemailer-mandrill-transport](https://github.co
   ```bash
   npm install nodemailer-mandrill-transport
   ```
-  
+
 - configure the transport (see the transport documentation for available configuration options):
   ```yaml
   email:
@@ -220,7 +220,7 @@ Four loggers can be configured in the *logging* section:
 - *sql*: logs the SQL queries before execution,
 - *http*: logs the HTTP requests via [morgan](https://github.com/expressjs/morgan),
 - *email*: logs when email are sent,
-- *config*: prints out the full configuration on startup.
+- *login*: logs the result of logg.
 
 Cloudpass uses [winston-config](https://github.com/triplem/winston-config) to configure logging. Please refer to the module documentation for the accepted configuration options.
 
@@ -316,7 +316,7 @@ First, make sure the devDependencies are installed: `npm install`
 
 This will produce coverage reports in `build/reports/coverage`.
 
-[Mocha's `spec` reporter](http://mochajs.org/#spec) is used by default. To use a different reporter, you can change the `mocha_reporter` npm config key.   
+[Mocha's `spec` reporter](http://mochajs.org/#spec) is used by default. To use a different reporter, you can change the `mocha_reporter` npm config key.
 For example to use [mocha-sonar-generic-test-coverage-file](https://github.com/qingguo-yu/mocha-sonar-generic-test-coverage-file):
 ```bash
 #install & configure sonar generic test coverage reporter

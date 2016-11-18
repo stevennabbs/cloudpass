@@ -23,7 +23,7 @@ email:
   fields: null
 # Or To use SMTP server and send carbon copies of each email:
 #  transport:
-#    name: null    
+#    name: null
 #    options:
 #      direct: false
 #      host: smtp.example.com
@@ -65,11 +65,7 @@ logging:
   sql: {}
   http: {}
   email: {}
-  # prints the configuration on startup
-  # disabled by default because it may contain passwords
-  config:
-    console:
-       level: error
+  login: {}
 # You can configure logging that way:
 #logging:
 #  sql:
@@ -83,4 +79,3 @@ logging:
 #       maxfiles: 5
 #       maxsize": 10485760
 
-  

@@ -2,6 +2,7 @@
 
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
+var winston = require('winston');
 var controllerHelper = require('../helpers/controllerHelper');
 var accountStoreController = require('../helpers/accountStoreController');
 var accountHelper = require('../helpers/accountHelper');
@@ -10,7 +11,8 @@ var email = require('../../helpers/email');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
 
-var controller = accountStoreController(models.application);
+let logger = winston.loggers.get('login');
+let controller = accountStoreController(models.application);
 
 controller.getIdSiteModel = _.partial(controller.getComputedSubResource, 'getIdSiteModel');
 controller.getSamlPolicy = _.partial(controller.getComputedSubResource, 'getSamlPolicy');
@@ -72,7 +74,11 @@ controller.authenticate = function(req, res) {
     .then(function(account) {
       res.json(expandAccountActionResult(account, req.swagger.params.expand.value));
     })
-    .catch(req.next);
+    .tap(() => logger.info('Login attempt successful: %s', login))
+    .catch(e => {
+        logger.info('Login attempt failed: %s (reason: %s)', login, e.message);
+        req.next(e);
+    });
 };
 
 controller.createPasswordResetToken = function(req, res) {
