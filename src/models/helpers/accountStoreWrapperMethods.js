@@ -8,6 +8,7 @@ var ApiError = require('../../ApiError');
 function getProviders(accountStoreWrapper){
     return accountStoreWrapper.getDirectories({
             attributes: ['id', 'name'],
+            where: {status: 'ENABLED'},
             include: [{
                 model: accountStoreWrapper.sequelize.models.directoryProvider,
                 as: 'provider',
