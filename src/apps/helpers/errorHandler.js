@@ -12,6 +12,11 @@ var exceptionToApiError = _.cond([
         _.property('allowedMethods'),
         e => new ApiError(405, 405, 'Method not supported (supported method(s): '+e.allowedMethods.join()+')')
     ],
+    //unique constraint violation
+    [
+        _.matches({'name': 'SequelizeUniqueConstraintError'}),
+        e => new ApiError(409, 2001, e.errors.length > 0 ? e.errors[0].message+' ('+e.errors[0].value+')': e.message)
+    ],
     //Ill-formed query or sequelize validation error
     [
         e => e.statusCode === 400 || _.startsWith(e.message, 'Validation error') || e.name === 'SequelizeValidationError',
@@ -21,11 +26,6 @@ var exceptionToApiError = _.cond([
     [
         _.property('failedValidation'),
         e => ApiError.BAD_REQUEST(_.isEmpty(e.results)?e.message:e.results.errors[0].message)
-    ],
-    //unique constraint violation
-    [
-        _.matches({'name': 'SequelizeUniqueConstraintError'}),
-        e => new ApiError(400, 2001, e.errors.length > 0 ? e.errors[0].message+' ('+e.errors[0].value+')': e.message)
     ],
     //other errors
     [
@@ -40,7 +40,7 @@ module.exports = function (err, req, res, next) {
     if (res.headersSent) {
         return next(err);
     }
-    
+
     var apiError = exceptionToApiError(err);
 
     if(apiError.status === 500){
