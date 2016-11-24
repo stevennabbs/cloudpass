@@ -56,12 +56,14 @@ exports.send  = function(account, directory, template, tokenId, additionalPlaceH
     );
 
     var emailFields = _.defaults (
+         {},
         //configuration fields
         config.get('email.fields'),
         //mandrill fields
         Optional.ofNullable(template.mandrillTemplate)
-            .map(_.partial(getMandrillFields, _, placeHolderValues))
-            .orElseGet(_.stubObject),
+                .filter(() => _.eq(transportName, 'nodemailer-mandrill-transport'))
+                .map(_.partial(getMandrillFields, _, placeHolderValues))
+                .orElseGet(_.stubObject),
         //template fields
         {
             from: template.fromName + '<'+template.fromEmailAddress+'>',
