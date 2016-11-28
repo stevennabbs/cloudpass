@@ -62,7 +62,7 @@
     "bootprint": "0.8.5",
     "bootprint-openapi": "0.17.0",
     "coveralls": "2.11.15",
-    "cross-conf-env": "1.0.6",
+    "cross-conf-env": "1.0.7",
     "dockerode": "2.3.1",
     "dockerode-promise": "0.1.0",
     "env-test": "1.0.0",
