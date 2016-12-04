@@ -19,6 +19,7 @@ module.exports = function(...strategies){
                         return next(err);
                     }
                     if (!user) {
+                        res.header("Access-Control-Allow-Origin", "*");
                         return ApiError.UNAUTHORIZED.write(res);
                     }
                     req.user = user;
