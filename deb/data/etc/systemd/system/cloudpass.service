@@ -8,7 +8,7 @@ StandardOutput=null
 StandardError=journal
 User=cloudpass
 Group=cloudpass
-ExecStart=/usr/bin/nodejs .
+ExecStart=/usr/bin/npm start
 Restart=on-failure
 
 [Install]
