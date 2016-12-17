@@ -59,7 +59,7 @@
     "winston-config": "0.5.1"
   },
   "devDependencies": {
-    "bootprint": "0.8.5",
+    "bootprint": "0.9.0",
     "bootprint-openapi": "0.17.0",
     "coveralls": "2.11.15",
     "cross-conf-env": "1.0.7",
