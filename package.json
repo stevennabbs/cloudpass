@@ -48,7 +48,7 @@
     "pg": "6.1.2",
     "pg-hstore": "2.3.2",
     "randomstring": "1.1.5",
-    "saml2-js": "1.10.0",
+    "saml2-js": "1.11.0",
     "sequelize": "3.28.0",
     "shimmer": "1.1.0",
     "ssacl": "0.1.3",
