@@ -36,7 +36,7 @@
     "express": "4.14.0",
     "js-yaml": "3.7.0",
     "jsonwebtoken": "7.2.1",
-    "lodash": "4.17.2",
+    "lodash": "4.17.3",
     "moment": "2.17.1",
     "morgan": "1.7.0",
     "nodemailer": "2.7.0",
@@ -59,7 +59,7 @@
     "winston-config": "0.5.1"
   },
   "devDependencies": {
-    "bootprint": "0.10.0",
+    "bootprint": "1.0.0",
     "bootprint-openapi": "1.0.1",
     "coveralls": "2.11.15",
     "cross-conf-env": "1.0.7",
