@@ -1,6 +1,8 @@
 "use strict";
 
 var _ = require('lodash');
+var BluebirdPromise = require('sequelize').Promise;
+var Optional = require('optional-js');
 var controllerHelper = require('../helpers/controllerHelper');
 var baseController = require('../helpers/baseController');
 var models = require('../../models');
@@ -14,12 +16,30 @@ controller.getCurrent = function (req, res) {
 };
 
 controller.getApiKeys = _.partial(controllerHelper.getCollection, models.account, 'apiKeys');
-
 controller.createApiKey = function(req, res){
     return controllerHelper.createAndExpand(
             models.apiKey,
             {tenantId: req.user.tenantId, accountId: req.swagger.params.id.value},
             req, res);
+};
+
+controller.getFactors = _.partial(controllerHelper.getCollection, models.account, 'factors');
+controller.createFactor = function(req, res){
+    var accountId = req.swagger.params.id.value;
+    var factorAttributes = req.swagger.params.attributes.value;
+    //if accountName is not set, take the account email
+    BluebirdPromise.resolve(
+      Optional.ofNullable(factorAttributes.accountName)
+        .orElseGet(() => models.account.findById(accountId, {attributes: ['email']})
+                        .tap(ApiError.assertFound)
+                        .get('email'))
+    ).then(email => {
+        factorAttributes.accountName = email;
+        return controllerHelper.createAndExpand(
+            models.factor,
+            {tenantId: req.user.tenantId, accountId: accountId},
+            req, res);
+    });
 };
 
 controller.consumeEmailVerificationToken = function(req, res){
@@ -71,7 +91,7 @@ controller.consumeEmailVerificationToken = function(req, res){
                             });
                     }
                 });
-            
+
         //send the whole account only if the expand parameter is set
         res.json(req.swagger.params.expand.value?account:_.pick(account, 'href'));
     })

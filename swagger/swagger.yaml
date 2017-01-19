@@ -1521,6 +1521,32 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /accounts/emailVerificationTokens/{tokenId}:
+    x-swagger-router-controller: accountController
+    post:
+      summary: consume an email verification token
+      description: consume an email verification token
+      operationId: consumeEmailVerificationToken
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/TokenId"
+        - name: expand
+          in: query
+          description: if the authentified account must be returned
+          required: false
+          type: string
+          enum:
+            - account
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/ResourceReference"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /accounts/{id}:
     x-swagger-router-controller: accountController
     get:
@@ -1647,32 +1673,6 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
-  /accounts/emailVerificationTokens/{tokenId}:
-    x-swagger-router-controller: accountController
-    post:
-      summary: consume an email verification token
-      description: consume an email verification token
-      operationId: consumeEmailVerificationToken
-      tags:
-        - accounts
-      parameters:
-        - $ref: "#/parameters/TokenId"
-        - name: expand
-          in: query
-          description: if the authentified account must be returned
-          required: false
-          type: string
-          enum:
-            - account
-      responses:
-        "200":
-          description: success
-          schema:
-            $ref: "#/definitions/ResourceReference"
-        "default":
-          description: error
-          schema:
-            $ref: "#/definitions/Error"
   /accounts/{id}/providerData:
     x-swagger-router-controller: accountController
     get:
@@ -1688,6 +1688,70 @@ paths:
           description: found
           schema:
             $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accounts/{id}/factors:
+    x-swagger-router-controller: accountController
+    post:
+      summary: create a new authentication factor
+      description: create a new authentication factor
+      operationId: createFactor
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - type
+            properties:
+              type:
+                type: string
+                enum:
+                  - google-authenticator
+              status:
+                type: string
+                enum:
+                  - ENABLED
+                  - DISABLED
+              accountName:
+                type: string
+                format: email
+              issuer:
+                type: string
+      responses:
+        "200":
+          description: api keys created
+          schema:
+            $ref: "#/definitions/Factor"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: retrieve the account authentication factors
+      description: retrieve the account authentication factors
+      operationId: getFactors
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/Expand"
+        - $ref: "#/parameters/OrderBy"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/CollectionResource"
         "default":
           description: error
           schema:
@@ -1791,6 +1855,7 @@ paths:
             - groups
             - applications
             - organizations
+            - factors
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -1866,6 +1931,152 @@ paths:
       responses:
         "204":
           description: group membership deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /factors/{id}:
+    x-swagger-router-controller: factorController
+    get:
+      summary: retrieve a factor its ID
+      description: retrieve an authentication factor its ID
+      tags:
+        - factors
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: factor found
+          schema:
+            $ref: "#/definitions/Factor"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update a factor
+      description: update the authentication factor with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - factors
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                enum:
+                  - ENABLED
+                  - DISABLED
+              accountName:
+                type: string
+                format: email
+              issuer:
+                type: string
+      responses:
+        "200":
+          description: factor updated
+          schema:
+            $ref: "#/definitions/Factor"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete a factor
+      description: delete a factor
+      tags:
+        - factor
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: factor deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /factors/{id}/challenges:
+    x-swagger-router-controller: factorController
+    post:
+      summary: create a challenge
+      description: create a second factor challenge. Verify it at the same time if a code is provided
+      operationId: getChallenge
+      tags:
+        - factors
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: false
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+      responses:
+        "200":
+          description: challenge created
+          schema:
+            $ref: "#/definitions/Challenge"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /challenges/{id}:
+    x-swagger-router-controller: factorController
+    get:
+      summary: get a challenge
+      description: get a challenge
+      operationId: getChallenge
+      tags:
+       - challenges
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: challenge found
+          schema:
+            $ref: "#/definitions/Challenge"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: verify a challenge
+      description: verify a challenge using the provided code
+      operationId: getChallenge
+      tags:
+       - challenges
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                type: string
+      responses:
+        "200":
+          description: challenge verified (the verification result is in the status attribute)
+          schema:
+            $ref: "#/definitions/Challenge"
         "default":
           description: error
           schema:
@@ -2024,7 +2235,7 @@ paths:
                 enum:
                   - text/plain
                   - text/html
-# commented out because swagger doesn't allow null values                  
+# commented out because swagger doesn't allow null values
 #              mandrillTemplate:
 #                type: string
               defaultModel:
@@ -2303,7 +2514,7 @@ paths:
                   - DISABLED
       responses:
         "200":
-          description: account updated
+          description: API key updated
           schema:
             $ref: "#/definitions/ApiKey"
         "default":
@@ -3269,6 +3480,7 @@ definitions:
           - groupMemberships
           - applications
           - organizations
+          - factors
           - customData
           - providerData
         properties:
@@ -3302,6 +3514,8 @@ definitions:
           applications:
             $ref: "#/definitions/ResourceReference"
           organizations:
+            $ref: "#/definitions/ResourceReference"
+          factors:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3671,6 +3885,64 @@ definitions:
           ssoInitiationEndpoint:
             $ref: "#/definitions/ResourceReference"
           defaultRelayStates:
+            $ref: "#/definitions/ResourceReference"
+  Factor:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - type
+          - status
+          - verificationStatus
+          - account
+        properties:
+          type:
+            type: string
+            enum:
+              - google-authenticator
+          status:
+            type: string
+            enum:
+              - ENABLED
+              - DISABLED
+          verificationStatus:
+            type: string
+            enum:
+              - VERIFIED
+              - UNVERIFIED
+          accountName:
+            type: string
+            format: email
+          issuer:
+            type: string
+          secret:
+            type: string
+          keyUri:
+            type: string
+          base64QRImage:
+            type: string
+          account:
+            $ref: "#/definitions/ResourceReference"
+          tenant:
+            $ref: "#/definitions/ResourceReference"
+  Challenge:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - status
+          - account
+          - factor
+        properties:
+          status:
+            type: string
+            enum:
+              - CREATED
+              - SUCCESS
+              - FAILED
+          account:
+            $ref: "#/definitions/ResourceReference"
+          factor:
             $ref: "#/definitions/ResourceReference"
 parameters:
   Id:

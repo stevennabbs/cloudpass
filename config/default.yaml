@@ -12,6 +12,9 @@ server:
   clustering: true
   # path of the folder containing static UI files. These files will be served under /ui
   uiFolder: public
+  # Secret key used to sign cookies (both for admin interface & SSO).
+  # Will be randomly generated if not set
+  secret: null
 
 email:
   # configuration of email transport

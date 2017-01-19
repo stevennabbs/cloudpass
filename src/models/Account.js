@@ -130,7 +130,7 @@ module.exports = function (sequelize, DataTypes) {
                     return ['email', 'username',  'password', 'givenName', 'middleName', 'surname', 'status', 'customData'];
                 },
                 isCustomizable: function(){
-                    return true;  
+                    return true;
                 },
                 associate: function(models) {
                     models.account.belongsTo(models.tenant, {onDelete: 'cascade'});
@@ -138,6 +138,7 @@ module.exports = function (sequelize, DataTypes) {
                     models.account.belongsTo(models.emailVerificationToken, {onDelete: 'set null'});
                     models.account.hasMany(models.groupMembership, {onDelete: 'cascade'});
                     models.account.hasMany(models.apiKey, {onDelete: 'cascade'});
+                    models.account.hasMany(models.factor, {onDelete: 'cascade'});
                     models.account.belongsToMany(
                         models.group,
                         {

@@ -53,7 +53,7 @@ var handleRedirects = applyToIdSiteRequests(function(req, res) {
   req.next();
 });
 
-//redirect back to the application once the user is authenticated 
+//redirect back to the application once the user is authenticated
 var redirectWithAccount = function(accountHrefGetter, isNewSub){
   return applyToIdSiteRequests(function(req, res) {
     shimmer.wrap(res, 'json', function(original) {
@@ -82,9 +82,10 @@ var redirectWithAccount = function(accountHrefGetter, isNewSub){
               })
               //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
               .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
+          } else {
+              original.call(this, result);
           }
         })
-        .then(() => original.call(this, result))
         .catch(req.next);
       };
     });

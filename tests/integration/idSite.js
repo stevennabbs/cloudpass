@@ -42,12 +42,12 @@ describe('idSite', function(){
                     .then(function(){
                       return init.postRequest('accountCreationPolicies/' + res.body.accountCreationPolicy.id)
                         .send({verificationEmailStatus: 'ENABLED'})
-                        .expect(200)
+                        .expect(200);
                     });
                 });
         });
     });
-  
+
     after(function () {
       //stop the SMTP server
       mailServer.stop();
@@ -159,7 +159,7 @@ describe('idSite', function(){
                     assert.strictEqual(res.header['set-cookie'][0].split(';')[0].split('=')[1], '');
                 });
     });
-  
+
     it('password reset', function(){
       return init.getIdSiteBearer(applicationId, callbackUrl)
         .then(function(bearer){
@@ -181,7 +181,7 @@ describe('idSite', function(){
            });
        });
     });
-  
+
     it('email verification', function(){
       const address = init.randomName() + '@example.com';
       return init.getIdSiteBearer(applicationId, callbackUrl)

@@ -54,7 +54,7 @@ controller.updateProvider = function(req, res) {
                         return provider.update(
                             req.swagger.params.newAttributes.value,
                             //the providerId cannot be changed
-                            {fields:  _.without(models.directoryProvider.getSettableAttributes(), 'providerId')}
+                            {fields: _.without(models.directoryProvider.getSettableAttributes(), 'providerId')}
                         );
                     }
                 }),

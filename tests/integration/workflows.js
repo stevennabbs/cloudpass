@@ -21,7 +21,7 @@ describe('Account workflows', function () {
         //stop the SMTP server
         mailServer.stop();
     });
-    
+
     describe('Registration', function(){
 
         it('Welcome e-mail should be sent if they are enabled', function () {
@@ -131,11 +131,11 @@ describe('Account workflows', function () {
                     });
         });
     });
-    
+
     describe('Password reset', function(){
-        
+
         var account;
-        
+
         before(function(){
             return init.getRequest('directories/'+directory.id+'/accounts')
                         .expect(200)
@@ -143,7 +143,7 @@ describe('Account workflows', function () {
                             account = res.body.items[0];
                         });
         });
-        
+
         it('Password reset and password reset success email should be sent if they are enabled', function(){
             //enable password workflows
             return init.postRequest('passwordPolicies/' + directory.passwordPolicy.id)
@@ -186,7 +186,7 @@ describe('Account workflows', function () {
                     assert(res.body.account.href);
                 });
         });
-        
+
         it('Password resets should fail if there are disabled', function(){
             //disable password workflows
             return init.postRequest('passwordPolicies/' + directory.passwordPolicy.id)

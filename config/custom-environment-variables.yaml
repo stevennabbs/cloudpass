@@ -5,8 +5,9 @@ server:
   port: SERVER_PORT
   clustering:
     __name: SERVER_CLUSTERING
-    __format: json  
+    __format: json
   uiFolder: SERVER_UI_FOLDER
+  secret: SERVER_SECRET
 
 email:
   fields:
