@@ -68,7 +68,7 @@
     "dockerode": "2.3.1",
     "dockerode-promise": "0.1.0",
     "env-test": "1.0.0",
-    "gh-pages-travis": "1.0.0",
+    "gh-pages-travis": "1.0.3",
     "gulp": "3.9.1",
     "gulp-deb": "0.2.1",
     "gulp-rename": "1.2.2",
