@@ -42,7 +42,7 @@ module.exports = function (err, req, res, next) {
     if(apiError.status === 500){
         logger.error('Unexpected error:', err.stack);
     } else {
-        logger.debug('Request failed:', apiError.message);
+        logger.debug('Request failed:', apiError.message, err.stack);
     }
 
     if (res.headersSent) {

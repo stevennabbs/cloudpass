@@ -4,6 +4,7 @@ var assert = require("assert");
 var BluebirdPromise = require('sequelize').Promise;
 var jwt = require('jsonwebtoken');
 var request = require('supertest-as-promised');
+var speakeasy = require("speakeasy");
 var init = require('./init');
 
 describe('idSite', function(){
@@ -13,7 +14,7 @@ describe('idSite', function(){
     var mailServer;
 
     before(function(){
-         //start the SMTP server
+        //start the SMTP server
         mailServer = init.getMailServer();
         //set the ID site URL
         return init.getRequest('tenants/'+init.apiKey.tenantId+'/idSites')
@@ -55,7 +56,7 @@ describe('idSite', function(){
 
     describe('login', function(){
         it('in application', function(){
-            return init.getIdSiteBearer(applicationId, callbackUrl)
+            return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 .then(function(bearer){
                     return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
                         .set('authorization', 'Bearer '+bearer)
@@ -78,7 +79,7 @@ describe('idSite', function(){
                     assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
                     assert(res.header['set-cookie']);
                     return BluebirdPromise.join(
-                            init.getIdSiteJwtRequest(applicationId, callbackUrl),
+                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl}),
                             res.header['set-cookie'][0].split(';')[0]
                         );
                 })
@@ -98,7 +99,7 @@ describe('idSite', function(){
 
             it('in organization', function(){
                 //create an organization an map it the the application
-                var organizationName = init.randomName();
+                const organizationName = init.randomName();
                 var organizationId;
                 return init.postRequest('organizations')
                     .send({
@@ -116,7 +117,7 @@ describe('idSite', function(){
                             .expect(200);
                     })
                     .then(function(){
-                        return init.getIdSiteBearer(applicationId, callbackUrl, organizationName);
+                        return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, onk: organizationName});
                     })
                     .tap(function(bearer){
                        //the bearer should give access to the organization & its ID site model
@@ -129,7 +130,7 @@ describe('idSite', function(){
                                    assert(res.body.idSiteModel.hasOwnProperty('providers'));
                                    assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
                                    assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
-                                 });
+                                });
                     })
                     .then(function(bearer){
                         //Cloudpass should return a 400 because the account is not in this organization
@@ -142,10 +143,90 @@ describe('idSite', function(){
                             .expect(400);
                     });
             });
+
+            function getConfiguredFactors(){
+                return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: ['google-authenticator']})
+                    .then(function(bearer){
+                        return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                            .set('authorization', 'Bearer '+bearer)
+                            .send({
+                                type: 'basic',
+                                value: new Buffer(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                            })
+                            .expect(200);
+                    })
+                    .then(function(res){
+                        //there shouldn't be a redirection URL in the headers
+                        assert(!res.header['stormpath-sso-redirect-location']);
+                        assert(res.header.authorization);
+
+                        //we should be able to retrieve the list of 2nd factors with the new bearer
+                        return request(init.app).get('/v1'+res.body.account.href+'/factors')
+                                .set('authorization', res.header.authorization)
+                                .expect(200);
+                    });
+            }
+
+            it('with new second factor', function(){
+                getConfiguredFactors()
+                    .then(function(res){
+                        //no 2nd factor configured yet
+                        assert.strictEqual(res.body.size, 0);
+                        //add one
+                        return request(init.app).post('/v1'+res.body.href)
+                                .set('authorization', res.header.authorization)
+                                .send({
+                                    type: 'google-authenticator',
+                                    issuer: init.randomName()
+                                })
+                                .expect(200);
+                    })
+                    .then(function(res){
+                        assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
+                        //verify the factor
+                        return request(init.app).post('/v1/factors/'+res.body.id+'/challenges')
+                                .set('authorization', res.header.authorization)
+                                .send({code: speakeasy.totp({secret: res.body.secret, encoding: 'base32'})})
+                                .expect(200);
+                    })
+                    .then(function(res){
+                        //there should be a redirection URL in the headers
+                        assert(res.header['stormpath-sso-redirect-location']);
+                        return request(res.header['stormpath-sso-redirect-location']).get('')
+                            .expect(302);
+                    });
+            });
+
+            it('with existing second factor', function(){
+                getConfiguredFactors()
+                    .then(function(res){
+                        //one second factor has already been configured
+                        assert.strictEqual(res.body.size, 1);
+                        return BluebirdPromise.join(
+                                request(init.app).post('/v1/factors/'+res.body.items[0].id+'/challenges')
+                                    .set('authorization', res.header.authorization)
+                                    .expect(200),
+                                res.body.items[0].secret);
+                    })
+                    .spread(function(res, secret){
+                        assert.strictEqual(res.body.status, 'CREATED');
+                        //verify the factor
+                        return request(init.app).post('/v1/challenges/'+res.body.id)
+                                .set('authorization', res.header.authorization)
+                                .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
+                                .expect(200);
+                    })
+                    .then(function(res){
+                        //there should be a redirection URL in the headers
+                        assert(res.header['stormpath-sso-redirect-location']);
+                        return request(res.header['stormpath-sso-redirect-location']).get('')
+                            .expect(302);
+                    });
+            });
     });
 
     it('logout', function(){
-        return init.getIdSiteJwtRequest(applicationId, callbackUrl)
+        return init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl})
                 .then(function(jwtRequest){
                     return request(init.app).get('/sso/logout')
                             .query({ jwtRequest: jwtRequest})
@@ -161,7 +242,7 @@ describe('idSite', function(){
     });
 
     it('password reset', function(){
-      return init.getIdSiteBearer(applicationId, callbackUrl)
+      return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
         .then(function(bearer){
            return BluebirdPromise.join(
               init.getEmailPromise(mailServer, init.adminUser),
@@ -184,7 +265,7 @@ describe('idSite', function(){
 
     it('email verification', function(){
       const address = init.randomName() + '@example.com';
-      return init.getIdSiteBearer(applicationId, callbackUrl)
+      return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
         .then(function(bearer){
           return BluebirdPromise.join(
                 init.getEmailPromise(mailServer, address.toLowerCase()),
@@ -208,11 +289,11 @@ describe('idSite', function(){
                     .set('authorization', 'Bearer '+jwtParam)
                     .expect(200);
               });
-        })
+        });
     });
 
     it('Requests with bearer authorization must have a limited scope', function(){
-        return init.getIdSiteBearer(applicationId, callbackUrl)
+        return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 .then(function(bearer){
                     return request(init.app).get('/v1/applications/'+applicationId+'/accounts')
                         .set('authorization', 'Bearer '+bearer)

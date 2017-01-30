@@ -42,7 +42,7 @@ app.use('/', ssaclAuthenticate('sso-jwt-request', 'sso-jwt-response'));
 app.use('/logout', ssaclAuthenticate('sso-jwt-request'));
 
 app.get('/', function(req, res){
-    
+
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
         var application = models.resolveHref(req.authInfo.sub);
@@ -118,6 +118,9 @@ function redirectToIdSite(jwtPayload, application, accountStore, apiKey, res){
             state: jwtPayload.state,
             asnk: jwtPayload.onk,
             sof: jwtPayload.sof,
+            //TODO
+            require_mfa: jwtPayload.require_mfa,
+            //require_mfa: ['google-authenticator'],
             //qualify the account store href
             ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
             //only to not make stormpath.js crash

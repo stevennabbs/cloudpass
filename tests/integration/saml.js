@@ -36,9 +36,9 @@ describe('SAML', function(){
                             });;
                 });
         });
-        
+
     });
-    
+
     describe('Service Provider Metadata', function(){
         var samlServiceProviderMetadataId;
         before(function(){
@@ -49,7 +49,7 @@ describe('SAML', function(){
                     samlServiceProviderMetadataId = res.body.samlServiceProviderMetadata.id;
                 });
         });
-        
+
         it('Service Provider Metadata should be returned in XML format by default', function(){
             return init.getRequest('samlServiceProviderMetadatas/'+samlServiceProviderMetadataId)
                 .accept('*.*')
@@ -58,7 +58,7 @@ describe('SAML', function(){
                     assert.strictEqual(res.type, 'application/xml');
                 });
         });
-        
+
         it('Service Provider Metadata should be returned in JSON format if requested', function(){
             return init.getRequest('samlServiceProviderMetadatas/'+samlServiceProviderMetadataId)
                 .accept('json')
@@ -70,7 +70,7 @@ describe('SAML', function(){
                 });
         });
     });
-    
+
     describe('Attribute Statement Mapping Rules', function(){
         var attributeStatementMappingRulesId;
         before(function(){
@@ -81,7 +81,7 @@ describe('SAML', function(){
                     attributeStatementMappingRulesId = res.body.attributeStatementMappingRules.id;
                 });
         });
-        
+
         it('Rules should be initially empty', function(){
             return init.getRequest('attributeStatementMappingRules/'+attributeStatementMappingRulesId)
                     .expect(200)
@@ -89,7 +89,7 @@ describe('SAML', function(){
                         assert.deepStrictEqual(res.body.items, []);
                     });
         });
-        
+
         it('Attributes can be mapped to Account and CustomData fields', function(){
             var mappingItems = [
                 {
@@ -112,7 +112,7 @@ describe('SAML', function(){
                         assert.deepStrictEqual(res.body.items, mappingItems);
                     });
         });
-        
+
         it('Attributes cannot be mapped unexistent Account fields', function(){
             return init.postRequest('attributeStatementMappingRules/'+attributeStatementMappingRulesId)
                     .send({items: [{
@@ -122,7 +122,7 @@ describe('SAML', function(){
                     .expect(400);
         });
     });
-    
+
     describe('application', function(){
         var applicationId;
         before(function(){
@@ -140,7 +140,7 @@ describe('SAML', function(){
                         .expect(200);
                 });
         });
-       
+
         it('application should have a SAML policy', function(){
            return init.getRequest('samlPolicies/'+applicationId)
                 .expect(200)
@@ -148,7 +148,7 @@ describe('SAML', function(){
                     assert(res.body.serviceProvider);
                 });
         });
-        
+
         it('application should have a SAML Service Provider', function(){
            return init.getRequest('samlServiceProviders/'+applicationId)
                 .expect(200)
@@ -157,7 +157,7 @@ describe('SAML', function(){
                     assert(res.body.defaultRelayStates);
                 });
         });
-        
+
         it('ID site model should have a SAML provider', function(){
             return init.getRequest('applications/'+applicationId+'/idSiteModel')
                 .expect(200)
@@ -166,9 +166,9 @@ describe('SAML', function(){
                     assert.strictEqual(res.body.providers[0].providerId, 'saml');
                 });
         });
-        
+
         it('default relay state generation', function(){
-            return init.postRequest('samlServiceProviders/'+applicationId+'/defaultRelayStates') 
+            return init.postRequest('samlServiceProviders/'+applicationId+'/defaultRelayStates')
                 .send({
                     callbackUri: 'http://www.example.com/callback',
                     state: 'foo'
@@ -178,11 +178,11 @@ describe('SAML', function(){
                     assert(res.body.defaultRelayState);
                 });
         });
-        
+
         describe('authentication', function(){
-            
+
             var callbackUrl = 'http://www.example.com/callback';
-            
+
             function mockIdPResponse(idPRequestUrl, responseFileName, expectedCompanyName){
                 assert(idPRequestUrl);
                 assert(idPRequestUrl.startsWith(idpSsoLoginUrl));
@@ -219,7 +219,7 @@ describe('SAML', function(){
                             assert.strictEqual(res.body.items[0].providerData.company, expectedCompanyName);
                         });
             }
-            
+
             it('via IdP redirect', function(){
                 return jwt.signAsync(
                     {cb_uri: callbackUrl},
@@ -232,14 +232,14 @@ describe('SAML', function(){
                 )
                 .then(function(accessToken){
                     return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
-                        .query({ accessToken: accessToken})
+                        .query({accessToken: accessToken})
                         .expect(302);
                 })
                 .then(function(res){
                     return mockIdPResponse(res.header.location, 'idpResponse1','some-company');
                 });
             });
-            
+
             it('with organization name', function(){
                 //create an organization an map it the the SAML application
                 var organizationName = init.randomName();
@@ -275,7 +275,7 @@ describe('SAML', function(){
                         //cloudpass should redirect stracight to the callback_uri with an error
                         // because it cannot find a SAML provider associated to the organization
                         return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
-                            .query({ accessToken: accessToken})
+                            .query({accessToken: accessToken})
                             .expect(302);
                     })
                     .then(function(res){
@@ -289,9 +289,9 @@ describe('SAML', function(){
                         assert.strictEqual(payload.err.status, 404);
                     });
             });
-        
+
             it('via ID Site', function(){
-                return init.getIdSiteBearer(applicationId, callbackUrl)
+                return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                     .then(function(bearer){
                          return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                             .set('authorization', 'Bearer '+bearer)
@@ -302,7 +302,7 @@ describe('SAML', function(){
                     });
             });
         });
-        
+
     });
-    
+
 });

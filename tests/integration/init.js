@@ -38,12 +38,9 @@ exports.getEmailPromise = function (mailServer, address) {
 
 exports.randomName = randomstring.generate;
 
-exports.getIdSiteJwtRequest = function(applicationId, callbackUrl, organizationName){
+exports.getIdSiteJwtRequest = function(applicationId, options){
     return signJwt(
-        {
-            cb_uri: callbackUrl,
-            onk: organizationName
-        },
+        options,
         exports.apiKey.secret,
         {
             issuer: exports.apiKey.id,
@@ -53,12 +50,12 @@ exports.getIdSiteJwtRequest = function(applicationId, callbackUrl, organizationN
     );
 };
 
-exports.getIdSiteBearer = function(applicationId, callbackUrl, organizationName){
-    return exports.getIdSiteJwtRequest(applicationId, callbackUrl, organizationName)
+exports.getIdSiteBearer = function(applicationId, options){
+    return exports.getIdSiteJwtRequest(applicationId, options)
         .then(function(jwtRequest){
                 //send it it cloudpass, it should redirect to ID site
                 return request(exports.app).get('/sso')
-                   .query({ jwtRequest: jwtRequest})
+                   .query({jwtRequest: jwtRequest})
                    .expect(302)
                    .toPromise();
         })
@@ -119,7 +116,7 @@ before(function(){
                 .get('/logout')
                 .expect(204);
         });
-            
+
 });
 
 after(function(){

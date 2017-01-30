@@ -15,7 +15,7 @@ var scope = {
 };
 
 describe('scope', function () {
-    
+
     describe('scopeHelper.getIdSiteScope', function(){
         it('should merge correctly the scopes of the provided instances', function(){
             assert.deepStrictEqual(
@@ -30,7 +30,7 @@ describe('scope', function () {
                     {
                         id: 'application1',
                         Model: {
-                             getIdSiteScope: () => 'application1-scope',
+                            getIdSiteScope: () => 'application1-scope',
                             options: {name: {plural: 'applications'}}
                         }
                     },
@@ -87,7 +87,7 @@ describe('scope', function () {
               }),
               scope
           );
-      })
+      });
     });
 
     describe('scopeChecker', function () {
@@ -108,7 +108,7 @@ describe('scope', function () {
                     }
             ));
         });
-        
+
         it('should allow expanding requests within their scope', function () {
             assert(isRequestAllowed(
                     {
@@ -121,7 +121,7 @@ describe('scope', function () {
                     }
             ));
         });
-        
+
         it('should forbid requests with a path outside of their scope', function () {
             assert(!isRequestAllowed(
                     {
@@ -134,7 +134,7 @@ describe('scope', function () {
                     }
             ));
         });
-        
+
         it('should forbid requests with a method outside of their scope', function () {
             assert(!isRequestAllowed(
                     {
@@ -147,7 +147,7 @@ describe('scope', function () {
                     }
             ));
         });
-        
+
         it('should forbid expanding requests outside of their scope', function () {
             assert(!isRequestAllowed(
                     {
