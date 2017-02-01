@@ -222,13 +222,14 @@ function createNewGroup(attributes) {
     .value());
 }
 
-function getProvider() {
+function getProvider(options) {
   return this.sequelize.models.directoryProvider
-    .findOne({
-      where: {
-        directoryId: this.id
-      }
-    })
+    .findOne(
+      _.merge(
+        {where: { directoryId: this.id }},
+         options
+      )
+    )
     .then(function(provider) {
       return Optional.ofNullable(provider).orElseGet(function() {
         //default provider is 'cloudpass'

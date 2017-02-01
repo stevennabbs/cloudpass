@@ -14,7 +14,7 @@ module.exports = {
                     allowNull: false
                 },
                 x509SigningCert: {
-                    type: DataTypes.STRING(2000),
+                    type: DataTypes.STRING(5000),
                     allowNull: false
                 },
                 directoryId: {
@@ -36,12 +36,12 @@ module.exports = {
                     onDelete: 'cascade'
                 }
             }
-        );        
+        );
     },
-    
+
     down: function(migration) {
         return migration.dropTable("samlServiceProviderMetadata");
     }
-    
+
 };
 

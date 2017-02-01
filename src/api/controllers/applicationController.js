@@ -272,10 +272,10 @@ controller.samlIdpRedirect = function(req, res) {
 
 function getSamlDirectoryProvider(accountStore) {
   if (accountStore instanceof models.directory.Instance) {
-    ApiError.assert(accountStore.providerId === 'saml', ApiError, 400, 2014, 'The directory %s is not a SAML directory', accountStore.id);
     return accountStore.getProvider({
       include: [models.samlServiceProviderMetadata]
-    });
+    })
+    .tap(provider => ApiError.assert(provider.providerId === 'saml', ApiError, 400, 2014, 'The directory %s is not a SAML directory', accountStore.id));
   }
   ApiError.assert(accountStore.getDirectories, ApiError, 400, 2014, 'SAML login in %s is not supported', accountStore.Model.options.name.plural);
   return accountStore.getDirectories({

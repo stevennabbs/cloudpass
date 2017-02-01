@@ -9,7 +9,7 @@ module.exports = {
                     type: DataTypes.UUID,
                     allowNull: false
                 },
-                providerId: {   
+                providerId: {
                     type: DataTypes.STRING(9),
                     allowNull: false,
                     defaultValue: 'cloudpass'
@@ -31,7 +31,7 @@ module.exports = {
                     allowNull: true
                 },
                 encodedX509SigningCert: {
-                    type: DataTypes.STRING(2000),
+                    type: DataTypes.STRING(5000),
                     allowNull: true
                 },
                 createdAt: {
@@ -67,12 +67,12 @@ module.exports = {
                     onDelete: "cascade"
                 }
             }
-        );        
+        );
     },
-    
+
     down: function(migration) {
         return migration.dropTable("directoryProviders");
     }
-    
+
 };
 
