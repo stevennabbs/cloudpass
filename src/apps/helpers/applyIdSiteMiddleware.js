@@ -88,7 +88,7 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, secondFactor){
                       apiKey,
                       req.authInfo.cb_uri,
                       req.authInfo.init_jti,
-                      isNewSub || req.authInfo.isNewSub,
+                      isNewSub || req.authInfo.isNewSub || false,
                       accountHref,
                       req.authInfo.state);
                   })
@@ -138,6 +138,15 @@ var addPathsToScope = function(newPathsGetter){
     return alterScope((oldPaths, req, result) => _.merge(oldPaths, newPathsGetter(result)));
 };
 
+var hideFactorSecrets = applyToIdSiteRequests(function(req, res) {
+    shimmer.wrap(res, 'json', function(original) {
+        return function(result) {
+            result.items.forEach(_.unary(_.partial(_.assign, _, {secret: null, keyUri: null, base64QRImage: null})));
+            return original.call(this, result);
+        };
+    });
+    return req.next();
+});
 
 module.exports = function(app) {
   app.use(['/applications/*', '/organizations/*', '/accounts/*', '/factors/*', '/challenges/*'], updateBearer, handleRedirects);
@@ -154,7 +163,9 @@ module.exports = function(app) {
   app.post('/applications/:applicationId/passwordResetTokens/:tokenId', removeCurrentPathFromScope);
   //allow challenging newly created factors
   app.post('/accounts/:id/factors', addPathsToScope(r => ({['/factors/'+r.id+'/challenges']: ['post']})));
-  //allow challenging retrieved factors of they are verified
+  //Hide configured factor sercrets
+  app.get('/accounts/:id/factors', hideFactorSecrets);
+  //allow challenging verified factors
   app.get('/accounts/:id/factors', addPathsToScope(r => _(r.items)
                                                             .filter(_.matches({verificationStatus :'VERIFIED'}))
                                                             .map(f => ({['/factors/'+f.id+'/challenges']: ['post']}))

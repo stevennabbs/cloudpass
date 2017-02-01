@@ -202,6 +202,11 @@ describe('idSite', function(){
                     .then(function(res){
                         //one second factor has already been configured
                         assert.strictEqual(res.body.size, 1);
+                        //secret should no be exposed
+                        assert(!res.body.items[0].secret);
+                        assert(!res.body.items[0].keyUri);
+                        assert(!res.body.items[0].base64QRImage);
+
                         return BluebirdPromise.join(
                                 request(init.app).post('/v1/factors/'+res.body.items[0].id+'/challenges')
                                     .set('authorization', res.header.authorization)

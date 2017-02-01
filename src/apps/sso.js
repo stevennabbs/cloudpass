@@ -118,9 +118,7 @@ function redirectToIdSite(jwtPayload, application, accountStore, apiKey, res){
             state: jwtPayload.state,
             asnk: jwtPayload.onk,
             sof: jwtPayload.sof,
-            //TODO
             require_mfa: jwtPayload.require_mfa,
-            //require_mfa: ['google-authenticator'],
             //qualify the account store href
             ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
             //only to not make stormpath.js crash
