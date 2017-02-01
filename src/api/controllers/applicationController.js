@@ -58,7 +58,7 @@ controller.create = function(req, res) {
 
 controller.authenticate = function(req, res) {
   var attempt = req.swagger.params.attempt.value;
-  var decodedValue = new Buffer(attempt.value, 'base64').toString('utf8');
+  var decodedValue = Buffer.from(attempt.value, 'base64').toString('utf8');
   var delimiterIndex = decodedValue.indexOf(':');
   ApiError.assert(delimiterIndex > 0, ApiError, 400, 400, 'Invalid value');
   var applicationId = req.swagger.params.id.value;
