@@ -49,7 +49,7 @@ An [image is available on docker hub](https://hub.docker.com/r/dhatim/cloudpass)
 
 ### Other systems
 
-- Install Node.js (version 4.3.2 or higher). You can find installation instructions for your system [here](nodejs.org/en/download/package-manager).
+- Install Node.js (version 6). You can find installation instructions for your system [here](nodejs.org/en/download/package-manager).
 - Clone the repository: `git clone https://github.com/dhatim/cloudpass.git`, or simply [download the zip](https://github.com/dhatim/cloudpass/archive/master.zip) and extract it somewhere.
 - Run `npm install --production`.
 - Configure the persistence (c.f. below).
@@ -91,14 +91,14 @@ There are four configuration sections: *server*, *persistence*, *email* and *log
   If `rootUrl` is left null, all hrefs will be relatives (e.g `/tenants/foo`). This should be fine in most cases. However:
     - this is not necessarily well supported by Stormpath clients. In particular, we had issues with `delete` operations on the Java client. If you are interested, there is a [fork](https://github.com/dhatim/stormpath-sdk-java) fixing this issue.
     - if you mount Cloudpass after one or more path segments (e.g. `htpp://www.example.com/my/cloudpass/instance/`) and use [Sauthc1 authentication](https://github.com/stormpath/stormpath-sdk-spec/blob/master/specifications/algorithms/sauthc1.md) (which is the default method on Stormpath clients), then you must provide a rootUrl. It is because Sauthc1 uses the request path to compute its hash.
-    - ID Sites makes queries on `href`s so you must also provide a rootUrl if you use it.
+    - ID Site makes queries on `href`s so you must also provide a rootUrl if you use it.
 
 - `server.port`: the port on which cloudpass listens.
 - `clustering`: Set to true to cluster the application in a number of procesess equals to the number of CPU cores (but not more than 4) to speed up response time.
 
 ### Persistence
 
-- `database`: name of the database to connect to (irrelevant for sqlite).
+- `database`: name of the database to connect to (irrelevant for SQLite).
 - `username` and `password`: connection credentials.
 - `options`: connection options. Cloudpass uses Sequelize internally, and this object is passed *as it is* to the Sequelize constructor. A list of available options is available in [Sequelize documentation](http://docs.sequelizejs.com/en/latest/api/sequelize/#new-sequelizedatabase-usernamenull-passwordnull-options).
 
@@ -151,28 +151,31 @@ The default configuration uses direct transport, which is a very good way of get
 You should use instead SMTP transport or any other supported Nodemailer transport.
 - `transport.name`: name of the transport method. Leave it to `null` to use SMTP.
 - `transport.options`: transport configuration
-- `fields`: Optional additional email message fields such as bcc (see the [nodemailer page](https://github.com/nodemailer/nodemailer#set-up-smtp))
+- `fields`: Optional additional email message fields such as bcc (see the [nodemailer page](https://nodemailer.com/message/))
 
 #### SMTP
 
 Example of an SMTP configuration that will send a copy of each email to `foo@example.com` and `bar@example.com`:
 ```yaml
 email:
-  bcc:
-    - foo@example.com
-    - bar@example.com
   transport:
-    direct: false
-    host: smtp.example.com
-    port: 587
-    auth:
-      user: mailer@example.com
-      pass: xxxxxxx
+    name: null
+    options:
+      direct: false
+      host: smtp.example.com
+      port: 587
+      auth:
+        user: mailer@example.com
+        pass: xxxxxxx
+  fields:
+    bcc:
+      - foo@example.com
+      - bar@example.com
 ```
 
 #### Other transports
 
-See [here](https://nodemailer.com/2-0-0-beta/setup-transporter/) for a list of available Nodemailer transports.
+See [here](https://nodemailer.com/transports/) for a list of available Nodemailer transports.
 The following example will use [nodemailer-mandrill-transport](https://github.com/rebelmail/nodemailer-mandrill-transport).
 
 - Navigate to Cloudpass installation directory and install the transport method:
