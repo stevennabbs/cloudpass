@@ -19,10 +19,7 @@ Persistence of data is done either through PostgreSQL, MySQL, MariaDB, SQLite or
 Cloudpass can be installed on Debian and Ubuntu based linux distributions from a package hosted on Bintray.
 Note that this package depends on PostgreSQL, as it is the default DBMS.
 
-- Cloupdass needs Node.js 4.x to run, so you will need to add node debian repository to your source list if you have not done so already. You can find instructions [here](https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions), or simply run this command:
-  ```bash
-  wget -O - https://deb.nodesource.com/setup_4.x | sudo -E bash -
-  ```
+- Cloupdass needs Node.js 6.x to run, so you will need to add node debian repository to your source list if you have not done so already. You can find instructions [here](https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions).
 
 - Add Dhatim Bintray's debian repository in sources.list:
   ```bash

@@ -20,8 +20,8 @@
   },
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=4.3.2",
-    "npm": ">=2.13.1"
+    "node": ">=6.9.5",
+    "npm": ">=3.8.2"
   },
   "main": "src/main.js",
   "dependencies": {
@@ -39,7 +39,7 @@
     "lodash": "4.17.4",
     "moment": "2.17.1",
     "morgan": "1.7.0",
-    "nodemailer": "2.7.0",
+    "nodemailer": "3.0.0",
     "optional-js": "1.2.1",
     "passport": "0.3.2",
     "passport-http": "0.3.0",
@@ -87,7 +87,7 @@
     "thenify": "3.2.1"
   },
   "scripts": {
-    "start": "node --harmony .",
+    "start": "node .",
     "clean": "rimraf build",
     "test:unit": "cross-conf-env node --harmony node_modules/istanbul/lib/cli.js cover --config=tests/unit/.istanbul.yml node_modules/mocha/bin/_mocha -- --opts tests/mocha.opts  --reporter $npm_package_config_mocha_reporter tests/unit",
     "test:integration": "cross-conf-env node --harmony node_modules/istanbul/lib/cli.js cover --config=tests/integration/.istanbul.yml node_modules/mocha/bin/_mocha -- --opts tests/mocha.opts  --reporter $npm_package_config_mocha_reporter tests/integration",
