@@ -13,6 +13,6 @@ COPY migrations migrations/
 COPY src src/
 COPY config/default.yaml config/default-docker.yaml config/custom-environment-variables.yaml config/
 
-EXPOSE 10010
+EXPOSE 10010 10011
 
 CMD [ "npm", "start" ]

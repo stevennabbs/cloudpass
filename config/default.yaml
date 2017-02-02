@@ -7,6 +7,8 @@ server:
   rootUrl: null
   # Port on which the server will listen
   port: 10010
+  # monintoring port, used to expose current application status
+  monitoringPort: 10011
   # If true, the application will be clustered in a number of processes equals to
   # the number of CPU cores (but not more than 4)
   clustering: true

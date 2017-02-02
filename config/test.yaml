@@ -1,8 +1,9 @@
 server:
     port: 20020
+    monitoringPort: 20021
     # using clustering would also fork tests
     clustering: false
-    
+
 # send emails to a fake smtp server started during integration tests
 email:
     transport:
@@ -18,7 +19,7 @@ persistence:
     options:
         dialect: sqlite
         storage: ':memory:'
-        
+
 logging:
   sql:
     console:

@@ -21,18 +21,22 @@ module.exports = loadLoggingConfig(config.get('logging'))
                     if(config.get('server.clustering') && numCPUs > 1){
                         return _.times(Math.min(numCPUs, 4), cluster.fork.bind(cluster, {secret: secret}));
                     } else {
-                        return startServer(secret);
+                        return startServers(secret);
                     }
                 });
         } else {
-            return startServer(process.env.secret);
+            return startServers(process.env.secret);
         }
 });
 
-function startServer(secret){
+function startServers(secret){
     //enable ACL
     require('./models').useSsacl(ssacl, ssaclCls);
 
+    //start monitoring app
+    require('./apps/monitoring').listen(config.get('server.monitoringPort'));
+
+    //load functional components
     var app = express();
     app.set('secret', secret);
     app.use(cookieParser(secret));
