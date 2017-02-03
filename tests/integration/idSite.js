@@ -3,7 +3,7 @@
 var assert = require("assert");
 var BluebirdPromise = require('sequelize').Promise;
 var jwt = require('jsonwebtoken');
-var request = require('supertest-as-promised');
+var request = require('supertest');
 var speakeasy = require("speakeasy");
 var init = require('./init');
 
@@ -119,7 +119,7 @@ describe('idSite', function(){
                     .then(function(){
                         return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, onk: organizationName});
                     })
-                    .tap(function(bearer){
+                    .then(function(bearer){
                        //the bearer should give access to the organization & its ID site model
                        return request(init.app).get('/v1/organizations/'+organizationId)
                                 .set('authorization', 'Bearer '+bearer)
@@ -130,7 +130,8 @@ describe('idSite', function(){
                                    assert(res.body.idSiteModel.hasOwnProperty('providers'));
                                    assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
                                    assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
-                                });
+                                })
+                                .then(() => bearer);
                     })
                     .then(function(bearer){
                         //Cloudpass should return a 400 because the account is not in this organization
@@ -302,8 +303,7 @@ describe('idSite', function(){
                 .then(function(bearer){
                     return request(init.app).get('/v1/applications/'+applicationId+'/accounts')
                         .set('authorization', 'Bearer '+bearer)
-                        .expect(403)
-                        .toPromise();
+                        .expect(403);
                 });
     });
 

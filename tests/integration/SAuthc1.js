@@ -5,7 +5,7 @@ var crypto = require('crypto');
 var url = require('url');
 var http = require('http');
 var BluebirdPromise = require('sequelize').Promise;
-var request = require('supertest-as-promised');
+var request = require('supertest');
 
 describe('SAuthc1', function(){
     var application;
@@ -45,8 +45,7 @@ describe('SAuthc1', function(){
      it('Invalid digest', function(){
          return request(init.app).get('/v1/tenants/'+init.apiKey.tenantId)
                     .set('authorization', 'SAuthc1 sauthc1Id=201c2ec2-6d42-47b1-ba85-3b5ca3700b38/20160223/2639dabba1390038/sauthc1_request, sauthc1SignedHeaders=content-type;host;x-stormpath-date, sauthc1Signature=51d68f16f209d1ac4ba3cfcdcb476d36cfa1eeecae976e749c889af0738dbe41')
-                    .expect(401)
-                    .toPromise();
+                    .expect(401);
      });
 });
 

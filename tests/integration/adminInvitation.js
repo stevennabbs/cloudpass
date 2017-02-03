@@ -2,21 +2,21 @@ var assert = require('assert');
 var url = require('url');
 var init = require('./init');
 var BluebirdPromise = require('sequelize').Promise;
-var request = require('supertest-as-promised');
+var request = require('supertest');
 
 describe('admin invitation', function(){
     var mailServer;
     before(function () {
-       mailServer = init.getMailServer(); 
+       mailServer = init.getMailServer();
     });
-    
+
     after(function () {
         mailServer.stop();
     });
-    
+
     it('workflow', function(){
         var invitedEmail = 'invited@example.com';
-        
+
         return BluebirdPromise.join(
                     // send an invitation email
                     init.getEmailPromise(mailServer, invitedEmail),
@@ -28,13 +28,11 @@ describe('admin invitation', function(){
                             linkPath: 'adminInvitation.html'
                         })
                         .expect(204)
-                        .toPromise()
                 )
                 .spread(function(email){
                     //consume the invitation
                     return request(init.app).get('/adminInvitation'+url.parse(email.body).search)
-                            .expect(200)
-                            .toPromise();
+                            .expect(200);
                 })
                 .then(function(res){
                     assert(res.body.id);
@@ -46,8 +44,7 @@ describe('admin invitation', function(){
                         .send('givenName=test')
                         .send('surname=test')
                         .send('password=Aa123456')
-                        .expect(204)
-                        .toPromise();
+                        .expect(204);
                 })
                 .then(function(){
                     //the new admin should be able to login
@@ -56,14 +53,13 @@ describe('admin invitation', function(){
                         .send('tenantNameKey=test-tenant')
                         .send('email='+invitedEmail)
                         .send('password=Aa123456')
-                        .expect(204)
-                        .toPromise();
+                        .expect(204);
                 })
                 .then(function(res){
                     assert(res.header['set-cookie']);
                 });
     });
-    
+
     it('invalid invitations should be rejected', function(){
         return request(init.app)
                 .post('/adminInvitation')

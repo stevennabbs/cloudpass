@@ -1,4 +1,4 @@
-var request = require('supertest-as-promised');
+var request = require('supertest');
 var randomstring = require("randomstring");
 var ms = require('smtp-tester');
 var BluebirdPromise = require('sequelize').Promise;
@@ -56,8 +56,7 @@ exports.getIdSiteBearer = function(applicationId, options){
                 //send it it cloudpass, it should redirect to ID site
                 return request(exports.app).get('/sso')
                    .query({jwtRequest: jwtRequest})
-                   .expect(302)
-                   .toPromise();
+                   .expect(302);
         })
         .then(function(res){
             var fragmentStart = '/#/?jwt=';
@@ -80,8 +79,7 @@ before(function(){
                 .send('givenName=test')
                 .send('surname=test')
                 .send('password='+exports.adminPassword)
-                .expect(204)
-                .toPromise();
+                .expect(204);
         })
         .then(function(){
             //login
@@ -90,8 +88,7 @@ before(function(){
                 .send('tenantNameKey=test-tenant')
                 .send('email=test@example.com')
                 .send('password=Aa123456')
-                .expect(204)
-                .toPromise();
+                .expect(204);
         })
         .then(function(res){
             var cookie = res.header['set-cookie'][0].split(';')[0];
@@ -103,8 +100,7 @@ before(function(){
                         return request(exports.app)
                             .post('/v1/accounts/'+res.header.location+'/apiKeys')
                             .set('Cookie', cookie)
-                            .expect(200)
-                            .toPromise();
+                            .expect(200);
                     });
         })
         .then(function(res){

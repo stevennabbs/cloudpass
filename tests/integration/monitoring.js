@@ -1,5 +1,5 @@
 const assert = require('assert');
-const request = require('supertest-as-promised');
+const request = require('supertest');
 const monitoringApp = require('../../src/apps/monitoring');
 
 describe('monitoring', function () {

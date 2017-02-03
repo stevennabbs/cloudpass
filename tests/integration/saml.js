@@ -3,7 +3,7 @@ var init = require('./init');
 var BluebirdPromise = require('sequelize').Promise;
 var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
 var readFile = BluebirdPromise.promisify(require("fs").readFile);
-var request = require('supertest-as-promised');
+var request = require('supertest');
 var url = require('url');
 
 describe('SAML', function(){
