@@ -41,7 +41,7 @@
     "moment": "2.17.1",
     "morgan": "1.7.0",
     "node-appinfo": "0.2.3",
-    "nodemailer": "3.0.0",
+    "nodemailer": "3.0.1",
     "optional-js": "1.2.1",
     "passport": "0.3.2",
     "passport-http": "0.3.0",
