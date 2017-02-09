@@ -870,6 +870,11 @@
         </td>
                     </tr>
                     <tr>
+                        <td><a href="#operation--accounts--id--passwordChanges-post">POST /accounts/{id}/passwordChanges</a></td>
+                        <td><p>change the password</p>
+        </td>
+                    </tr>
+                    <tr>
                         <td><a href="#operation--accounts--id--customData-get">GET /accounts/{id}/customData</a></td>
                         <td><p>retrieve account custom data</p>
         </td>
@@ -3028,6 +3033,147 @@
                                                                 <a class="json-schema-ref" href="#/definitions/Factor">Factor</a>
                                                     </div>
                                                 </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-default">
+                                        default 
+                                    
+                                    </dt>
+                                    <dd class="sw-response-default">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>error</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/Error">Error</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                </div>
+            </div>    
+        <span id="path--accounts--id--passwordChanges"></span>
+            <div id="operation--accounts--id--passwordChanges-post" class="swagger--panel-operation-post panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">change the password</div>
+                    <h3 class="panel-title"><span class="operation-name">POST</span> <strong>/accounts/{id}/passwordChanges</strong></h3>
+                        Tags:
+                            <a href="#tag-accounts">accounts</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        <p>change the password of the given user</p>
+            
+                    </section>
+                        
+                            <section class="sw-request-body">
+                                
+                                    <p><a href="#sw-default-consumes">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> <span class="label label-default">application/octet-stream</span> 
+                                    </p>
+                                                <div class="row">
+                                            <div class="col-md-6">
+                                                <p><p>attributes</p>
+                        </p>
+                                            </div>
+                                            <div class="col-md-6 sw-request-model">
+                            <div  class="panel panel-definition">
+                                <div class="panel-body">
+                                        
+                                                <section class="json-schema-properties">
+                                                    <dl>
+                                                            <dt data-property-name="currentPassword">
+                                                                <span class="json-property-name">currentPassword:</span>
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="newPassword">
+                                                                <span class="json-property-name">newPassword:</span>
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                                    <span class="json-property-required"></span>
+                                                            </dt>
+                                                            <dd>
+                                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                    </dl>
+                                                </section>
+                                </div>
+                            </div></div>
+                                        </div>
+                            </section>        
+                        <section class="sw-request-params">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-param-name"></th>
+                                    <th class="sw-param-description"></th>
+                                    <th class="sw-param-type"></th>
+                                    <th class="sw-param-data-type"></th>
+                                    <th class="sw-param-annotation"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td>
+                                                id
+                                            <td><p>Resource ID</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td><span class="json-property-type">string</span>    <span class="json-property-format">(uuid)</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Id">#/parameters/Id</a></span>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    
+                        <section class="sw-responses">
+                                <p><a href="#sw-default-produces">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> 
+                                </p>
+                            
+                            <dl>
+                                    <dt class="sw-response-204">
+                                        204 No Content
+                                    
+                                    </dt>
+                                    <dd class="sw-response-204">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>password changed</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                            </div>
                                             
                                             </div>                </dd>
                                     <dt class="sw-response-default">
@@ -18102,6 +18248,20 @@
                                                                             
                                                                         </div>
                                                                     </dd>
+                                                                    <dt data-property-name="passwordChanges">
+                                                                        <span class="json-property-name">passwordChanges:</span>
+                                                                        <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/ResourceReference">ResourceReference</a>
+                                                                        </span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
                                                                     <dt data-property-name="customData">
                                                                         <span class="json-property-name">customData:</span>
                                                                         <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/ResourceReference">ResourceReference</a>
@@ -18830,6 +18990,19 @@
                                                                                     
                                                                                 }
                                                                                 </span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                                    <dt data-property-name="type">
+                                                                        <span class="json-property-name">type:</span>
+                                                                        <span class="json-property-type">string</span>
                                                                         <span class="json-property-range" title="Value limits"></span>
                                                                         
                                                                             <span class="json-property-required"></span>
