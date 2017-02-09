@@ -46,26 +46,33 @@ app.get('/', function(req, res){
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
         var application = models.resolveHref(req.authInfo.sub);
-         application.getLookupAccountStore(req.authInfo.onk)
+        application.getLookupAccountStore(req.authInfo.onk)
             .then(function(accountStore){
                 var cookie = req.cookies[req.user.tenantId];
                 if(cookie){
                     //the user already authenticated for this tenant
                     //check if his account belongs to the requested account store
                     return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
+                        .tap(cookieJwt => ApiError.assert(_.isEmpty(req.authInfo.require_mfa) || _.includes(req.authInfo.require_mfa, cookieJwt.mfa), Error, 'second factor required'))
                         .get('sub')
-                        .then(function(accountId){
-                            return accountStore.getAccounts({where: {id: accountId}, limit:1, actor: req.user.tenantId});
-                        })
+                        .then(accountId => accountStore.getAccounts({where: {id: accountId}, limit:1, actor: req.user.tenantId}))
                         .spread(function(account){
-                            ApiError.assert(account, 'account not found in account store');
-                            return idSiteHelper.getJwtResponse(req.user, req.authInfo.cb_uri, req.authInfo.jti, false, account.href, req.authInfo.state)
-                                    .then(sendJwtResponse(res, req.authInfo.cb_uri));
+                            ApiError.assert(account, Error, 'account not found in account store');
+                            return idSiteHelper.getJwtResponse(
+                                req.user,
+                                account.href,
+                                {
+                                    isNewSub: false,
+                                    status: "AUTHENTICATED",
+                                    cb_uri: req.authInfo.cb_uri,
+                                    irt: req.authInfo.jti,
+                                    state: req.authInfo.state
+                                }
+                            )
+                            .then(sendJwtResponse(res, req.authInfo.cb_uri));
                         })
-                        .catch(function(){
-                            // jwt expired or the account does not belong to the account store => re-authentication required
-                            return redirectToIdSite(req.authInfo, application, accountStore, req.user, res);
-                        });
+                        // jwt expired, the account does not belong to the account store, or an aditional factor has been requested => re-authentication required
+                        .catch(() => redirectToIdSite(req.authInfo, application, accountStore, req.user, res));
                 }
                 return redirectToIdSite(req.authInfo, application, accountStore, req.user, res);
             })
@@ -75,7 +82,9 @@ app.get('/', function(req, res){
         //the user was redirected from the ID site to here, and we must redirect it back to the application
         //make a jwt cookie from the account ID
         jwt.signAsync(
-            {},
+            {
+                mfa: req.authInfo.mfa
+            },
             req.app.get('secret'),
             {
                 subject: models.resolveHref(req.authInfo.sub).id,

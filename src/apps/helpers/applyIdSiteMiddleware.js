@@ -53,7 +53,7 @@ var handleRedirects = applyToIdSiteRequests(function(req, res) {
   req.next();
 });
 
-var afterAuthentication = function(accountHrefGetter, isNewSub, secondFactor){
+var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter){
   return applyToIdSiteRequests(function(req, res) {
     shimmer.wrap(res, 'json', function(original) {
       return function(result) {
@@ -61,8 +61,11 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, secondFactor){
         let accountHref = accountHrefGetter(result);
         BluebirdPromise.try(() => {
           if (accountHref) {
+            var secondFactor = Optional.ofNullable(factorTypeGetter)
+                                .map(_.method('call', null, result))
+                                .orElse(null);
             //ask for a second factor if requested
-            if(!secondFactor && req.authInfo.require_mfa){
+            if(!_.isEmpty(req.authInfo.require_mfa) && !_.includes(req.authInfo.require_mfa, secondFactor)){
                 var accountId = /\/accounts\/(.*)$/.exec(accountHref)[1];
                 //add 2nd factors into the request scope
                 req.authInfo.scope = scopeHelper.pathsToScope(_.merge(
@@ -85,12 +88,17 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, secondFactor){
                   )
                   .then(function(apiKey) {
                     return idSiteHelper.getJwtResponse(
-                      apiKey,
-                      req.authInfo.cb_uri,
-                      req.authInfo.init_jti,
-                      isNewSub || req.authInfo.isNewSub || false,
-                      accountHref,
-                      req.authInfo.state);
+                        apiKey,
+                        accountHref,
+                        {
+                            isNewSub: isNewSub || req.authInfo.isNewSub || false,
+                            status: "AUTHENTICATED",
+                            cb_uri: req.authInfo.cb_uri,
+                            irt: req.authInfo.init_jti,
+                            state: req.authInfo.state,
+                            mfa: secondFactor
+                        }
+                    );
                   })
                   //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
                   .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
@@ -149,29 +157,33 @@ var hideFactorSecrets = applyToIdSiteRequests(function(req, res) {
 });
 
 module.exports = function(app) {
-  app.use(['/applications/*', '/organizations/*', '/accounts/*', '/factors/*', '/challenges/*'], updateBearer, handleRedirects);
-  //handle successful 1st factor: either redirect to application or ask for a 2nd factor
-  app.post('/applications/:id/loginAttempts', afterAuthentication(_.property('account.href'), false, false));
-  //after account creation, redirect to the application if the email verification workflow is not enabled
-  app.post(
-    ['/applications/:id/accounts', '/organization/:id/accounts'],
-    afterAuthentication(result => Optional.ofNullable(result.href).filter(_.constant(result.status === 'ENABLED')).orElseGet(_.stubFalse), true, false)
-  );
-  //tokens should not be exposed to the user
-  app.post('/applications/:id/passwordResetTokens', suppressOutput);
-  //remove tokens from the scope once they have been used
-  app.post('/applications/:applicationId/passwordResetTokens/:tokenId', removeCurrentPathFromScope);
-  //allow challenging newly created factors
-  app.post('/accounts/:id/factors', addPathsToScope(r => ({['/factors/'+r.id+'/challenges']: ['post']})));
-  //Hide configured factor sercrets
-  app.get('/accounts/:id/factors', hideFactorSecrets);
-  //allow challenging verified factors
-  app.get('/accounts/:id/factors', addPathsToScope(r => _(r.items)
-                                                            .filter(_.matches({verificationStatus :'VERIFIED'}))
-                                                            .map(f => ({['/factors/'+f.id+'/challenges']: ['post']}))
-                                                            .reduce(_.merge)));
-  //allow veryfing created challenges
-  app.post('/factors/:id/challenges', addPathsToScope(_.cond([[_.matches({status :'CREATED'}), c => ({['challenges/'+c.id]: ['post']})],[_.stubTrue, _.stubObject]])));
-  //handle successful 2nd factor: redirect to application
-  app.post(['/challenges/:id', '/factors/:id/challenges'], afterAuthentication(_.cond([[_.matches({status :'SUCCESS'}), _.property('account.href')], [_.stubTrue, _.stubFalse]]), false, true));
+    app.use(['/applications/*', '/organizations/*', '/accounts/*', '/factors/*', '/challenges/*'], updateBearer, handleRedirects);
+    //handle successful 1st factor: either redirect to application or ask for a 2nd factor
+    app.post('/applications/:id/loginAttempts', afterAuthentication(_.property('account.href'), false));
+    //after account creation, redirect to the application if the email verification workflow is not enabled
+    app.post(
+      ['/applications/:id/accounts', '/organization/:id/accounts'],
+      afterAuthentication(result => Optional.ofNullable(result.href).filter(_.constant(result.status === 'ENABLED')).orElseGet(_.stubFalse), true)
+    );
+    //tokens should not be exposed to the user
+    app.post('/applications/:id/passwordResetTokens', suppressOutput);
+    //remove tokens from the scope once they have been used
+    app.post('/applications/:applicationId/passwordResetTokens/:tokenId', removeCurrentPathFromScope);
+    //allow challenging newly created factors
+    app.post('/accounts/:id/factors', addPathsToScope(r => ({['/factors/'+r.id+'/challenges']: ['post']})));
+    //Hide configured factor sercrets
+    app.get('/accounts/:id/factors', hideFactorSecrets);
+    //allow challenging verified factors
+    app.get('/accounts/:id/factors', addPathsToScope(r => _(r.items)
+                                                              .filter(_.matches({verificationStatus :'VERIFIED'}))
+                                                              .map(f => ({['/factors/'+f.id+'/challenges']: ['post']}))
+                                                              .reduce(_.merge)));
+    //allow veryfing created challenges
+    app.post('/factors/:id/challenges', addPathsToScope(_.cond([[_.matches({status :'CREATED'}), c => ({['challenges/'+c.id]: ['post']})],[_.stubTrue, _.stubObject]])));
+    //handle successful 2nd factor: redirect to application
+    app.post(['/challenges/:id', '/factors/:id/challenges'], afterAuthentication(
+          _.cond([[_.matches({status :'SUCCESS'}), _.property('account.href')], [_.stubTrue, _.stubFalse]]),
+          false,
+          _.property('type')
+     ));
 };

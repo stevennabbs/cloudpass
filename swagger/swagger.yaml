@@ -1756,6 +1756,37 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /accounts/{id}/passwordChanges:
+    x-swagger-router-controller: accountController
+    post:
+      summary: change the password
+      description: change the password of the given user
+      operationId: changePassword
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - currentPassword
+              - newPassword
+            properties:
+              currentPassword:
+                type: string
+              newPassword:
+                type: string
+      responses:
+        "204":
+          description: password changed
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /accounts/{id}/customData:
     x-swagger-router-controller: accountController
     get:
@@ -3481,6 +3512,7 @@ definitions:
           - applications
           - organizations
           - factors
+          - passwordChanges
           - customData
           - providerData
         properties:
@@ -3516,6 +3548,8 @@ definitions:
           organizations:
             $ref: "#/definitions/ResourceReference"
           factors:
+            $ref: "#/definitions/ResourceReference"
+          passwordChanges:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3931,6 +3965,7 @@ definitions:
       - type: object
         required:
           - status
+          - type
           - account
           - factor
         properties:
@@ -3940,6 +3975,8 @@ definitions:
               - CREATED
               - SUCCESS
               - FAILED
+          type:
+            type: string
           account:
             $ref: "#/definitions/ResourceReference"
           factor:

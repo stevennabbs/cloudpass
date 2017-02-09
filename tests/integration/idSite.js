@@ -84,16 +84,35 @@ describe('idSite', function(){
                         );
                 })
                 .spread(function(jwtRequest, cookie){
-                    //send a a new request with the cookie
-                    return request(init.app).get('/sso')
-                        .query({ jwtRequest: jwtRequest})
-                        .set('Cookie', cookie)
-                        .expect(302);
+                    return BluebirdPromise.join(
+                        //send a a new request with the cookie
+                        request(init.app).get('/sso')
+                            .query({ jwtRequest: jwtRequest})
+                            .set('Cookie', cookie)
+                            .expect(302),
+                        cookie
+                    );
                 })
-                .then(function(res){
+                .spread(function(res, cookie){
                     //cloudpass should redirect directly to the callback URL, not to the ID site
                     assert(res.header.location);
                     assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                    return BluebirdPromise.join(
+                        init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl, require_mfa: ['google-authenticator']}),
+                        cookie
+                    );
+                })
+                .spread(function(jwtRequest, cookie){
+                    //send a a new request requiring MFA with the cookie
+                    return request(init.app).get('/sso')
+                            .query({ jwtRequest: jwtRequest})
+                            .set('Cookie', cookie)
+                            .expect(302);
+                })
+                .then(function(res){
+                    //cloudpass should redirect to ID site because no 2nd factor has been provided yet
+                    assert(res.header.location);
+                    assert(res.header.location.startsWith(idSiteUrl+'/#/?jwt='));
                 });
             });
 

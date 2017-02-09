@@ -87,6 +87,7 @@ module.exports = function (sequelize, DataTypes) {
                             createdAt: new Date(),
                             modifiedAt:new Date(),
                             status,
+                            type: this.type,
                             account: {href: hrefHelper.baseUrl+'accounts/'+this.accountId},
                             factor: {href: hrefHelper.baseUrl+'factors/'+this.id},
                             getAccount: this.getAccount.bind(this),

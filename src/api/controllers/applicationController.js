@@ -250,12 +250,10 @@ controller.samlIdpRedirect = function(req, res) {
   //when using _.defaultTo here, the first param is found in ID Site bearer
   //while the 2nd one is found in access token
   return BluebirdPromise.join(
-      models.application.build({
-        id: req.swagger.params.id.value
-      })
-      .getLookupAccountStore(req.authInfo.onk)
-      .then(as => accountHelper.getSubAccountStore(as, _.defaultTo(req.swagger.params['accountStore.href'].value, req.authInfo.ash)))
-      .then(getSamlDirectoryProvider),
+      models.application.build({id: req.swagger.params.id.value})
+        .getLookupAccountStore(req.authInfo.onk)
+        .then(as => accountHelper.getSubAccountStore(as, _.defaultTo(req.swagger.params['accountStore.href'].value, req.authInfo.ash)))
+        .then(getSamlDirectoryProvider),
       samlHelper.getRelayState(
         req.user,
         req.authInfo.cb_uri,

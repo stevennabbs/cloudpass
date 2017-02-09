@@ -1,8 +1,10 @@
 "use strict";
 
 var _ = require('lodash');
+var BluebirdPromise = require('sequelize').Promise;
+var bcrypt = BluebirdPromise.promisifyAll(require('bcryptjs'));
+var Optional = require('optional-js');
 var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
-var bcrypt = require('sequelize').Promise.promisifyAll(require('bcryptjs'));
 
 module.exports = function (sequelize, DataTypes) {
     return sequelize.define(
@@ -77,6 +79,9 @@ module.exports = function (sequelize, DataTypes) {
             getterMethods: {
                 fullName: function() {
                     return this.sequelize.Utils._.compact([this.givenName, this.middleName, this.surname]).join(' ');
+                },
+                passwordChanges: function(){
+                    return {href: this.href+'/passwordChanges'};
                 }
             },
             indexes: [
@@ -108,8 +113,9 @@ module.exports = function (sequelize, DataTypes) {
             },
             instanceMethods:{
                 verifyPassword: function(password){
-                    var hash = this.get('password', {role: 'passwordHashing'});
-                    return hash && bcrypt.compareAsync(password, hash);
+                    return Optional.ofNullable(this.get('password', {role: 'passwordHashing'}))
+                            .map(hash => bcrypt.compareAsync(password, hash))
+                            .orElse(BluebirdPromise.resolve(false));
                 },
                 getProviderData: function(){
                     return _.assign(

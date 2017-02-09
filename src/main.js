@@ -33,9 +33,6 @@ function startServers(secret){
     //enable ACL
     require('./models').useSsacl(ssacl, ssaclCls);
 
-    //start monitoring app
-    require('./apps/monitoring').listen(config.get('server.monitoringPort'));
-
     //load functional components
     var app = express();
     app.set('secret', secret);
@@ -56,5 +53,7 @@ function startServers(secret){
           app.use('/v1', apiApp);
           //start the server
           return app.listen(config.get('server.port'));
-       });
+        })
+        //start monitoring app
+        .tap(() =>  require('./apps/monitoring').listen(config.get('server.monitoringPort')));
 }

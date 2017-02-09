@@ -100,4 +100,31 @@ controller.consumeEmailVerificationToken = function(req, res){
 
 controller.getProviderData = _.partial(controller.getComputedSubResource, 'getProviderData');
 
+controller.changePassword = function(req, res){
+    models.account.findById(
+        req.swagger.params.id.value,
+        {
+            include: [{
+                model: models.directory,
+                include: [{model: models.passwordPolicy}]
+            }]
+        }
+    )
+    .tap(ApiError.assertFound)
+    .tap(account =>
+        account.verifyPassword(req.swagger.params.attributes.value.currentPassword)
+            .then(_.partial(ApiError.assert, _, ApiError, 400, 7100, 'Password change failed because the specified password is incorrect.'))
+    )
+    .then(account => account.update({password: req.swagger.params.attributes.value.newPassword}))
+    .then(account => {
+        if (account.directory.passwordPolicy.resetSuccessEmailStatus === 'ENABLED') {
+            account.directory.passwordPolicy
+                .getResetSuccessEmailTemplates({limit: 1})
+                .spread(template => email.send(account, account.directory, template));
+        }
+        res.status(204).json();
+    })
+    .catch(req.next);
+};
+
 module.exports = controller;
