@@ -38,7 +38,10 @@ describe('idSite', function(){
                 .then(function(res){
                   //enable password reset workflow
                   return init.postRequest('passwordPolicies/' + res.body.passwordPolicy.id)
-                    .send({resetEmailStatus: 'ENABLED'})
+                    .send({
+                        resetEmailStatus: 'ENABLED',
+                        resetSuccessEmailStatus: 'ENABLED'
+                    })
                     .expect(200)
                     .then(function(){
                       return init.postRequest('accountCreationPolicies/' + res.body.accountCreationPolicy.id)
@@ -62,7 +65,7 @@ describe('idSite', function(){
                         .set('authorization', 'Bearer '+bearer)
                         .send({
                             type: 'basic',
-                            value: new Buffer(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                            value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
                         })
                         .expect(200);
                 })
@@ -87,7 +90,7 @@ describe('idSite', function(){
                     return BluebirdPromise.join(
                         //send a a new request with the cookie
                         request(init.app).get('/sso')
-                            .query({ jwtRequest: jwtRequest})
+                            .query({jwtRequest: jwtRequest})
                             .set('Cookie', cookie)
                             .expect(302),
                         cookie
@@ -158,7 +161,7 @@ describe('idSite', function(){
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 type: 'basic',
-                                value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
+                                value: Buffer.from('test@example.com:Aa123456', 'utf8').toString('base64')
                             })
                             .expect(400);
                     });
@@ -171,7 +174,7 @@ describe('idSite', function(){
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 type: 'basic',
-                                value: new Buffer(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                                value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
                             })
                             .expect(200);
                     })
@@ -275,17 +278,22 @@ describe('idSite', function(){
                   .set('authorization', 'Bearer '+bearer)
                   .send({email: init.adminUser})
                   .expect(200)
-           ).spread(function(email){
-              let jwtParam = /\/#\/reset\?jwt=(.*?)\n/.exec(email.body)[1];
-              assert(jwtParam);
-              let tokenId = jwt.decode(jwtParam).sp_token;
-              assert(tokenId);
-              return request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+tokenId)
-                  .set('authorization', 'Bearer '+jwtParam)
-                  .send({password: init.adminPassword})
-                  .expect(200);
-           });
-       });
+            );
+        })
+        .spread(function(email){
+           let jwtParam = /\/#\/reset\?jwt=(.*?)\n/.exec(email.body)[1];
+           assert(jwtParam);
+           let tokenId = jwt.decode(jwtParam).sp_token;
+           assert(tokenId);
+           return BluebirdPromise.join(
+                   init.getEmailPromise(mailServer, init.adminUser),
+                   request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+tokenId)
+                     .set('authorization', 'Bearer '+jwtParam)
+                     .send({password: init.adminPassword})
+                     .expect(200)
+            );
+        })
+        .spread(email => assert.strictEqual(email.headers.subject, 'Your password has been changed'));
     });
 
     it('email verification', function(){
@@ -333,6 +341,77 @@ describe('idSite', function(){
                     assert(res.body.hasOwnProperty('providers'));
                     assert(res.body.hasOwnProperty('passwordPolicy'));
                     assert(res.body.hasOwnProperty('logoUrl'));
+                });
+    });
+
+    it('Password change', function(){
+        return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
+                //login
+                .then(bearer => request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                        .set('authorization', 'Bearer '+bearer)
+                        .send({
+                            type: 'basic',
+                            value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                        })
+                        .expect(200)
+                )
+                .then(res => request(res.header['stormpath-sso-redirect-location']).get('').expect(302))
+                .then(res => BluebirdPromise.join(
+                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl, path: '/#/securitySettings'}),
+                            res.header['set-cookie'][0].split(';')[0]
+                ))
+                //send a a new request to access security settings with the cookie
+                .spread((jwtRequest, cookie) =>
+                        request(init.app).get('/sso')
+                            .query({jwtRequest: jwtRequest})
+                            .set('Cookie', cookie)
+                            .expect(302)
+                )
+                .then(res => {
+                    const fragmentStart = '/#/securitySettings?jwt=';
+                    assert(res.header.location.indexOf(fragmentStart) >= 0);
+                    return res.header.location.substring(res.header.location.indexOf(fragmentStart) + fragmentStart.length);
+                })
+                //this bearer should give access to the /passwordChanges endpoint
+                .then(bearer => request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                            .set('authorization', 'Bearer '+bearer)
+                            .send({
+                                currentPassword: '123456',
+                                newPassword: init.adminPassword
+                            })
+                            .expect(400)
+                )
+                //the password change must be refused if the current password is incorrect
+                .then(res => {
+                    assert.strictEqual(res.body.code, 7100);
+                    return request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                            .set('authorization', res.get('authorization'))
+                            .send({
+                                currentPassword: init.adminPassword,
+                                newPassword: '1'
+                            })
+                            .expect(400);
+                })
+                //the password change must be refused if the new password doesn't satisfy password policy
+                .then(res => {
+                    assert.strictEqual(res.body.code, 2007);
+                    return request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                            .set('authorization', res.get('authorization'))
+                            .send({
+                                currentPassword: init.adminPassword,
+                                newPassword: init.adminPassword
+                            })
+                            .expect(204);
+                })
+                //the password can be changed only once
+                .then(res => {
+                    return request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                            .set('authorization', res.get('authorization'))
+                            .send({
+                                currentPassword: init.adminPassword,
+                                newPassword: init.adminPassword
+                            })
+                            .expect(403);
                 });
     });
 });

@@ -97,8 +97,9 @@ before(function(){
                     .set('Cookie', cookie)
                     .expect(302)
                     .then(function(res){
+                        exports.adminUserId = res.header.location;
                         return request(exports.app)
-                            .post('/v1/accounts/'+res.header.location+'/apiKeys')
+                            .post('/v1/accounts/'+ exports.adminUserId +'/apiKeys')
                             .set('Cookie', cookie)
                             .expect(200);
                     });

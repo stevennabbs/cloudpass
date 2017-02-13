@@ -130,11 +130,11 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 getIdSiteScope: function(){
                     return [
-                        "get",
-                        { customData: [ "get" ] },
-                        { idSiteModel: [ "get" ] },
-                        { loginAttempts: [ "post" ] },
-                        { accounts: [ "post" ] },
+                        'get',
+                        { customData: [ 'get' ] },
+                        { idSiteModel: [ 'get' ] },
+                        { loginAttempts: [ 'post' ] },
+                        { accounts: [ 'post' ] },
                         { passwordResetTokens: [ "post" ] },
                         { saml: {sso : {idpRedirect: ['get'] } } }
                     ];

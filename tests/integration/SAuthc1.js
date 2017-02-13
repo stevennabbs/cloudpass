@@ -163,7 +163,7 @@ function sendAauthc1Request(path, query, method, body) {
         );
 
         if(bodyString){
-            req.write(new Buffer(bodyString));
+            req.write(Buffer.from(bodyString, 'utf8'));
         }
         req.end();
     });

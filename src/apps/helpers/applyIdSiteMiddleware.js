@@ -56,60 +56,60 @@ var handleRedirects = applyToIdSiteRequests(function(req, res) {
 var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter){
   return applyToIdSiteRequests(function(req, res) {
     shimmer.wrap(res, 'json', function(original) {
-      return function(result) {
-        //check if an account has been returned
-        let accountHref = accountHrefGetter(result);
-        BluebirdPromise.try(() => {
-          if (accountHref) {
-            var secondFactor = Optional.ofNullable(factorTypeGetter)
-                                .map(_.method('call', null, result))
-                                .orElse(null);
-            //ask for a second factor if requested
-            if(!_.isEmpty(req.authInfo.require_mfa) && !_.includes(req.authInfo.require_mfa, secondFactor)){
-                var accountId = /\/accounts\/(.*)$/.exec(accountHref)[1];
-                //add 2nd factors into the request scope
-                req.authInfo.scope = scopeHelper.pathsToScope(_.merge(
-                    scopeHelper.scopeToPaths(req.authInfo.scope),
-                    {accounts: {[accountId]: [{factors: ['get', 'post']}]}}
-                ));
-                req.authInfo.isNewSub = isNewSub;
-                return setAuthorizationBearer(req, this)
-                        .then(() => original.call(this, result));
-            } else {
-                //the user is authenticated: redirect back to the application once
-                return getApiKey(
-                    req.authInfo.sub, {
-                      model: models.tenant,
-                      include: [{
-                        model: models.idSite,
-                        limit: 1
-                      }]
+        return function(result) {
+            //check if an account has been returned
+            let accountHref = accountHrefGetter(result);
+            BluebirdPromise.try(() => {
+                if (accountHref) {
+                    var secondFactor = Optional.ofNullable(factorTypeGetter)
+                                        .map(_.method('call', null, result))
+                                        .orElse(null);
+                    //ask for a second factor if requested
+                    if(!_.isEmpty(req.authInfo.require_mfa) && !_.includes(req.authInfo.require_mfa, secondFactor)){
+                        var accountId = /\/accounts\/(.*)$/.exec(accountHref)[1];
+                        //add 2nd factors into the request scope
+                        req.authInfo.scope = scopeHelper.pathsToScope(_.merge(
+                            scopeHelper.scopeToPaths(req.authInfo.scope),
+                            idSiteHelper.getFactorsScope(accountId)
+                        ));
+                        req.authInfo.isNewSub = isNewSub;
+                        return setAuthorizationBearer(req, this)
+                                .then(() => original.call(this, result));
+                    } else {
+                        //the user is authenticated: redirect back to the application once
+                        return getApiKey(
+                            req.authInfo.sub, {
+                              model: models.tenant,
+                              include: [{
+                                model: models.idSite,
+                                limit: 1
+                              }]
+                            }
+                          )
+                          .then(function(apiKey) {
+                            return idSiteHelper.getJwtResponse(
+                                apiKey,
+                                accountHref,
+                                {
+                                    isNewSub: isNewSub || req.authInfo.isNewSub || false,
+                                    status: "AUTHENTICATED",
+                                    cb_uri: req.authInfo.cb_uri,
+                                    irt: req.authInfo.init_jti,
+                                    state: req.authInfo.state,
+                                    mfa: secondFactor
+                                }
+                            );
+                          })
+                          //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
+                          .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
                     }
-                  )
-                  .then(function(apiKey) {
-                    return idSiteHelper.getJwtResponse(
-                        apiKey,
-                        accountHref,
-                        {
-                            isNewSub: isNewSub || req.authInfo.isNewSub || false,
-                            status: "AUTHENTICATED",
-                            cb_uri: req.authInfo.cb_uri,
-                            irt: req.authInfo.init_jti,
-                            state: req.authInfo.state,
-                            mfa: secondFactor
-                        }
-                    );
-                  })
-                  //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
-                  .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
-            }
-          } else {
-              return original.call(this, result);
-          }
+                } else {
+                    return original.call(this, result);
+                }
 
-        })
-        .catch(req.next);
-      };
+            })
+            .catch(req.next);
+        };
     });
     req.next();
   });
@@ -126,7 +126,7 @@ var alterScope = function(newPathsGetter){
     shimmer.wrap(res, 'json', function(original) {
       return function(result) {
         BluebirdPromise.try(() => {
-          if (this.statusCode === 200) {
+          if (_.inRange(this.statusCode, 200, 400)) {
             req.authInfo.scope = scopeHelper.pathsToScope(newPathsGetter(scopeHelper.scopeToPaths(req.authInfo.scope), req, result));
             return setAuthorizationBearer(req, this);
           }
@@ -167,8 +167,8 @@ module.exports = function(app) {
     );
     //tokens should not be exposed to the user
     app.post('/applications/:id/passwordResetTokens', suppressOutput);
-    //remove tokens from the scope once they have been used
-    app.post('/applications/:applicationId/passwordResetTokens/:tokenId', removeCurrentPathFromScope);
+    //Endpoints changing passwords can only be used once
+    app.post(['/applications/:applicationId/passwordResetTokens/:tokenId', '/accounts/:id/passwordChanges'], removeCurrentPathFromScope);
     //allow challenging newly created factors
     app.post('/accounts/:id/factors', addPathsToScope(r => ({['/factors/'+r.id+'/challenges']: ['post']})));
     //Hide configured factor sercrets
@@ -186,4 +186,6 @@ module.exports = function(app) {
           false,
           _.property('type')
      ));
+     //redirect to application once the user is done setting up his account (password or multi factor change)
+     app.get('/accounts/:id', afterAuthentication(_.property('href'), false));
 };

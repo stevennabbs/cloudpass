@@ -53,28 +53,43 @@ app.get('/', function(req, res){
                     //the user already authenticated for this tenant
                     //check if his account belongs to the requested account store
                     return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
-                        .tap(cookieJwt => ApiError.assert(_.isEmpty(req.authInfo.require_mfa) || _.includes(req.authInfo.require_mfa, cookieJwt.mfa), Error, 'second factor required'))
-                        .get('sub')
-                        .then(accountId => accountStore.getAccounts({where: {id: accountId}, limit:1, actor: req.user.tenantId}))
-                        .spread(function(account){
-                            ApiError.assert(account, Error, 'account not found in account store');
-                            return idSiteHelper.getJwtResponse(
-                                req.user,
-                                account.href,
-                                {
-                                    isNewSub: false,
-                                    status: "AUTHENTICATED",
-                                    cb_uri: req.authInfo.cb_uri,
-                                    irt: req.authInfo.jti,
-                                    state: req.authInfo.state
-                                }
-                            )
-                            .then(sendJwtResponse(res, req.authInfo.cb_uri));
-                        })
-                        // jwt expired, the account does not belong to the account store, or an aditional factor has been requested => re-authentication required
-                        .catch(() => redirectToIdSite(req.authInfo, application, accountStore, req.user, res));
+                            .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1, actor: req.user.tenantId}).get(0)))
+                            .spread((verifiedMfa, account) => {
+                                ApiError.assert(account, Error, 'account not found in account store');
+                                return _.cond([
+                                    [
+                                        //if the user didn't authenticate with one of the requested factor, redirect to ID site with factors scope
+                                        authInfo => !_.isEmpty(authInfo.require_mfa) && !_.includes(authInfo.require_mfa, verifiedMfa),
+                                        authInfo => redirectToIdSite(res, req.user, application, accountStore, authInfo, idSiteHelper.getFactorsScope(account.id))
+                                    ],
+                                    [
+                                        //if the password change page is requested, redirect to ID site with the right scope
+                                        _.matchesProperty('path', '/#/securitySettings'),
+                                        authInfo => redirectToIdSite(res, req.user, application, accountStore, authInfo, idSiteHelper.getPasswordChangeScope(account.id))
+                                    ],
+                                    [
+                                        //else redirect to the application directly
+                                        _.stubTrue,
+                                        () => idSiteHelper.getJwtResponse(
+                                                req.user,
+                                                account.href,
+                                                {
+                                                    isNewSub: false,
+                                                    status: "AUTHENTICATED",
+                                                    cb_uri: req.authInfo.cb_uri,
+                                                    irt: req.authInfo.jti,
+                                                    state: req.authInfo.state
+                                                }
+                                            )
+                                            .then(sendJwtResponse(res, req.authInfo.cb_uri))
+                                    ]
+                                ])(req.authInfo);
+                            })
+                        // Either jwt expired or the account does not belong to the account store
+                        //  => re-authentication required
+                        .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo));
                 }
-                return redirectToIdSite(req.authInfo, application, accountStore, req.user, res);
+                return redirectToIdSite(res, req.user, application, accountStore, req.authInfo);
             })
             .catch(req.next);
 
@@ -117,11 +132,11 @@ app.get('/logout', function(req, res){
 
 app.use(errorHandler);
 
-function redirectToIdSite(jwtPayload, application, accountStore, apiKey, res){
+function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, scope){
     return jwt.signAsync(
         {
             init_jti: jwtPayload.jti,
-            scope: scopeHelper.getIdSiteScope(application, accountStore),
+            scope: _.defaults(scopeHelper.getIdSiteScope(application, accountStore), scope),
             app_href: jwtPayload.sub,
             cb_uri: jwtPayload.cb_uri,
             state: jwtPayload.state,

@@ -120,21 +120,12 @@ describe('Application', function() {
   });
 
   describe('Login attempts', function () {
-//      var applicationId;
-//      before(function(){
-//         return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
-//             .query({ name: 'Cloudpass', limit: 1})
-//             .expect(200)
-//             .then(function(res){
-//                 applicationId = res.body.items[0].id;
-//             });
-//      });
 
      it('Must succeed if username and password are correct', function(){
          return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({
                     type: 'basic',
-                    value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
+                    value: Buffer.from('test@example.com:Aa123456', 'utf8').toString('base64')
                 })
                 .expect(200)
                 .then(function(res){
@@ -147,7 +138,7 @@ describe('Application', function() {
         return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({
                     type: 'basic',
-                    value: new Buffer('test@example.com:Aa12345', 'utf8').toString('base64')
+                    value: Buffer.from('test@example.com:Aa12345', 'utf8').toString('base64')
                 })
                 .expect(400)
                 .then(function(res){
@@ -161,7 +152,7 @@ describe('Application', function() {
                 .query({expand: 'account'})
                 .send({
                     type: 'basic',
-                    value: new Buffer('test@example.com:Aa123456', 'utf8').toString('base64')
+                    value: Buffer.from('test@example.com:Aa123456', 'utf8').toString('base64')
                 })
                 .expect(200)
                 .then(function(res){
@@ -173,7 +164,7 @@ describe('Application', function() {
         return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({
                     type: 'basic',
-                    value: new Buffer('test@example.com:Aa12345', 'utf8').toString('base64'),
+                    value: Buffer.from('test@example.com:Aa12345', 'utf8').toString('base64'),
                     accountStore: {
                         href: '/organizations/6cacc65f-37e8-4b28-91ae-de031a695d43'
                     }
