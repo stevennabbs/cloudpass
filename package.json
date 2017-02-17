@@ -82,7 +82,7 @@
     "rimraf": "2.5.4",
     "smtp-tester": "0.6.3",
     "sqlite3": "3.1.8",
-    "superagent": "3.4.3",
+    "superagent": "3.4.4",
     "supertest": "3.0.0",
     "supertest-as-promised": "4.0.2",
     "tar-fs": "1.15.0",
