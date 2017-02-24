@@ -23,10 +23,11 @@ exports.getFactorsScope = accountId => ({
     }
 });
 
-exports.getPasswordChangeScope = accountId => ({
+exports.getSecuritySettingsScope = accountId => ({
     accounts: {
         [accountId]: [
             'get',
+            {factors: ['get', 'post']},
             {passwordChanges: ['post']}
         ]
     }

@@ -57,7 +57,27 @@ describe('idSite', function(){
       mailServer.stop();
     });
 
+    function createAccount(){
+        var account = {
+            email: init.randomName()+'@example.com',
+            password: 'Aa123456',
+            givenName: init.randomName(),
+            surname: init.randomName()
+        };
+        return init.postRequest('applications/'+applicationId+'/accounts')
+                .query({registrationWorkflowEnabled: false})
+                .send(account)
+                .expect(200)
+                .then(res => {
+                    account.id = res.body.id;
+                    return account;
+                });
+    }
+
     describe('login', function(){
+        let account;
+        before(() => createAccount().then(a => account = a));
+
         it('in application', function(){
             return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 .then(function(bearer){
@@ -65,7 +85,7 @@ describe('idSite', function(){
                         .set('authorization', 'Bearer '+bearer)
                         .send({
                             type: 'basic',
-                            value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                            value: Buffer.from(account.email+':'+account.password, 'utf8').toString('base64')
                         })
                         .expect(200);
                 })
@@ -167,111 +187,114 @@ describe('idSite', function(){
                     });
             });
 
-            function getConfiguredFactors(requireMfa){
-                return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: requireMfa})
-                    .then(function(bearer){
-                        return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
-                            .set('authorization', 'Bearer '+bearer)
-                            .send({
-                                type: 'basic',
-                                value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
-                            })
-                            .expect(200);
-                    })
-                    .then(function(res){
-                        //there shouldn't be a redirection URL in the headers
-                        assert(!res.header['stormpath-sso-redirect-location']);
-                        assert(res.header.authorization);
+            describe('MFA', function(){
+                let secret;
 
-                        //we should be able to retrieve the list of 2nd factors with the new bearer
-                        return request(init.app).get('/v1'+res.body.account.href+'/factors')
-                                .set('authorization', res.header.authorization)
-                                .expect(200);
-                    });
-            }
-
-            it('with new second factor', function(){
-                //require google authenticator mfa in login
-                getConfiguredFactors(['google-authenticator'])
-                    .then(function(res){
-                        //no 2nd factor configured yet
-                        assert.strictEqual(res.body.size, 0);
-                        //add one
-                        return request(init.app).post('/v1'+res.body.href)
-                                .set('authorization', res.header.authorization)
+                function getConfiguredFactors(requireMfa){
+                    return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: requireMfa})
+                        .then(function(bearer){
+                            return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                                .set('authorization', 'Bearer '+bearer)
                                 .send({
-                                    type: 'google-authenticator',
-                                    issuer: init.randomName()
+                                    type: 'basic',
+                                    value: Buffer.from(account.email+':'+account.password, 'utf8').toString('base64')
                                 })
                                 .expect(200);
-                    })
-                    .then(function(res){
-                        assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
-                        //verify the factor
-                        return request(init.app).post('/v1/factors/'+res.body.id+'/challenges')
-                                .set('authorization', res.header.authorization)
-                                .send({code: speakeasy.totp({secret: res.body.secret, encoding: 'base32'})})
-                                .expect(200);
-                    })
-                    .then(function(res){
-                        //there should be a redirection URL in the headers
-                        assert(res.header['stormpath-sso-redirect-location']);
-                        return request(res.header['stormpath-sso-redirect-location']).get('')
-                            .expect(302);
-                    });
-            });
+                        })
+                        .then(function(res){
+                            //there shouldn't be a redirection URL in the headers
+                            assert(!res.header['stormpath-sso-redirect-location']);
+                            assert(res.header.authorization);
 
-            it('with existing second factor', function(){
-                //don't require google-authenticator MFA in login
-                //it should be asked for anyway because it has been configured
-                getConfiguredFactors()
-                    .then(function(res){
-                        //one second factor has already been configured
-                        assert.strictEqual(res.body.size, 1);
-                        //secret should no be exposed
-                        assert(!res.body.items[0].secret);
-                        assert(!res.body.items[0].keyUri);
-                        assert(!res.body.items[0].base64QRImage);
-
-                        return BluebirdPromise.join(
-                                request(init.app).post('/v1/factors/'+res.body.items[0].id+'/challenges')
+                            //we should be able to retrieve the list of 2nd factors with the new bearer
+                            return request(init.app).get('/v1'+res.body.account.href+'/factors')
                                     .set('authorization', res.header.authorization)
-                                    .expect(200),
-                                res.body.items[0].secret);
-                    })
-                    .spread(function(res, secret){
-                        assert.strictEqual(res.body.status, 'CREATED');
-                        //verify the factor
-                        return request(init.app).post('/v1/challenges/'+res.body.id)
-                                .set('authorization', res.header.authorization)
-                                .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
-                                .expect(200);
-                    })
-                    .then(function(res){
-                        //there should be a redirection URL in the headers
-                        assert(res.header['stormpath-sso-redirect-location']);
-                        return request(res.header['stormpath-sso-redirect-location']).get('')
-                            .expect(302);
-                    })
-                    .then(function(res){
-                        //the cookie should give us the right to not re-enter a second factor next time
-                        return BluebirdPromise.join(
-                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl}),
-                            res.header['set-cookie'][0].split(';')[0]
-                        );
-                    })
-                    .spread(function(jwtRequest, cookie){
-                        //send a a new request with the cookie
-                        return request(init.app).get('/sso')
-                                .query({jwtRequest: jwtRequest})
-                                .set('Cookie', cookie)
+                                    .expect(200);
+                        });
+                }
+
+                it('with new second factor', function(){
+                    //require google authenticator mfa in login
+                    return getConfiguredFactors(['google-authenticator'])
+                        .then(function(res){
+                            //no 2nd factor configured yet
+                            assert.strictEqual(res.body.size, 0);
+                            //add one
+                            return request(init.app).post('/v1'+res.body.href)
+                                    .set('authorization', res.header.authorization)
+                                    .send({
+                                        type: 'google-authenticator',
+                                        issuer: init.randomName()
+                                    })
+                                    .expect(200);
+                        })
+                        .then(function(res){
+                            assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
+                            secret = res.body.secret;
+                            //verify the factor
+                            return request(init.app).post('/v1/factors/'+res.body.id+'/challenges')
+                                    .set('authorization', res.header.authorization)
+                                    .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
+                                    .expect(200);
+                        })
+                        .then(function(res){
+                            //there should be a redirection URL in the headers
+                            assert(res.header['stormpath-sso-redirect-location']);
+                            return request(res.header['stormpath-sso-redirect-location']).get('')
                                 .expect(302);
-                    })
-                    .then(function(res){
-                        //cloudpass should redirect directly to the callback URL, not to the ID site
-                        assert(res.header.location);
-                        assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
-                    });
+                        });
+                });
+
+                it('with existing second factor', function(){
+                    //don't require google-authenticator MFA in login
+                    //it should be asked for anyway because it has been configured
+                    return getConfiguredFactors()
+                        .then(function(res){
+                            //one second factor has already been configured
+                            assert.strictEqual(res.body.size, 1);
+                            //secret should no be exposed
+                            assert(!res.body.items[0].secret);
+                            assert(!res.body.items[0].keyUri);
+                            assert(!res.body.items[0].base64QRImage);
+
+                            return request(init.app).post('/v1/factors/'+res.body.items[0].id+'/challenges')
+                                        .set('authorization', res.header.authorization)
+                                        .expect(200);
+                        })
+                        .then(function(res){
+                            assert.strictEqual(res.body.status, 'CREATED');
+                            //verify the factor
+                            return request(init.app).post('/v1/challenges/'+res.body.id)
+                                    .set('authorization', res.header.authorization)
+                                    .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
+                                    .expect(200);
+                        })
+                        .then(function(res){
+                            //there should be a redirection URL in the headers
+                            assert(res.header['stormpath-sso-redirect-location']);
+                            return request(res.header['stormpath-sso-redirect-location']).get('')
+                                .expect(302);
+                        })
+                        .then(function(res){
+                            //the cookie should give us the right to not re-enter a second factor next time
+                            return BluebirdPromise.join(
+                                init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl}),
+                                res.header['set-cookie'][0].split(';')[0]
+                            );
+                        })
+                        .spread(function(jwtRequest, cookie){
+                            //send a a new request with the cookie
+                            return request(init.app).get('/sso')
+                                    .query({jwtRequest: jwtRequest})
+                                    .set('Cookie', cookie)
+                                    .expect(302);
+                        })
+                        .then(function(res){
+                            //cloudpass should redirect directly to the callback URL, not to the ID site
+                            assert(res.header.location);
+                            assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                        });
+                });
             });
     });
 
@@ -366,50 +389,59 @@ describe('idSite', function(){
                 });
     });
 
-    it('Password change', function(){
-        return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
+    describe('Settings', function(){
+
+        let account;
+        before(() => createAccount().then(a => account = a));
+
+        function getSettingsBearer(){
+            return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 //login
                 .then(bearer => request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
                         .set('authorization', 'Bearer '+bearer)
                         .send({
                             type: 'basic',
-                            value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                            value: Buffer.from(account.email+':'+account.password, 'utf8').toString('base64')
                         })
                         .expect(200)
                 )
                 .then(res => request(res.header['stormpath-sso-redirect-location']).get('').expect(302))
                 .then(res => BluebirdPromise.join(
-                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl, path: '/#/securitySettings'}),
+                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl, path: '/#/settings'}),
                             res.header['set-cookie'][0].split(';')[0]
                 ))
-                //send a a new request to access security settings with the cookie
+                //send a a new request to access settings with the cookie
                 .spread((jwtRequest, cookie) =>
-                        request(init.app).get('/sso')
-                            .query({jwtRequest: jwtRequest})
-                            .set('Cookie', cookie)
-                            .expect(302)
+                    request(init.app).get('/sso')
+                        .query({jwtRequest: jwtRequest})
+                        .set('Cookie', cookie)
+                        .expect(302)
                 )
                 .then(res => {
-                    const fragmentStart = '/#/securitySettings?jwt=';
+                    const fragmentStart = '/#/settings?jwt=';
                     assert(res.header.location.indexOf(fragmentStart) >= 0);
                     return res.header.location.substring(res.header.location.indexOf(fragmentStart) + fragmentStart.length);
-                })
+                });
+        }
+
+        it('Password Change', function(){
+            return getSettingsBearer()
                 //this bearer should give access to the /passwordChanges endpoint
-                .then(bearer => request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                .then(bearer => request(init.app).post('/v1/accounts/'+account.id+'/passwordChanges')
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 currentPassword: '123456',
-                                newPassword: init.adminPassword
+                                newPassword: 'Aa123456'
                             })
                             .expect(400)
                 )
                 //the password change must be refused if the current password is incorrect
                 .then(res => {
                     assert.strictEqual(res.body.code, 7100);
-                    return request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                    return request(init.app).post('/v1/accounts/'+account.id+'/passwordChanges')
                             .set('authorization', res.get('authorization'))
                             .send({
-                                currentPassword: init.adminPassword,
+                                currentPassword: account.password,
                                 newPassword: '1'
                             })
                             .expect(400);
@@ -417,23 +449,50 @@ describe('idSite', function(){
                 //the password change must be refused if the new password doesn't satisfy password policy
                 .then(res => {
                     assert.strictEqual(res.body.code, 2007);
-                    return request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
+                    return request(init.app).post('/v1/accounts/'+account.id+'/passwordChanges')
                             .set('authorization', res.get('authorization'))
                             .send({
-                                currentPassword: init.adminPassword,
-                                newPassword: init.adminPassword
+                                currentPassword: account.password,
+                                newPassword: account.password
                             })
                             .expect(204);
-                })
-                //the password can be changed only once
-                .then(res => {
-                    return request(init.app).post('/v1/accounts/'+init.adminUserId+'/passwordChanges')
-                            .set('authorization', res.get('authorization'))
-                            .send({
-                                currentPassword: init.adminPassword,
-                                newPassword: init.adminPassword
-                            })
-                            .expect(403);
                 });
+
+        });
+
+        it('MFA configuration', function(){
+            return getSettingsBearer()
+                //this bearer should enable us to create factors
+                .then(bearer => request(init.app).post('/v1/accounts/'+account.id+'/factors')
+                            .set('authorization', 'Bearer '+bearer)
+                            .send({
+                                type: 'google-authenticator',
+                                issuer: init.randomName()
+                            })
+                            .expect(200)
+                )
+                .then(res => {
+                    assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
+                    //verify the factor
+                    return request(init.app).post('/v1/factors/'+res.body.id+'/challenges')
+                            .set('authorization', res.header.authorization)
+                            .send({code: speakeasy.totp({secret: res.body.secret, encoding: 'base32'})})
+                            .expect(200);
+                })
+                .then(res => {
+                    //there shouldn't be a redirection URL in the headers since we already are authentified
+                    assert(!res.header['stormpath-sso-redirect-location']);
+                    return request(init.app).get('/v1/accounts/'+account.id+'/factors')
+                        .set('authorization', res.header.authorization)
+                        .expect(200);
+                })
+                .then(res => {
+                    assert.strictEqual(res.body.size, 1);
+                    //delete the factor
+                    return request(init.app).delete('/v1/factors/'+res.body.items[0].id)
+                        .set('authorization', res.header.authorization)
+                        .expect(204);
+                });
+        });
     });
 });

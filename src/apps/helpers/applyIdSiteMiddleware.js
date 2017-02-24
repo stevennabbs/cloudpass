@@ -58,19 +58,19 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
     shimmer.wrap(res, 'json', function(original) {
         return function(result) {
             //check if an account has been returned
-            let accountHref = accountHrefGetter(result);
+            let accountHref = accountHrefGetter(result, req);
             if (accountHref) {
                 var accountId = /\/accounts\/(.*)$/.exec(accountHref)[1];
-                //request a 2nd factor if:
-                // - the user already configured any
-                // - the application requested it
+                //request a 2nd factor if the user is not already authenticated
+                // and the user already configured any or the application requested it
                 BluebirdPromise.resolve(
-                        Optional.ofNullable(req.authInfo.require_mfa)
+                        Optional.ofNullable(req.authInfo.authenticated ? [] : req.authInfo.require_mfa)
                             .orElseGet(() =>
                                 models.factor.findAll({
                                     where: {
                                         accountId,
-                                        status: 'ENABLED'
+                                        status: 'ENABLED',
+                                        verificationStatus: 'VERIFIED'
                                     }
                                 })
                                 .map(_.property('type'))
@@ -78,7 +78,6 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                             )
                 )
                 .then(requireMfa => {
-                    console.log('aaaaaaaaa', requireMfa);
                     var secondFactor = Optional.ofNullable(factorTypeGetter)
                                         .map(_.method('call', null, result))
                                         .orElse(null);
@@ -160,7 +159,7 @@ var alterScope = function(newPathsGetter){
 var removeCurrentPathFromScope = alterScope((oldPaths, req) => _.omit(oldPaths, req.path));
 //remove paths to the scope if the request was successful
 var addPathsToScope = function(newPathsGetter){
-    return alterScope((oldPaths, req, result) => _.merge(oldPaths, newPathsGetter(result)));
+    return alterScope((oldPaths, req, result) => _.merge(oldPaths, newPathsGetter(result, req)));
 };
 
 var hideFactorSecrets = applyToIdSiteRequests(function(req, res) {
@@ -184,24 +183,32 @@ module.exports = function(app) {
     );
     //tokens should not be exposed to the user
     app.post('/applications/:id/passwordResetTokens', suppressOutput);
-    //Endpoints changing passwords can only be used once
-    app.post(['/applications/:applicationId/passwordResetTokens/:tokenId', '/accounts/:id/passwordChanges'], removeCurrentPathFromScope);
+    //password reset tokens can only be used once
+    app.post('/applications/:applicationId/passwordResetTokens/:tokenId', removeCurrentPathFromScope);
     //allow challenging newly created factors
     app.post('/accounts/:id/factors', addPathsToScope(r => ({['/factors/'+r.id+'/challenges']: ['post']})));
     //Hide configured factor sercrets
     app.get('/accounts/:id/factors', hideFactorSecrets);
-    //allow challenging verified factors
-    app.get('/accounts/:id/factors', addPathsToScope(r => _(r.items)
-                                                              .filter(_.matches({verificationStatus :'VERIFIED'}))
-                                                              .map(f => ({['/factors/'+f.id+'/challenges']: ['post']}))
-                                                              .reduce(_.merge)));
+    //after getting factors:
+    // - allow deleting them if the user is authenticated (security settings view)
+    // - allow challenging verified factors if he is not authenticated yet
+    app.get('/accounts/:id/factors', addPathsToScope(
+        (r, req) => req.authInfo.authenticated ?
+            _(r.items)
+                .map(f => ({['/factors/'+f.id]: ['delete']}))
+                .reduce(_.merge) :
+            _(r.items)
+                .filter(_.matches({verificationStatus :'VERIFIED'}))
+                .map(f => ({['/factors/'+f.id+'/challenges']: ['post']}))
+                .reduce(_.merge)
+    ));
     //allow veryfing created challenges
     app.post('/factors/:id/challenges', addPathsToScope(_.cond([[_.matches({status :'CREATED'}), c => ({['challenges/'+c.id]: ['post']})],[_.stubTrue, _.stubObject]])));
-    //handle successful 2nd factor: redirect to application
+    //handle successful 2nd factor: redirect to application if the user is not yet authenticated
     app.post(['/challenges/:id', '/factors/:id/challenges'], afterAuthentication(
-          _.cond([[_.matches({status :'SUCCESS'}), _.property('account.href')], [_.stubTrue, _.stubFalse]]),
-          false,
-          _.property('type')
+            (result, req) => !req.authInfo.authenticated && result.status === 'SUCCESS' ? result.account.href: null,
+            false,
+            _.property('type')
      ));
      //redirect to application once the user is done setting up his account (password or multi factor change)
      app.get('/accounts/:id', afterAuthentication(_.property('href'), false));

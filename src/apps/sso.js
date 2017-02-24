@@ -60,12 +60,30 @@ app.get('/', function(req, res){
                                     [
                                         //if the user didn't authenticate with one of the requested factor, redirect to ID site with factors scope
                                         authInfo => !_.isEmpty(authInfo.require_mfa) && !_.includes(authInfo.require_mfa, verifiedMfa),
-                                        authInfo => redirectToIdSite(res, req.user, application, accountStore, authInfo, idSiteHelper.getFactorsScope(account.id))
+                                        authInfo => redirectToIdSite(
+                                                res,
+                                                req.user,
+                                                application,
+                                                accountStore,
+                                                authInfo,
+                                                {scope: idSiteHelper.getFactorsScope(account.id)}
+                                        )
                                     ],
                                     [
-                                        //if the password change page is requested, redirect to ID site with the right scope
-                                        _.matchesProperty('path', '/#/securitySettings'),
-                                        authInfo => redirectToIdSite(res, req.user, application, accountStore, authInfo, idSiteHelper.getPasswordChangeScope(account.id))
+                                        //if the settings page is requested, redirect to ID site with the right scope
+                                        _.matchesProperty('path', '/#/settings'),
+                                        authInfo => redirectToIdSite(
+                                                        res,
+                                                        req.user,
+                                                        application,
+                                                        accountStore,
+                                                        authInfo,
+                                                        {
+                                                            scope: idSiteHelper.getSecuritySettingsScope(account.id),
+                                                            authenticated: true,
+                                                            require_mfa: ['google-authenticator']
+                                                        }
+                                        )
                                     ],
                                     [
                                         //else redirect to the application directly
@@ -132,22 +150,25 @@ app.get('/logout', function(req, res){
 
 app.use(errorHandler);
 
-function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, scope){
+function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, content){
     return jwt.signAsync(
-        {
-            init_jti: jwtPayload.jti,
-            scope: _.defaults(scopeHelper.getIdSiteScope(application, accountStore), scope),
-            app_href: jwtPayload.sub,
-            cb_uri: jwtPayload.cb_uri,
-            state: jwtPayload.state,
-            asnk: jwtPayload.onk,
-            sof: jwtPayload.sof,
-            require_mfa: jwtPayload.require_mfa,
-            //qualify the account store href
-            ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
-            //only to not make stormpath.js crash
-            sp_token: 'null'
-        },
+        _.merge(
+            {
+                init_jti: jwtPayload.jti,
+                scope: scopeHelper.getIdSiteScope(application, accountStore),
+                app_href: jwtPayload.sub,
+                cb_uri: jwtPayload.cb_uri,
+                state: jwtPayload.state,
+                asnk: jwtPayload.onk,
+                sof: jwtPayload.sof,
+                require_mfa: jwtPayload.require_mfa,
+                //qualify the account store href
+                ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
+                //only to not make stormpath.js crash
+                sp_token: 'null'
+            },
+            content
+        ),
         apiKey.secret,
         {
             expiresIn: 60,
