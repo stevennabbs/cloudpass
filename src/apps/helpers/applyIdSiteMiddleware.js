@@ -78,6 +78,7 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                             )
                 )
                 .then(requireMfa => {
+                    console.log('aaaaaaaaa', requireMfa);
                     var secondFactor = Optional.ofNullable(factorTypeGetter)
                                         .map(_.method('call', null, result))
                                         .orElse(null);
