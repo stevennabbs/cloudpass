@@ -167,8 +167,8 @@ describe('idSite', function(){
                     });
             });
 
-            function getConfiguredFactors(){
-                return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: ['google-authenticator']})
+            function getConfiguredFactors(requireMfa){
+                return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: requireMfa})
                     .then(function(bearer){
                         return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
                             .set('authorization', 'Bearer '+bearer)
@@ -191,7 +191,8 @@ describe('idSite', function(){
             }
 
             it('with new second factor', function(){
-                getConfiguredFactors()
+                //require google authenticator mfa in login
+                getConfiguredFactors(['google-authenticator'])
                     .then(function(res){
                         //no 2nd factor configured yet
                         assert.strictEqual(res.body.size, 0);
@@ -221,6 +222,8 @@ describe('idSite', function(){
             });
 
             it('with existing second factor', function(){
+                //don't require google-authenticator MFA in login
+                //it should be asked for anyway because it has been configured
                 getConfiguredFactors()
                     .then(function(res){
                         //one second factor has already been configured
@@ -249,6 +252,25 @@ describe('idSite', function(){
                         assert(res.header['stormpath-sso-redirect-location']);
                         return request(res.header['stormpath-sso-redirect-location']).get('')
                             .expect(302);
+                    })
+                    .then(function(res){
+                        //the cookie should give us the right to not re-enter a second factor next time
+                        return BluebirdPromise.join(
+                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl}),
+                            res.header['set-cookie'][0].split(';')[0]
+                        );
+                    })
+                    .spread(function(jwtRequest, cookie){
+                        //send a a new request with the cookie
+                        return request(init.app).get('/sso')
+                                .query({jwtRequest: jwtRequest})
+                                .set('Cookie', cookie)
+                                .expect(302);
+                    })
+                    .then(function(res){
+                        //cloudpass should redirect directly to the callback URL, not to the ID site
+                        assert(res.header.location);
+                        assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
                     });
             });
     });
