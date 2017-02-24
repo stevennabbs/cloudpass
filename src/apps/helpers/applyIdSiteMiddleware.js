@@ -59,14 +59,31 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
         return function(result) {
             //check if an account has been returned
             let accountHref = accountHrefGetter(result);
-            BluebirdPromise.try(() => {
-                if (accountHref) {
+            if (accountHref) {
+                var accountId = /\/accounts\/(.*)$/.exec(accountHref)[1];
+                //request a 2nd factor if:
+                // - the user already configured any
+                // - the application requested it
+                BluebirdPromise.resolve(
+                        Optional.ofNullable(req.authInfo.require_mfa)
+                            .orElseGet(() =>
+                                models.factor.findAll({
+                                    where: {
+                                        accountId,
+                                        status: 'ENABLED'
+                                    }
+                                })
+                                .map(_.property('type'))
+                                .then(_.uniq)
+                            )
+                )
+                .then(requireMfa => {
                     var secondFactor = Optional.ofNullable(factorTypeGetter)
                                         .map(_.method('call', null, result))
                                         .orElse(null);
                     //ask for a second factor if requested
-                    if(!_.isEmpty(req.authInfo.require_mfa) && !_.includes(req.authInfo.require_mfa, secondFactor)){
-                        var accountId = /\/accounts\/(.*)$/.exec(accountHref)[1];
+                    if(!_.isEmpty(requireMfa) && !_.includes(requireMfa, secondFactor)){
+                        req.authInfo.require_mfa = requireMfa;
                         //add 2nd factors into the request scope
                         req.authInfo.scope = scopeHelper.pathsToScope(_.merge(
                             scopeHelper.scopeToPaths(req.authInfo.scope),
@@ -76,7 +93,7 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                         return setAuthorizationBearer(req, this)
                                 .then(() => original.call(this, result));
                     } else {
-                        //the user is authenticated: redirect back to the application once
+                        //the user is authenticated: redirect back to the application
                         return getApiKey(
                             req.authInfo.sub, {
                               model: models.tenant,
@@ -103,12 +120,11 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                           //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
                           .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
                     }
-                } else {
-                    return original.call(this, result);
-                }
-
-            })
-            .catch(req.next);
+                })
+                .catch(req.next);
+            } else {
+                return original.call(this, result);
+            }
         };
     });
     req.next();
