@@ -22,6 +22,9 @@ module.exports = function (sequelize, DataTypes) {
             },
             {
                 classMethods: {
+                   getSearchableAttributes: function(){
+                        return ['email'];
+                   },
                    getSettableAttributes: function(){
                         return ['email', 'callbackUri', 'application', 'organization', 'account', 'customData'];
                     },
@@ -38,4 +41,3 @@ module.exports = function (sequelize, DataTypes) {
             }
     );
 };
-    
