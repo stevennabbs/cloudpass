@@ -63,6 +63,6 @@ module.exports = {
     },
 
     down: function(migration) {
-        return migration.dropTable("groups");
+        return migration.dropTable("factors");
     }
 };

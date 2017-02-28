@@ -22,9 +22,11 @@ exports.generateDefaultRelayState = function(req, res){
     ApiError.assert(req.user.id, ApiError.FORBIDDEN);
     samlHelper.getRelayState(
         req.user,
-        req.swagger.params.properties.value.callbackUri,
-        req.swagger.params.properties.value.state,
-        models.application.getHref(req.swagger.params.id.value)
+        {
+            cb_uri: req.swagger.params.properties.value.callbackUri,
+            state: req.swagger.params.properties.value.state,
+            app_href: models.application.getHref(req.swagger.params.id.value)
+        }
     )
     .then(function(relayState){
         res.json({defaultRelayState: relayState});

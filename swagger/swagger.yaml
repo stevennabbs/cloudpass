@@ -235,10 +235,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
         - name: createDirectory
           in: query
           description: either the name of the directory to create and map to the application, or 'true' (then directory name = application name)
@@ -294,10 +291,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -493,10 +487,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: group created
@@ -782,6 +773,7 @@ paths:
             - accountStoreMappings
             - directories
             - organizations
+            - invitations
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -819,10 +811,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               provider:
                 type: object
                 required:
@@ -892,10 +881,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -1108,10 +1094,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: group created
@@ -1289,10 +1272,7 @@ paths:
               desciption:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -1717,10 +1697,7 @@ paths:
                 enum:
                   - google-authenticator
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               accountName:
                 type: string
                 format: email
@@ -2002,10 +1979,7 @@ paths:
             type: object
             properties:
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               accountName:
                 type: string
                 format: email
@@ -2539,10 +2513,7 @@ paths:
             type: object
             properties:
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: API key updated
@@ -2591,10 +2562,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
         - $ref: "#/parameters/Expand"
@@ -2649,10 +2617,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -2703,10 +2668,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: group created
@@ -2930,6 +2892,7 @@ paths:
             - accountStoreMappings
             - directories
             - applications
+            - invitations
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -3242,6 +3205,274 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /invitationPolicies/{id}:
+    x-swagger-router-controller: invitationPolicyController
+    get:
+      summary: retrieve the invitation policy from its ID
+      description: retrieve the invitation policy from its ID
+      tags:
+        - invitation policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: invitation policy found
+          schema:
+            $ref: "#/definitions/InvitationPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update an invitation policy
+      description: update the invitation policy with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - invitation policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              invitationEmailStatus:
+                $ref: "#/definitions/Status"
+      responses:
+        "200":
+          description: invitation policy updated
+          schema:
+            $ref: "#/definitions/InvitationPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitationPolicies/{id}/{collection}:
+    x-swagger-router-controller: invitationPolicyController
+    get:
+      summary: retrieve a collection sub-resource from the policy
+      description: retrieve a collection sub-resource from the policy
+      operationId: getCollection
+      tags:
+        - invitation policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: collection
+          in: path
+          description: the collection to retrieve
+          required: true
+          type: string
+          enum:
+            - invitationEmailTemplates
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/OrderBy"
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations:
+    x-swagger-router-controller: invitationController
+    post:
+      summary: create a new invitation
+      description: create a new invitation
+      operationId: create
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - application
+            properties:
+              email:
+                type: string
+                format: email
+              callbackUri:
+                type: string
+                format: email
+              invitedBy:
+                $ref: "#/definitions/ResourceReference"
+              application:
+                $ref: "#/definitions/ResourceReference"
+              organization:
+                $ref: "#/definitions/ResourceReference"
+              customData:
+                type: object
+      responses:
+        "200":
+          description: invitation created
+          schema:
+            $ref: "#/definitions/Invitation"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations/{id}:
+    x-swagger-router-controller: invitationController
+    get:
+      summary: retrieve invitation
+      description: retrieve invitation
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/Invitation"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update invitation
+      description: update invitation and resend invitation email
+      operationId: update
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+              callbackUri:
+                type: string
+                format: url
+              invitedBy:
+                $ref: "#/definitions/ResourceReference"
+              application:
+                $ref: "#/definitions/ResourceReference"
+              organization:
+                $ref: "#/definitions/ResourceReference"
+              customData:
+                type: object
+      responses:
+        "200":
+          description: invitation updated
+          schema:
+            $ref: "#/definitions/Invitation"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete an invitation
+      description: delete an invitation
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: invitation deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations/{id}/customData:
+    x-swagger-router-controller: invitationController
+    get:
+      summary: retrieve invitation custom data
+      description: retrieve custom data
+      operationId: getCustomData
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update invitations custom data
+      description: update custom data of the invitation with the given ID using the provided values
+      operationId: updateCustomData
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: newCustomData
+          description: New custom data
+          in: body
+          required: true
+          schema:
+            type: object
+      responses:
+        "200":
+          description: updated
+          schema:
+            $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete custom data
+      description: delete custom data
+      operationId: deleteCustomData
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: custom data deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations/{id}/customData/{fieldName}:
+    x-swagger-router-controller: invitationController
+    delete:
+      summary: delete custom data field
+      description: delete custom data field
+      operationId: deleteCustomDataField
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: fieldName
+          in: path
+          description: field to delete
+          required: true
+          type: string
+      responses:
+        "204":
+          description: custom data field deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
 definitions:
   Resource:
     type: object
@@ -3357,9 +3588,11 @@ definitions:
           - groups
           - directories
           - organizations
+          - invitations
           - loginAttempts
           - passwordResetTokens
           - samlPolicy
+          - invitationPolicy
           - customData
         properties:
           name:
@@ -3369,10 +3602,7 @@ definitions:
           description:
             type: string
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           accountStoreMappings:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -3383,11 +3613,15 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           organizations:
             $ref: "#/definitions/ResourceReference"
+          invitations:
+            $ref: "#/definitions/ResourceReference"
           loginAttempts:
             $ref: "#/definitions/ResourceReference"
           passwordResetTokens:
             $ref: "#/definitions/ResourceReference"
           samlPolicy:
+            $ref: "#/definitions/ResourceReference"
+          invitationPolicy:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3419,10 +3653,7 @@ definitions:
           provider:
             $ref: "#/definitions/ResourceReference"
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           groups:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -3463,10 +3694,7 @@ definitions:
           description:
             type: string
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           directory:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -3753,6 +3981,8 @@ definitions:
           - accounts
           - groups
           - directories
+          - applications
+          - invitations
           - customData
         properties:
           name:
@@ -3764,10 +3994,7 @@ definitions:
           description:
             type: string
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           accountStoreMappings:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -3775,6 +4002,10 @@ definitions:
           groups:
             $ref: "#/definitions/ResourceReference"
           directories:
+            $ref: "#/definitions/ResourceReference"
+          applications:
+            $ref: "#/definitions/ResourceReference"
+          invitations:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3935,10 +4166,7 @@ definitions:
             enum:
               - google-authenticator
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           verificationStatus:
             type: string
             enum:
@@ -3981,6 +4209,41 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           factor:
             $ref: "#/definitions/ResourceReference"
+  InvitationPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - invitationEmailStatus
+          - invitationEmailTemplates
+        properties:
+          invitationEmailStatus:
+            $ref: "#/definitions/Status"
+          invitationEmailTemplates:
+            $ref: "#/definitions/ResourceReference"
+  Invitation:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - email
+          - application
+          - customData
+        properties:
+          email:
+            type: string
+            format: email
+          callbackUri:
+            type: string
+            format: url
+          application:
+            $ref: "#/definitions/ResourceReference"
+          organization:
+            $ref: "#/definitions/ResourceReference"
+          invitedBy:
+            $ref: "#/definitions/ResourceReference"
+          customData:
+            type: object
 parameters:
   Id:
     name: id

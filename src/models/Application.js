@@ -35,12 +35,18 @@ module.exports = function (sequelize, DataTypes) {
             }
         },
         {
-            indexes:[
-                {
+            indexes:[{
                     unique: true,
                     fields: ['name', 'tenantId']
-                }
-            ],
+            }],
+            hooks: {
+              beforeCreate: function(instance) {
+                return this.sequelize.models.invitationPolicy.create({tenantId: instance.tenantId})
+                  .then(function(invitationPolicy) {
+                    instance.set('invitationPolicyId', invitationPolicy.id);
+                  });
+              }
+            },
             getterMethods: {
                 loginAttempts: function(){
                     return {href: this.href+'/loginAttempts'};
@@ -106,6 +112,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 associate: function (models) {
                     models.application.hasMany(models.accountStoreMapping, {onDelete: 'cascade'});
+                    models.application.hasMany(models.invitation, {onDelete: 'cascade'});
                     models.application.belongsTo(models.accountStoreMapping, {as: 'defaultAccountStoreMapping', constraints: false});
                     models.application.belongsTo(models.accountStoreMapping, {as: 'defaultGroupStoreMapping', constraints: false});
                     models.application.hasMany(models.passwordResetToken, {onDelete: 'cascade'});
@@ -122,6 +129,7 @@ module.exports = function (sequelize, DataTypes) {
                            foreignKey: 'applicationId'
                        }
                     );
+                    models.application.belongsTo(models.invitationPolicy, {onDelete: 'cascade'});
                 },
                 afterAssociate: function(models){
                     addAccountStoreAccessors(models.application, models.account);

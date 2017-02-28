@@ -60,6 +60,7 @@ module.exports = function (sequelize, DataTypes) {
                 associate: function(models) {
                     models.organization.belongsTo(models.tenant, {onDelete: 'cascade'});
                     models.organization.hasMany(models.organizationAccountStoreMapping, {as: 'accountStoreMappings', onDelete: 'cascade'});
+                    models.organization.hasMany(models.invitation, {onDelete: 'cascade'});
                     models.organization.belongsTo(models.organizationAccountStoreMapping, {as: 'defaultAccountStoreMapping', constraints: false});
                     models.organization.belongsTo(models.organizationAccountStoreMapping, {as: 'defaultGroupStoreMapping', constraints: false});
                     models.organization.belongsToMany(

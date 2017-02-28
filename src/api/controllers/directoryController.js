@@ -113,7 +113,8 @@ controller.consumeSamlAssertion = function(req, res){
                 status: "AUTHENTICATED",
                 cb_uri: req.authInfo.cb_uri,
                 irt: req.authInfo.init_jti,
-                state: req.authInfo.state
+                state: req.authInfo.state,
+                inv_id: req.authInfo.inv_id
             },
             req.user.secret,
             {

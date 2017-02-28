@@ -96,7 +96,8 @@ app.get('/', function(req, res){
                                                     status: "AUTHENTICATED",
                                                     cb_uri: req.authInfo.cb_uri,
                                                     irt: req.authInfo.jti,
-                                                    state: req.authInfo.state
+                                                    state: req.authInfo.state,
+                                                    inv_id: req.authInfo.inv_id
                                                 }
                                             )
                                             .then(sendJwtResponse(res, req.authInfo.cb_uri))
@@ -164,8 +165,6 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, co
                 require_mfa: jwtPayload.require_mfa,
                 //qualify the account store href
                 ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
-                //only to not make stormpath.js crash
-                sp_token: 'null'
             },
             content
         ),

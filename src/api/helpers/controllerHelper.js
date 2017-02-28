@@ -214,6 +214,28 @@ exports.createAndExpand = function(model, foreignKeys, req, res, inTransaction){
    );
 };
 
+function update(model, id, newAttributes){
+  return model.findById(id)
+      .tap(ApiError.assertFound)
+      .then(resource =>
+          resource.update(
+            _.mapValues(
+               newAttributes,
+               v => Optional.ofNullable(v).map(_.property('href')).map(models.resolveHref).orElse(v)
+            ),
+            {fields:  model.getSettableAttributes()}
+          )
+      );
+}
+exports.update = update;
+
+exports.updateAndExpand = function(model, req, res, inTransaction){
+  return queryAndExpand(
+      () => update(model, req.swagger.params.id.value, req.swagger.params.newAttributes.value),
+      req, res, inTransaction
+   );
+};
+
 function findAndCountAssociation(instance, association, options){
     //do count + get in a REPETABLE_READ transaction
     return models.sequelize.requireTransaction(function(){

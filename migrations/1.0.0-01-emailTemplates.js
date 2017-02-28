@@ -14,7 +14,7 @@ module.exports = {
                     allowNull: false
                 },
                 workflowStep: {
-                    type: DataTypes.ENUM('passwordReset', 'passwordResetSuccess', 'emailVerification', 'emailVerificationSuccess', 'welcome'),
+                    type: DataTypes.STRING(30),
                     allowNull: false
                 },
                 fromEmailAddress: {

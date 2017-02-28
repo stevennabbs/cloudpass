@@ -1,7 +1,6 @@
 "use strict";
 
 var _ = require('lodash');
-var Optional = require('optional-js');
 var controllerHelper = require('./controllerHelper');
 var ApiError = require('../../ApiError');
 var models = require('../../models');
@@ -34,22 +33,7 @@ module.exports = function (model, transactionalMethods) {
                 .catch(req.next);
         },
         update: function(req, res){
-            return controllerHelper.queryAndExpand(
-                      () => model.findById(req.swagger.params.id.value)
-                              .tap(ApiError.assertFound)
-                              .then(resource =>
-                                  resource.update(
-                                    _.mapValues(
-                                       req.swagger.params.newAttributes.value,
-                                       v => Optional.ofNullable(v).map(_.property('href')).map(models.resolveHref).orElse(v)
-                                    ),
-                                    {fields:  model.getSettableAttributes()}
-                                  )
-                              ),
-                      req,
-                      res,
-                      _.includes(transactionalMethods, 'update')
-                   );
+            return controllerHelper.updateAndExpand(model, req, res, _.includes(transactionalMethods, 'update'));
         },
         updateCustomData: function(req, res){
             return model

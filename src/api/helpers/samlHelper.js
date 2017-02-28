@@ -47,14 +47,9 @@ exports.getSamlResponse = function(provider, requestBody){
             );
 };
 
-exports.getRelayState = function(apiKey, cb_uri, state, appHref, jti, expiration){
+exports.getRelayState = function(apiKey, content, expiration){
     return signJwt(
-        {
-            cb_uri: cb_uri,
-            state: state,
-            init_jti: jti,
-            app_href: appHref
-        },
+        content,
         apiKey.secret,
         {
             expiresIn: expiration,

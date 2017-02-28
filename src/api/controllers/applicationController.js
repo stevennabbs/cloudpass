@@ -256,10 +256,13 @@ controller.samlIdpRedirect = function(req, res) {
         .then(getSamlDirectoryProvider),
       samlHelper.getRelayState(
         req.user,
-        req.authInfo.cb_uri,
-        req.authInfo.state,
-        _.defaultTo(req.authInfo.app_href, req.authInfo.iss),
-        _.defaultTo(req.authInfo.init_jti, req.authInfo.jti),
+        {
+            cb_uri: req.authInfo.cb_uri,
+            state: req.authInfo.state,
+            init_jti: _.defaultTo(req.authInfo.init_jti, req.authInfo.jti),
+            app_href: _.defaultTo(req.authInfo.app_href, req.authInfo.iss),
+            inv_id: req.authInfo.inv_id
+        },
         '1h'
       )
     )

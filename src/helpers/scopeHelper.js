@@ -12,7 +12,7 @@ exports.getIdSiteScope = function(...modelInstances) {
 exports.scopeToPaths = function(scope, baseUrl) {
     baseUrl = baseUrl || '';
     if (_.isString(scope)) {
-        //the scope is simply a permission (read, create etc.)
+        //the scope is simply a permission (get, post etc.)
         //map the URL to the corresponding HTTP method
         return {
           [baseUrl]: [scope]

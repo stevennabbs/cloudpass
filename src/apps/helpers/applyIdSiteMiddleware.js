@@ -113,7 +113,9 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                                     cb_uri: req.authInfo.cb_uri,
                                     irt: req.authInfo.init_jti,
                                     state: req.authInfo.state,
-                                    mfa: secondFactor
+                                    mfa: secondFactor,
+                                    inv_id: req.authInfo.inv_id,
+                                    email: req.authInfo.email
                                 }
                             );
                           })

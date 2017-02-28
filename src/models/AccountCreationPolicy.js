@@ -2,6 +2,7 @@
 
 var fs = require("fs");
 var yaml = require('js-yaml');
+var _ = require('lodash');
 var defaultEmailVerificationEmail = yaml.safeLoad(fs.readFileSync(__dirname+'/../templates/emailVerification.yaml', 'utf8'));
 var defaultEmailVerificationSuccessEmail = yaml.safeLoad(fs.readFileSync(__dirname+'/../templates/emailVerificationSuccess.yaml', 'utf8'));
 var defaultWelcomeEmail = yaml.safeLoad(fs.readFileSync(__dirname+'/../templates/welcome.yaml', 'utf8'));
@@ -38,7 +39,6 @@ module.exports = function (sequelize, DataTypes) {
         {
             hooks: {
                 afterCreate: function(accountCreationPolicy){
-                    var _ = accountCreationPolicy.sequelize.Utils._;
                     return accountCreationPolicy.sequelize.Promise.join(
                         accountCreationPolicy.createVerificationEmailTemplate(_.defaults({tenantId: accountCreationPolicy.tenantId}, defaultEmailVerificationEmail)),
                         accountCreationPolicy.createVerificationSuccessEmailTemplate(_.defaults({tenantId: accountCreationPolicy.tenantId}, defaultEmailVerificationSuccessEmail)),
@@ -91,6 +91,17 @@ module.exports = function (sequelize, DataTypes) {
                                 constraints: false,
                                 scope: {
                                     workflowStep: 'welcome'
+                            }
+                        }
+                    );
+                    models.accountCreationPolicy.hasMany(
+                            models.emailTemplate,
+                            {
+                                as: 'invitationEmailTemplates',
+                                foreignKey: 'policyId',
+                                constraints: false,
+                                scope: {
+                                    workflowStep: 'invitation'
                             }
                         }
                     );
