@@ -3,10 +3,10 @@
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var Optional = require('optional-js');
+var config = require('config');
 var baseController = require('../helpers/baseController');
 var ApiError = require('../../ApiError');
 var models = require('../../models');
-var config = require('config');
 var email = require('../../helpers/email');
 
 var invitationBaseUrl = Optional.ofNullable(config.get('server.rootUrl')).orElseGet(function(){return 'http://'+require('os').hostname()+':'+config.get('server.port');}) +'/ui/';
@@ -24,7 +24,13 @@ var controller = _.mapValues(
       });
 
 controller.getCurrent = function (req, res) {
-    res.status(302).location(req.user.tenantId).json();
+    res.status(302)
+            .location(
+                Optional.ofNullable(config.get('server.rootUrl'))
+                    .map(_.method('concat', '/v1/tenants/', req.user.tenantId))
+                    .orElse(req.user.tenantId)
+            )
+            .json();
 };
 
 controller.inviteAdmin = function(req, res) {
@@ -61,4 +67,3 @@ controller.inviteAdmin = function(req, res) {
 
 module.exports = controller;
 
- 

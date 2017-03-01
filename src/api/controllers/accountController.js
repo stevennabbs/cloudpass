@@ -3,6 +3,7 @@
 var _ = require('lodash');
 var BluebirdPromise = require('sequelize').Promise;
 var Optional = require('optional-js');
+var config = require('config');
 var controllerHelper = require('../helpers/controllerHelper');
 var baseController = require('../helpers/baseController');
 var models = require('../../models');
@@ -12,7 +13,13 @@ var email = require('../../helpers/email');
 var controller = baseController(models.account);
 
 controller.getCurrent = function (req, res) {
-    res.status(302).location(req.user.accountId).json();
+    res.status(302)
+            .location(
+                Optional.ofNullable(config.get('server.rootUrl'))
+                    .map(_.method('concat', '/v1/accounts/', req.user.accountId))
+                    .orElse(req.user.accountId)
+            )
+            .json();
 };
 
 controller.getApiKeys = _.partial(controllerHelper.getCollection, models.account, 'apiKeys');

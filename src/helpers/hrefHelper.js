@@ -1,6 +1,7 @@
 "use strict";
 
 var config = require('config');
+var _ = require('lodash');
 var Optional = require('optional-js');
 
 var hrefPattern = /^((.*?)\/v1)(\/.*)$/;
@@ -21,5 +22,5 @@ exports.unqualifyHref = href => href.replace(hrefPattern, '$3');
 
 //returned the configured base URL
 exports.baseUrl = Optional.ofNullable(config.get('server.rootUrl'))
-                            .map(url => url+'/v1/')
+                            .map(_.method('concat', '/v1/'))
                             .orElse('/');
