@@ -114,7 +114,7 @@ controller.consumeSamlAssertion = function(req, res){
                 cb_uri: req.authInfo.cb_uri,
                 irt: req.authInfo.init_jti,
                 state: req.authInfo.state,
-                inv_id: req.authInfo.inv_id
+                inv_href: req.authInfo.inv_href
             },
             req.user.secret,
             {

@@ -38,7 +38,7 @@ function sendEmail(invitation, apiKey) {
                                         app_href: application.href,
                                         cb_uri: callbackUri,
                                         ash: application.href,
-                                        inv_id: invitation.id,
+                                        inv_href: invitation.href,
                                         email: invitation.email
                                       },
                                       apiKey.secret,

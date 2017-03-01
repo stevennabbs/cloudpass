@@ -114,7 +114,7 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                                     irt: req.authInfo.init_jti,
                                     state: req.authInfo.state,
                                     mfa: secondFactor,
-                                    inv_id: req.authInfo.inv_id,
+                                    inv_href: req.authInfo.inv_href,
                                     email: req.authInfo.email
                                 }
                             );

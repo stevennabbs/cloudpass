@@ -97,7 +97,7 @@ app.get('/', function(req, res){
                                                     cb_uri: req.authInfo.cb_uri,
                                                     irt: req.authInfo.jti,
                                                     state: req.authInfo.state,
-                                                    inv_id: req.authInfo.inv_id
+                                                    inv_href: req.authInfo.inv_href
                                                 }
                                             )
                                             .then(sendJwtResponse(res, req.authInfo.cb_uri))

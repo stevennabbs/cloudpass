@@ -49,7 +49,7 @@ describe('invitation', () => {
       assert(email.body.indexOf('https://change.me.example.com?cpToken='+invitationId) >= 0);
     })
   );
-  
+
   it('update', () =>
     //if a callbackUri is specified, the link in the email must redirect to the ID site
     BluebirdPromise.join(
@@ -62,7 +62,7 @@ describe('invitation', () => {
       const jwtParam = /\/#\/\?jwt=(.*?)\n/.exec(email.body)[1];
       assert(jwtParam);
       const decodedJwt = jwt.decode(jwtParam);
-      assert.strictEqual(decodedJwt.inv_id, invitationId);
+      assert.strictEqual(decodedJwt.inv_href, '/invitations/'+invitationId);
       assert.strictEqual(decodedJwt.email, invitedEmail);
       //login with this token
       return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
@@ -71,7 +71,7 @@ describe('invitation', () => {
                             type: 'basic',
                             value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
                         })
-                        .expect(200);      
+                        .expect(200);
     })
     .then(res => {
       assert(res.header['stormpath-sso-redirect-location']);
@@ -83,10 +83,10 @@ describe('invitation', () => {
       const locationStart = callbackUri+'?jwtResponse=';
       assert(res.header.location.startsWith(locationStart));
       const jwtResponse = res.header.location.substring(locationStart.length);
-      assert.strictEqual(jwt.decode(jwtResponse).inv_id, invitationId);
+      assert.strictEqual(jwt.decode(jwtResponse).inv_href, '/invitations/'+invitationId);
    })
   );
-  
+
   it('delete', () => init.deleteRequest('invitations/'+invitationId).expect(204));
-  
+
 });
