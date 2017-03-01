@@ -26,7 +26,7 @@ module.exports = function (sequelize, DataTypes) {
                         return ['email'];
                    },
                    getSettableAttributes: function(){
-                        return ['email', 'callbackUri', 'application', 'organization', 'account', 'customData'];
+                        return ['email', 'callbackUri', 'application', 'organization', 'fromAccount', 'customData'];
                     },
                     isCustomizable: function(){
                       return true;
