@@ -30,7 +30,7 @@ module.exports = {
                     type: DataTypes.STRING(255)
                 },
                 secret: {
-                    type: DataTypes.STRING(32)
+                    type: DataTypes.STRING(64)
                 },
                 createdAt: {
                     allowNull: false,
