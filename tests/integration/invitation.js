@@ -57,9 +57,9 @@ describe('invitation', () => {
       init.postRequest('invitations/'+invitationId)
         .send({callbackUri})
         .expect(200)
-    ).spread((email, res) => {
+    ).spread((email) => {
       assert.strictEqual(email.headers.subject, 'Invitation');
-      const jwtParam = /\/#\/\?jwt=(.*?)\n/.exec(email.body)[1];
+      const jwtParam = /\/#\/register\?jwt=(.*?)\n/.exec(email.body)[1];
       assert(jwtParam);
       const decodedJwt = jwt.decode(jwtParam);
       assert.strictEqual(decodedJwt.inv_href, '/invitations/'+invitationId);
