@@ -165,6 +165,8 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, co
                 require_mfa: jwtPayload.require_mfa,
                 //qualify the account store href
                 ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
+                //only to not make stormpath.js crash
+                sp_token: 'null'
             },
             content
         ),

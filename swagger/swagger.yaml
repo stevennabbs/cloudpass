@@ -3305,7 +3305,7 @@ paths:
                 format: email
               callbackUri:
                 type: string
-                format: email
+                format: url
               invitedBy:
                 $ref: "#/definitions/ResourceReference"
               application:

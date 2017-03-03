@@ -7,6 +7,7 @@ var randomstring = require("randomstring");
 var Optional = require("optional-js");
 var baseController = require('../helpers/baseController');
 var controllerHelper = require('../helpers/controllerHelper');
+var accountHelper = require('../helpers/accountHelper');
 var scopeHelper = require('../../helpers/scopeHelper');
 var email = require('../../helpers/email');
 var models = require('../../models');
@@ -39,17 +40,19 @@ function sendEmail(invitation, apiKey) {
                                         cb_uri: callbackUri,
                                         ash: application.href,
                                         inv_href: invitation.href,
-                                        email: invitation.email
+                                        email: invitation.email,
+                                        sp_token: 'null'
                                       },
                                       apiKey.secret,
                                       {
                                         subject: apiKey.id,
-                                        audience: 'idSite',
+                                        audience: 'idSite'
                                       }
                                     ),
-                                    models.idSite.findOne({attributes: ['url']}).get('url')
+                                    models.idSite.findOne({attributes: ['url']}).get('url'),
+                                    accountHelper.findAccount(invitation.email, application.id)
                                   )
-                                  .spread((jwt, idSiteUrl) => ({url: idSiteUrl + '/#/?jwt=' + jwt}))
+                                  .spread((jwt, idSiteUrl, account) => ({url: idSiteUrl + '/#/'+Optional.ofNullable(account).map(_.constant('')).orElse('register')+'?jwt=' + jwt}))
               )
               .orElseGet(_.stubObject)
             )
