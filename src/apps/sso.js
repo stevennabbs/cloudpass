@@ -7,6 +7,9 @@ var BluebirdPromise = require('sequelize').Promise;
 var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
 var _ = require('lodash');
 var passport = require('passport');
+var Optional = require('optional-js');
+var url = require('url');
+var config = require('config');
 var models = require('../models');
 var scopeHelper = require('../helpers/scopeHelper');
 var idSiteHelper = require('./helpers/idSiteHelper');
@@ -128,7 +131,7 @@ app.get('/', function(req, res){
         .then(function(cookieToken){
             var cookieOptions = {
                 httpOnly: true,
-                path: '/sso'
+                path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso').pathname
             };
             if(req.user.tenant.idSites[0].sessionCookiePersistent){
                 cookieOptions.maxAge =  moment.duration(req.user.tenant.idSites[0].sessionTtl).asMilliseconds();
