@@ -44,6 +44,8 @@ app.use(passport.initialize());
 app.use('/', ssaclAuthenticate('sso-jwt-request', 'sso-jwt-response'));
 app.use('/logout', ssaclAuthenticate('sso-jwt-request'));
 
+const cookiePath = url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso').pathname;
+
 app.get('/', function(req, res){
 
     if(req.query.jwtRequest){
@@ -131,7 +133,7 @@ app.get('/', function(req, res){
         .then(function(cookieToken){
             var cookieOptions = {
                 httpOnly: true,
-                path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso').pathname
+                path: cookiePath
             };
             if(req.user.tenant.idSites[0].sessionCookiePersistent){
                 cookieOptions.maxAge =  moment.duration(req.user.tenant.idSites[0].sessionTtl).asMilliseconds();
@@ -146,7 +148,7 @@ app.get('/', function(req, res){
 });
 
 app.get('/logout', function(req, res){
-    res.clearCookie(req.user.tenant.id, {path: '/sso'})
+    res.clearCookie(req.user.tenant.id, {path: cookiePath})
       .status(302)
       .location(req.authInfo.cb_uri)
       .send();
