@@ -3,7 +3,7 @@
 const fs = require("fs");
 const yaml = require('js-yaml');
 const _ = require('lodash');
-const defaultInvitationEmail = yaml.safeLoad(fs.readFileSync(__dirname+'/../templates/invitation.yaml', 'utf8')); 
+const defaultInvitationEmail = yaml.safeLoad(fs.readFileSync(__dirname+'/../templates/invitation.yaml', 'utf8'));
 
 module.exports = function (sequelize, DataTypes) {
     return sequelize.define(
@@ -20,7 +20,7 @@ module.exports = function (sequelize, DataTypes) {
                 validate: {isIn: [['ENABLED', 'DISABLED']]},
                 allowNull: false,
                 defaultValue: 'DISABLED'
-            },
+            }
         },
         {
             hooks: {
@@ -39,7 +39,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             classMethods: {
                 getSettableAttributes: function(){
-                    return ['invitationEmailStatus'];  
+                    return ['invitationEmailStatus'];
                 },
                 associate: function(models) {
                     models.invitationPolicy.belongsTo(models.tenant, {onDelete: 'cascade'});

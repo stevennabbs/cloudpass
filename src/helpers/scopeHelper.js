@@ -9,8 +9,7 @@ exports.getIdSiteScope = function(...modelInstances) {
         .reduce(_.merge, {});
 };
 
-exports.scopeToPaths = function(scope, baseUrl) {
-    baseUrl = baseUrl || '';
+exports.scopeToPaths = function(scope, baseUrl = '') {
     if (_.isString(scope)) {
         //the scope is simply a permission (get, post etc.)
         //map the URL to the corresponding HTTP method
