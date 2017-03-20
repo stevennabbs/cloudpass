@@ -26,14 +26,14 @@ describe('invitation', () => {
             return init.postRequest('invitationPolicies/'+res.body.items[0].invitationPolicy.id)
                       .send({invitationEmailStatus:"ENABLED"})
                       .expect(200);
-        })
+        });
   });
 
   after(() => {
     mailServer.stop();
   });
 
-  it('creation', () =>
+  it('create', () =>
     //if no callbackUri is specified, the link in the email must redirect to the address specified in the email template
     BluebirdPromise.join(
       init.getEmailPromise(mailServer, invitedEmail),
@@ -50,42 +50,79 @@ describe('invitation', () => {
     })
   );
 
-  it('update', () =>
+  function setCallbackUri(emailAddress, expectedPath){
     //if a callbackUri is specified, the link in the email must redirect to the ID site
-    BluebirdPromise.join(
-      init.getEmailPromise(mailServer, invitedEmail),
-      init.postRequest('invitations/'+invitationId)
-        .send({callbackUri})
+    return BluebirdPromise.join(
+          init.getEmailPromise(mailServer, emailAddress),
+          init.postRequest('invitations/'+invitationId)
+            .send({callbackUri})
+            .expect(200)
+        ).spread((email) => {
+          assert.strictEqual(email.headers.subject, 'Invitation');
+          const jwtParam = new RegExp('/#/'+expectedPath+'\\?jwt=(.*?)\n').exec(email.body)[1];
+          assert(jwtParam);
+          const decodedJwt = jwt.decode(jwtParam);
+          assert.strictEqual(decodedJwt.inv_href, '/invitations/'+invitationId);
+          assert.strictEqual(decodedJwt.email, emailAddress);
+          //login with this token
+          return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                            .set('authorization', 'Bearer '+jwtParam)
+                            .send({
+                                type: 'basic',
+                                value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
+                            })
+                            .expect(200);
+        })
+        .then(res => {
+          assert(res.header['stormpath-sso-redirect-location']);
+          return request(init.app).get(res.header['stormpath-sso-redirect-location'])
+                  .expect(302);
+        })
+        .then((res) => {
+          assert(res.header.location);
+          const locationStart = callbackUri+'?jwtResponse=';
+          assert(res.header.location.startsWith(locationStart));
+          const jwtResponse = res.header.location.substring(locationStart.length);
+          assert.strictEqual(jwt.decode(jwtResponse).inv_href, '/invitations/'+invitationId);
+       });
+  }
+
+  function idSiteRequestWithInvitation(email, expectedPath){
+    return init.getIdSiteJwtRequest(
+        applicationId,
+        {
+            cb_uri: 'http://www.example.com/callback',
+            inv_href: '/invitations/'+invitationId
+        }
+     )
+    .then(jwtRequest =>
+       request(init.app).get('/sso')
+          .query({jwtRequest: jwtRequest})
+          .expect(302)
+    )
+    .then(res =>{
+        const fragmentStart = '/#/'+expectedPath+'?jwt=';
+        const startIndex = res.header.location.indexOf(fragmentStart);
+        assert(startIndex >= 0);
+        const decodedJwt = jwt.decode(res.header.location.substring(startIndex + fragmentStart.length));
+        assert(decodedJwt.inv_href);
+        assert(decodedJwt.inv_href.indexOf('/invitations/'+invitationId) > 0);
+        assert.strictEqual(decodedJwt.email, email);
+    });
+  }
+
+  it('idSite request with nonexistent account', () => idSiteRequestWithInvitation(invitedEmail, 'register'));
+
+  it('with Callback URI and nonexistent account', () => setCallbackUri(invitedEmail, 'register'));
+
+  it('idSite request with existing account', () =>
+    init.postRequest('invitations/'+invitationId)
+        .send({email: init.adminUser})
         .expect(200)
-    ).spread((email) => {
-      assert.strictEqual(email.headers.subject, 'Invitation');
-      const jwtParam = /\/#\/register\?jwt=(.*?)\n/.exec(email.body)[1];
-      assert(jwtParam);
-      const decodedJwt = jwt.decode(jwtParam);
-      assert.strictEqual(decodedJwt.inv_href, '/invitations/'+invitationId);
-      assert.strictEqual(decodedJwt.email, invitedEmail);
-      //login with this token
-      return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
-                        .set('authorization', 'Bearer '+jwtParam)
-                        .send({
-                            type: 'basic',
-                            value: Buffer.from(init.adminUser+':'+init.adminPassword, 'utf8').toString('base64')
-                        })
-                        .expect(200);
-    })
-    .then(res => {
-      assert(res.header['stormpath-sso-redirect-location']);
-      return request(init.app).get(res.header['stormpath-sso-redirect-location'])
-              .expect(302);
-    })
-    .then((res) => {
-      assert(res.header.location);
-      const locationStart = callbackUri+'?jwtResponse=';
-      assert(res.header.location.startsWith(locationStart));
-      const jwtResponse = res.header.location.substring(locationStart.length);
-      assert.strictEqual(jwt.decode(jwtResponse).inv_href, '/invitations/'+invitationId);
-   })
+        .then(() => idSiteRequestWithInvitation(init.adminUser, ''))
   );
+
+  it('with Callback URI and nonexistent account', () => setCallbackUri(init.adminUser, ''));
 
   it('delete', () => init.deleteRequest('invitations/'+invitationId).expect(204));
 

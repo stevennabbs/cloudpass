@@ -23,7 +23,7 @@ persistence:
 logging:
   sql:
     console:
-      level: info
+      level: debug
       colorize: true
       timestamp: true
   http:

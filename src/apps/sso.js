@@ -44,7 +44,7 @@ app.use(passport.initialize());
 app.use('/', ssaclAuthenticate('sso-jwt-request', 'sso-jwt-response'));
 app.use('/logout', ssaclAuthenticate('sso-jwt-request'));
 
-const cookiePath = url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso').pathname;
+const cookiePath = url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso/').pathname;
 
 app.get('/', function(req, res){
 
@@ -58,7 +58,7 @@ app.get('/', function(req, res){
                     //the user already authenticated for this tenant
                     //check if his account belongs to the requested account store
                     return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
-                            .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1, actor: req.user.tenantId}).get(0)))
+                            .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0)))
                             .spread((verifiedMfa, account) => {
                                 ApiError.assert(account, Error, 'account not found in account store');
                                 return _.cond([
@@ -157,32 +157,47 @@ app.get('/logout', function(req, res){
 app.use(errorHandler);
 
 function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, content){
-    return jwt.signAsync(
-        _.merge(
-            {
-                init_jti: jwtPayload.jti,
-                scope: scopeHelper.getIdSiteScope(application, accountStore),
-                app_href: jwtPayload.sub,
-                cb_uri: jwtPayload.cb_uri,
-                state: jwtPayload.state,
-                asnk: jwtPayload.onk,
-                sof: jwtPayload.sof,
-                require_mfa: jwtPayload.require_mfa,
-                //qualify the account store href
-                ash: hrefHelper.getBaseUrl(jwtPayload.sub) + hrefHelper.unqualifyHref(accountStore.href),
-                //only to not make stormpath.js crash
-                sp_token: 'null'
-            },
-            content
-        ),
-        apiKey.secret,
-        {
-            expiresIn: 60,
-            subject: jwtPayload.iss,
-            audience: 'idSite'
-        }
-    )
-    .then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send());
+    const baseUrl = hrefHelper.getBaseUrl(jwtPayload.sub);
+
+    //if an invitation has been provided, check if the account already exists in the application
+    //if not, redirect to the registration page
+    BluebirdPromise.resolve(
+        Optional.ofNullable(jwtPayload.inv_href)
+            .map(href => models.resolveHref(href)
+                            .reload()
+                            .then(i => accountStore.getAccounts({where: {email: _.toLower(i.email)}, limit:1}).get(0)
+                            .then(account => Optional.ofNullable(account).map(a => [jwtPayload.path, a.email]).orElseGet(() => ['/#/register', i.email])))
+            )
+            .orElseGet(() => [jwtPayload.path, null])
+    ).spread((path, email) =>
+        jwt.signAsync(
+           _.merge(
+               {
+                   init_jti: jwtPayload.jti,
+                   scope: scopeHelper.getIdSiteScope(application, accountStore),
+                   app_href: jwtPayload.sub,
+                   cb_uri: jwtPayload.cb_uri,
+                   state: jwtPayload.state,
+                   asnk: jwtPayload.onk,
+                   sof: jwtPayload.sof,
+                   require_mfa: jwtPayload.require_mfa,
+                   //qualify the account store & invitation hrefs
+                   ash: baseUrl + hrefHelper.unqualifyHref(accountStore.href),
+                   inv_href: Optional.ofNullable(jwtPayload.inv_href).map(_.bindKey(baseUrl, 'concat')).orElse(undefined),
+                   email: email,
+                   //only to not make stormpath.js crash
+                   sp_token: 'null'
+               },
+               content
+           ),
+           apiKey.secret,
+           {
+               expiresIn: 60,
+               subject: jwtPayload.iss,
+               audience: 'idSite'
+           }
+       ).then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(path, '/#/')+'?jwt='+token).send())
+    );
 }
 
 module.exports = app;
