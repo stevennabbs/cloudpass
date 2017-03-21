@@ -8,6 +8,7 @@ var controllerHelper = require('../helpers/controllerHelper');
 var samlHelper = require('../helpers/samlHelper');
 var models = require('../../models');
 var sendJwtResponse = require('../../apps/helpers/sendJwtResponse');
+var ApiError = require('../../ApiError');
 
 
 var controller = accountStoreController(models.directory, ['create', 'delete']);
@@ -106,6 +107,20 @@ controller.consumeSamlAssertion = function(req, res){
            });
         });
     })
+    //check that the account really belongs to the app
+    //(it's possible that the account directory is link to the application via a group,
+    //and this account does not necessarily belongs to the group)
+    .tap(res =>
+        res[0].getApplications({
+            attributes:['id'],
+            where: {
+                id: models.resolveHref(req.authInfo.app_href).id
+            },
+            limit :1
+        })
+        .get(0)
+        .then(_.partial(ApiError.assert, _, ApiError, 400, 7104, 'This account does not belong to the application'))
+    )
     .spread(function(account, created){
         return signJwt(
             {
@@ -129,7 +144,8 @@ controller.consumeSamlAssertion = function(req, res){
             }
         );
     })
-    .then(sendJwtResponse(res, req.authInfo.cb_uri));
+    .then(sendJwtResponse(res, req.authInfo.cb_uri))
+    .catch(req.next);
 };
 
 module.exports = controller;

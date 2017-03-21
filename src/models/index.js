@@ -30,13 +30,13 @@ var persistenceOptions = _.merge(
                    return 'tenantId';
                },
                getSearchableAttributes: function(){
-                    return [];  
+                    return [];
                },
                getSettableAttributes: function(){
                     return this.getSearchableAttributes();
                },
                isCustomizable: function(){
-                    return false;  
+                    return false;
                },
                associatePriority: function(){
                    return 0;
