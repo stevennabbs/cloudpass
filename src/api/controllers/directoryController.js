@@ -107,19 +107,19 @@ controller.consumeSamlAssertion = function(req, res){
            });
         });
     })
-    //check that the account really belongs to the app
-    //(it's possible that the account directory is link to the application via a group,
+    //check that the account really belongs to the required account store
+    //(it's possible that the account directory is linked to the account store via a group,
     //and this account does not necessarily belongs to the group)
     .tap(res =>
-        res[0].getApplications({
-            attributes:['id'],
-            where: {
-                id: models.resolveHref(req.authInfo.app_href).id
-            },
-            limit :1
-        })
-        .get(0)
-        .then(_.partial(ApiError.assert, _, ApiError, 400, 7104, 'This account does not belong to the application'))
+        models.resolveHref(req.authInfo.app_href)
+                .getLookupAccountStore(req.authInfo.onk)
+                .then(as => as.getAccounts({
+                    where: {id: res[0].id},
+                    limit:1,
+                    attributes: ['id']
+                }))
+                .get(0)
+                .then(_.partial(ApiError.assert, _, ApiError, 400, 7104, 'This account does not belong to the required account store'))
     )
     .spread(function(account, created){
         return signJwt(
