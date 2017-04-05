@@ -106,7 +106,7 @@ describe('invitation', () => {
         assert(startIndex >= 0);
         const decodedJwt = jwt.decode(res.header.location.substring(startIndex + fragmentStart.length));
         assert(decodedJwt.inv_href);
-        assert(decodedJwt.inv_href.indexOf('/invitations/'+invitationId) > 0);
+        assert(decodedJwt.inv_href.indexOf('/invitations/'+invitationId) >= 0);
         assert.strictEqual(decodedJwt.email, email);
     });
   }

@@ -183,7 +183,7 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, co
                    require_mfa: jwtPayload.require_mfa,
                    //qualify the account store & invitation hrefs
                    ash: baseUrl + hrefHelper.unqualifyHref(accountStore.href),
-                   inv_href: Optional.ofNullable(jwtPayload.inv_href).map(_.bindKey(baseUrl, 'concat')).orElse(undefined),
+                   inv_href: jwtPayload.inv_href,
                    email: email,
                    //only to not make stormpath.js crash
                    sp_token: 'null'
