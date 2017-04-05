@@ -1,10 +1,9 @@
 # Cloudpass
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/dhatim/cloudpass.svg)](https://greenkeeper.io/)
-
 [![Build Status](https://travis-ci.org/dhatim/cloudpass.svg?branch=master)](https://travis-ci.org/dhatim/cloudpass)
 [![GitHub version](https://badge.fury.io/gh/dhatim%2Fcloudpass.svg)](https://badge.fury.io/gh/dhatim%2Fcloudpass)
 [![Coverage Status](https://coveralls.io/repos/github/dhatim/cloudpass/badge.svg?branch=master)](https://coveralls.io/github/dhatim/cloudpass?branch=master)
+[![Greenkeeper badge](https://badges.greenkeeper.io/dhatim/cloudpass.svg)](https://greenkeeper.io/)
 
 Cloudpass is an implementation of Stormpath Identity Management written in Node.js.
 
