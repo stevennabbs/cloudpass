@@ -16,7 +16,7 @@ module.exports = {
                 },
                 callbackUri: {
                     type: DataTypes.STRING,
-                    allowNull: true,
+                    allowNull: true
                 },
                 customData: {
                     type: DataTypes.STRING(10485760),

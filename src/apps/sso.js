@@ -44,7 +44,7 @@ app.use(passport.initialize());
 app.use('/', ssaclAuthenticate('sso-jwt-request', 'sso-jwt-response'));
 app.use('/logout', ssaclAuthenticate('sso-jwt-request'));
 
-const cookiePath = url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso/').pathname;
+const cookiePath = url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso').pathname;
 
 app.get('/', function(req, res){
 
