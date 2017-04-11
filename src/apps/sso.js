@@ -51,8 +51,12 @@ app.get('/', function(req, res){
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
         var application = models.resolveHref(req.authInfo.sub);
-        application.getLookupAccountStore(req.authInfo.onk)
-            .then(function(accountStore){
+        //get the account store in where to login
+        //and the invited email (if exists)
+        BluebirdPromise.join(
+            application.getLookupAccountStore(req.authInfo.onk),
+            Optional.ofNullable(req.authInfo.inv_href).map(href => models.resolveHref(href).reload().then(_.property('email'))).orElse(null)
+        ).spread(function(accountStore, invitationEmail){
                 var cookie = req.cookies[req.user.tenantId];
                 if(cookie){
                     //the user already authenticated for this tenant
@@ -61,6 +65,7 @@ app.get('/', function(req, res){
                             .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0)))
                             .spread((verifiedMfa, account) => {
                                 ApiError.assert(account, Error, 'account not found in account store');
+                                ApiError.assert(!invitationEmail || _.eq(invitationEmail.toLowerCase(), account.email), Error, 'user not logged with the invited email');
                                 return _.cond([
                                     [
                                         //if the user didn't authenticate with one of the requested factor, redirect to ID site with factors scope
@@ -71,6 +76,7 @@ app.get('/', function(req, res){
                                                 application,
                                                 accountStore,
                                                 authInfo,
+                                                invitationEmail,
                                                 {scope: idSiteHelper.getFactorsScope(account.id)}
                                         )
                                     ],
@@ -83,6 +89,7 @@ app.get('/', function(req, res){
                                                         application,
                                                         accountStore,
                                                         authInfo,
+                                                        invitationEmail,
                                                         {
                                                             scope: idSiteHelper.getSecuritySettingsScope(account.id),
                                                             authenticated: true,
@@ -111,9 +118,9 @@ app.get('/', function(req, res){
                             })
                         // Either jwt expired or the account does not belong to the account store
                         //  => re-authentication required
-                        .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo));
+                        .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail));
                 }
-                return redirectToIdSite(res, req.user, application, accountStore, req.authInfo);
+                return redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail);
             })
             .catch(req.next);
 
@@ -156,20 +163,18 @@ app.get('/logout', function(req, res){
 
 app.use(errorHandler);
 
-function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, content){
+function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, invitationEmail, content){
     const baseUrl = hrefHelper.getBaseUrl(jwtPayload.sub);
 
     //if an invitation has been provided, check if the account already exists in the application
     //if not, redirect to the registration page
     BluebirdPromise.resolve(
-        Optional.ofNullable(jwtPayload.inv_href)
-            .map(href => models.resolveHref(href)
-                            .reload()
-                            .then(i => accountStore.getAccounts({where: {email: _.toLower(i.email)}, limit:1}).get(0)
-                            .then(account => Optional.ofNullable(account).map(a => [jwtPayload.path, a.email]).orElseGet(() => ['/#/register', i.email])))
+        Optional.ofNullable(invitationEmail)
+            .map(e => accountStore.getAccounts({where: {email: _.toLower(e)}, limit:1}).get(0)
+                        .then(account => account ? null : '/#/register')
             )
-            .orElseGet(() => [jwtPayload.path, null])
-    ).spread((path, email) =>
+            .orElse(jwtPayload.path)
+    ).then(path =>
         jwt.signAsync(
            _.merge(
                {
@@ -184,7 +189,7 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, co
                    //qualify the account store & invitation hrefs
                    ash: baseUrl + hrefHelper.unqualifyHref(accountStore.href),
                    inv_href: jwtPayload.inv_href,
-                   email: email,
+                   email: invitationEmail,
                    //only to not make stormpath.js crash
                    sp_token: 'null'
                },
