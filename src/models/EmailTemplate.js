@@ -34,18 +34,16 @@ module.exports = function (sequelize, DataTypes) {
                 subject: {
                     type: DataTypes.STRING(78),
                     validate: {len: [1, 78]},
-                    allowNull: false                    
+                    allowNull: false
                 },
                 htmlBody: {
-                    type: DataTypes.STRING(1024),
+                    type: DataTypes.STRING,
                     allowNull: false,
-                    validate: {len: [0, 1024]},
                     defaultValue: ''
                 },
                 textBody: {
-                    type: DataTypes.STRING(1024),
+                    type: DataTypes.STRING,
                     allowNull: false,
-                    validate: {len: [0, 1024]},
                     defaultValue: ''
                 },
                 mimeType: {
@@ -90,7 +88,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 classMethods: {
                     getSettableAttributes: function(){
-                        return ['fromEmailAddress', 'fromName', 'subject', 'htmlBody', 'textBody', 'mimeType', 'defaultModel', 'linkBaseUrl', 'mandrillTemplate'];  
+                        return ['fromEmailAddress', 'fromName', 'subject', 'htmlBody', 'textBody', 'mimeType', 'defaultModel', 'linkBaseUrl', 'mandrillTemplate'];
                      },
                      associate: function(models) {
                          models.emailTemplate.belongsTo(models.tenant, {onDelete: 'cascade'});
@@ -99,4 +97,3 @@ module.exports = function (sequelize, DataTypes) {
             }
     );
 };
-    
