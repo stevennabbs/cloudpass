@@ -40,7 +40,7 @@ module.exports = {
                     defaultValue: 'ENABLED'
                 },
                 customData: {
-                    type: DataTypes.STRING(10485760),
+                    type: DataTypes.TEXT,
                     defaultValue: "{}",
                     allowNull: false
                 },

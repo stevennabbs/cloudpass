@@ -23,8 +23,7 @@ module.exports = function (sequelize, DataTypes) {
                 validate: {len: [0, 63]}
             },
             description: {
-                type: DataTypes.STRING(1022),
-                validate: {len: [0, 1022]},
+                type: DataTypes.TEXT,
                 defaultValue: ''
             },
             status:{

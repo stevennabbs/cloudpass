@@ -14,11 +14,11 @@ module.exports = function (sequelize, DataTypes) {
                 defaultValue: DataTypes.UUIDV4
             },
             items: {
-                type: DataTypes.STRING,
+                type: DataTypes.TEXT,
                 defaultValue: '[]',
                 get: function() {
                     return JSON.parse(this.getDataValue('items'));
-                }, 
+                },
                 set: function(val) {
                     return this.setDataValue('items', JSON.stringify(val));
                 },
@@ -46,7 +46,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             classMethods: {
                 getSettableAttributes: function(){
-                    return ['items'];  
+                    return ['items'];
                 },
                 associate: function(models){
                     models.attributeStatementMappingRules.belongsTo(models.tenant, {onDelete: 'cascade'});

@@ -10,11 +10,11 @@ module.exports = {
                     allowNull: false
                 },
                 privateKey: {
-                    type: DataTypes.STRING(2000),
+                    type: DataTypes.TEXT,
                     allowNull: false
                 },
                 x509SigningCert: {
-                    type: DataTypes.STRING(5000),
+                    type: DataTypes.TEXT,
                     allowNull: false
                 },
                 directoryId: {

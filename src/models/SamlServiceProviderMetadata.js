@@ -11,12 +11,12 @@ module.exports = function (sequelize, DataTypes) {
                 defaultValue: DataTypes.UUIDV4
             },
             privateKey: {
-                type: DataTypes.STRING,
+                type: DataTypes.TEXT,
                 allowNull: false,
                 roles: { serviceProvider: true }
             },
             x509SigningCert: {
-                type: DataTypes.STRING(2000),
+                type: DataTypes.TEXT,
                 allowNull: false
             },
             directoryId: {

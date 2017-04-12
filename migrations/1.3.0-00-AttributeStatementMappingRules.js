@@ -10,7 +10,7 @@ module.exports = {
                     allowNull: false
                 },
                 items: {
-                    type: DataTypes.STRING(1024),
+                    type: DataTypes.TEXT,
                     defaultValue: '[]',
                     allowNull: false
                 },
@@ -29,12 +29,12 @@ module.exports = {
                     onDelete: 'cascade'
                 }
             }
-        );        
+        );
     },
-    
+
     down: function(migration) {
         return migration.dropTable("attributeStatementMappingRules");
     }
-    
+
 };
 

@@ -59,7 +59,7 @@ module.exports = function (sequelize, DataTypes) {
                 validate: {len: [0, 255]}
             },
             providerData: {
-                type: DataTypes.STRING(10485760),
+                type: DataTypes.TEXT,
                 get: function(){
                     return {href: this.href+'/providerData'};
                 },

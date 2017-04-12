@@ -31,7 +31,7 @@ module.exports = {
                     allowNull: true
                 },
                 encodedX509SigningCert: {
-                    type: DataTypes.STRING(5000),
+                    type: DataTypes.TEXT,
                     allowNull: true
                 },
                 createdAt: {

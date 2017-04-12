@@ -22,10 +22,7 @@ module.exports = function(sequelize, DataTypes) {
         allowNull: false
       },
       description: {
-        type: DataTypes.STRING(1022),
-        validate: {
-          len: [0, 1022]
-        },
+        type: DataTypes.TEXT,
         defaultValue: ''
       },
       status: {

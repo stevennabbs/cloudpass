@@ -14,7 +14,7 @@ module.exports = {
                     allowNull: false
                 },
                 description: {
-                    type: DataTypes.STRING(1022),
+                    type: DataTypes.TEXT,
                     defaultValue: ''
                 },
                 status:{
@@ -29,7 +29,7 @@ module.exports = {
                     type: DataTypes.UUID
                 },
                 customData: {
-                    type: DataTypes.STRING(10485760),
+                    type: DataTypes.TEXT,
                     defaultValue: "{}",
                     allowNull: false
                 },

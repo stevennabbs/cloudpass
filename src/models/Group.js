@@ -19,8 +19,7 @@ module.exports = function (sequelize, DataTypes) {
                     allowNull: false
                 },
                 description: {
-                    type: DataTypes.STRING(1022),
-                    validate: {len: [0, 1022]},
+                    type: DataTypes.TEXT,
                     defaultValue: ''
                 },
                 status:{
@@ -42,7 +41,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 classMethods: {
                     getSearchableAttributes: _.constant(['id', 'name', 'description', 'status']),
-                    getSettableAttributes:  _.constant(['name', 'description', 'status', 'customData']),  
+                    getSettableAttributes:  _.constant(['name', 'description', 'status', 'customData']),
                     isCustomizable: _.stubTrue,
                     associate: function(models) {
                         models.group.belongsTo(models.tenant, {onDelete: 'cascade'});

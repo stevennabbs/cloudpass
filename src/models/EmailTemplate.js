@@ -37,12 +37,12 @@ module.exports = function (sequelize, DataTypes) {
                     allowNull: false
                 },
                 htmlBody: {
-                    type: DataTypes.STRING,
+                    type: DataTypes.TEXT,
                     allowNull: false,
                     defaultValue: ''
                 },
                 textBody: {
-                    type: DataTypes.STRING,
+                    type: DataTypes.TEXT,
                     allowNull: false,
                     defaultValue: ''
                 },

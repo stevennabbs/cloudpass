@@ -43,7 +43,7 @@ module.exports = function (sequelize, DataTypes) {
                 allowNull: true
             },
             encodedX509SigningCert: {
-                type: DataTypes.STRING(2000),
+                type: DataTypes.TEXT,
                 validate:{
                     isPem: function(value){
                         ApiError.assert(
@@ -112,7 +112,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             classMethods: {
                 getSettableAttributes: function(){
-                    return ['clientId', 'clientSecret', 'ssoLoginUrl', 'ssoLogoutUrl', 'encodedX509SigningCert'];  
+                    return ['clientId', 'clientSecret', 'ssoLoginUrl', 'ssoLogoutUrl', 'encodedX509SigningCert'];
                 },
                 associate: function(models){
                     models.directoryProvider.belongsTo(models.tenant, {onDelete: 'cascade'});

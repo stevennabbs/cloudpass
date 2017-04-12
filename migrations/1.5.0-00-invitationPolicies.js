@@ -43,7 +43,7 @@ module.exports = {
                type: DataTypes.STRING(30),
                allowNull: true
             }
-          )
+          );
         })
         .then(() =>
           migration.addColumn(

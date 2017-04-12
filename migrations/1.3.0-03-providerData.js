@@ -14,17 +14,17 @@ module.exports = {
             'accounts',
             'providerData',
             {
-              type: Sequelize.STRING(10485760),
+              type: Sequelize.TEXT,
               defaultValue: '{"providerId": "cloudpass"}',
               allowNull: false
             }
           );
         });
     },
-    
+
     down: function(queryInterface) {
         return queryInterface.removeColumn('accounts', 'providerData');
     }
-    
+
 };
 
