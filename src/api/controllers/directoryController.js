@@ -107,9 +107,7 @@ controller.consumeSamlAssertion = function(req, res){
            });
         });
     })
-    //check that the account really belongs to the required account store
-    //(it's possible that the account directory is linked to the account store via a group,
-    //and this account does not necessarily belongs to the group)
+    //check that the account belongs to the required organization
     .tap(res =>
         models.resolveHref(req.authInfo.app_href)
                 .getLookupAccountStore(req.authInfo.onk)

@@ -3,7 +3,6 @@
 var BluebirdPromise = require('sequelize').Promise;
 var _ = require('lodash');
 var winston = require('winston');
-var Optional = require('optional-js');
 var controllerHelper = require('../helpers/controllerHelper');
 var accountStoreController = require('../helpers/accountStoreController');
 var accountHelper = require('../helpers/accountHelper');
@@ -251,9 +250,15 @@ controller.samlIdpRedirect = function(req, res) {
   //when using _.defaultTo here, the first param is found in ID Site bearer
   //while the 2nd one is found in access token
   return BluebirdPromise.join(
-      models.application.build({id: req.swagger.params.id.value})
-        .getLookupAccountStore(req.authInfo.onk)
-        .then(as => accountHelper.getSubAccountStore(as, _.defaultTo(req.swagger.params['accountStore.href'].value, req.authInfo.ash)))
+        //don't restrict the lookup account store to the requested organization (if any)
+        //(if accounts are linked to organizations via a groups, org.getDirectories() would be empty)
+        //organization memberships are checked after login instead (c.f. directoryController)
+        BluebirdPromise.resolve(
+            accountHelper.getSubAccountStore(
+              models.application.build({id: req.swagger.params.id.value}),
+              _.defaultTo(req.swagger.params['accountStore.href'].value, req.authInfo.ash)
+            )
+        )
         .then(getSamlDirectoryProvider),
       samlHelper.getRelayState(
         req.user,
@@ -274,62 +279,24 @@ controller.samlIdpRedirect = function(req, res) {
 
 function getSamlDirectoryProvider(accountStore) {
     if (accountStore instanceof models.directory.Instance) {
-      return accountStore.getProvider({
+    return accountStore.getProvider({
+      include: [models.samlServiceProviderMetadata]
+    })
+    .tap(provider => ApiError.assert(provider.providerId === 'saml', ApiError, 400, 2014, 'The directory %s is not a SAML directory', accountStore.id));
+  }
+  ApiError.assert(accountStore.getDirectories, ApiError, 400, 2014, 'SAML login in %s is not supported', accountStore.Model.options.name.plural);
+  return accountStore.getDirectories({
+      attributes: [],
+      include: [{
+        model: models.directoryProvider,
+        as: 'provider',
+        where: {
+          providerId: 'saml'
+        },
         include: [models.samlServiceProviderMetadata]
-      })
-      .tap(provider => ApiError.assert(provider.providerId === 'saml', ApiError, 400, 2014, 'The directory %s is not a SAML directory', accountStore.id));
-    }
-
-    //look for a SAML provider in the directories of the account store first
-    //if not found see if there is a group belonging to a SAML directory
-    //(belonging to the directory does not mean belonging to the group, we will
-    // need to check after loging if the account really belongs to the application)
-    return BluebirdPromise.join(
-        Optional.ofNullable(accountStore.getDirectories)
-            .map(getDirectories =>
-                getDirectories.call(
-                    accountStore,
-                    {
-                        attributes: [],
-                        include: [{
-                          model: models.directoryProvider,
-                          as: 'provider',
-                          where: {
-                            providerId: 'saml'
-                          },
-                          include: [models.samlServiceProviderMetadata]
-                        }],
-                        limit: 1
-                    }
-                )
-            )
-            .orElseGet(_.stubArray),
-        Optional.ofNullable(accountStore.getGroups)
-            .map(getGroups =>
-                getGroups.call(
-                    accountStore,
-                    {
-                        attributes: [],
-                        include: [{
-                          model: models.directory,
-                          attributes: ['id'],
-                          include: [{
-                              model: models.directoryProvider,
-                              as: 'provider',
-                              where: {
-                                providerId: 'saml'
-                              },
-                              include: [models.samlServiceProviderMetadata]
-                          }]
-                        }],
-                        limit: 1
-                    }
-                )
-                .map(_.property('directory'))
-            )
-            .orElseGet(_.stubArray)
-    )
-    .then(_.flatten)
+      }],
+      limit: 1
+    })
     .then(_.head)
     .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'No SAML provider found in %s %s', accountStore.Model.name, accountStore.id))
     .get('provider');

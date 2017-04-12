@@ -240,8 +240,8 @@ describe('SAML', function(){
                 });
             });
 
-            it('with organization name', function(){
-                //create an organization an map it the the SAML application
+            it('with account store', function(){
+                //create an organization and map it the the SAML application
                 var organizationName = init.randomName();
                 return init.postRequest('organizations')
                     .send({
@@ -257,11 +257,11 @@ describe('SAML', function(){
                             })
                             .expect(200);
                     })
-                    .then(function(){
+                    .then(function(res){
                         return jwt.signAsync(
                             {
                                 cb_uri: callbackUrl,
-                                onk: organizationName
+                                ash: res.body.accountStore.href
                             },
                             init.apiKey.secret,
                             {
