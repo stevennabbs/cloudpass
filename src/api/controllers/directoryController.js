@@ -79,7 +79,7 @@ controller.consumeSamlAssertion = function(req, res){
         return models.sequelize.requireTransaction(function () {
            return models.account.findOrCreate({
                 where:{
-                    email: samlResponse.user.name_id,
+                    email: _.toLower(samlResponse.user.name_id),
                     directoryId: req.swagger.params.id.value
                 },
                 defaults:{
