@@ -61,7 +61,10 @@ module.exports = function (err, req, res, next) {
             req.user.secret,
             {
                 expiresIn: 60,
-                issuer: _.defaultTo(req.authInfo.app_href, req.authInfo.sub)
+                issuer: _.defaultTo(req.authInfo.app_href, req.authInfo.sub),
+                header: {
+                    kid: req.user.id
+                }
             }
         )
         .then(sendJwtResponse(res, req.authInfo.cb_uri));
