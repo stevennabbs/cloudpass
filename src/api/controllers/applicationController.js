@@ -267,7 +267,8 @@ controller.samlIdpRedirect = function(req, res) {
             state: req.authInfo.state,
             init_jti: _.defaultTo(req.authInfo.init_jti, req.authInfo.jti),
             app_href: _.defaultTo(req.authInfo.app_href, req.authInfo.sub),
-            inv_href: req.authInfo.inv_href
+            inv_href: req.authInfo.inv_href,
+            onk: req.authInfo.onk
         },
         '1h'
       )
