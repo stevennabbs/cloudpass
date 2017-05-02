@@ -3179,7 +3179,7 @@ paths:
       parameters:
         - $ref: "#/parameters/Id"
         - name: properties
-          description: releay state properties
+          description: relay state properties
           in: body
           required: true
           schema:
@@ -3190,6 +3190,8 @@ paths:
               callbackUri:
                 type: string
               state:
+                type: string
+              onk:
                 type: string
       responses:
         "200":
