@@ -26,7 +26,7 @@ exports.generateDefaultRelayState = function(req, res){
             cb_uri: req.swagger.params.properties.value.callbackUri,
             state: req.swagger.params.properties.value.state,
             app_href: models.application.getHref(req.swagger.params.id.value),
-            onk: req.authInfo.onk
+            onk: req.swagger.params.properties.value.onk
         }
     )
     .then(function(relayState){
