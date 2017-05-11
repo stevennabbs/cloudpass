@@ -189,7 +189,7 @@ The following example will use [nodemailer-mandrill-transport](https://github.co
       name: nodemailer-mandrill-transport
       options:
         auth:
-          apiKey: 0lh_FXQfROgL4ZZgn2U-uQ
+          apiKey: XXXXXXXXXXXXXX
   ```
 
 #### Mandrill Templates
