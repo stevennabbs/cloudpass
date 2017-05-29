@@ -30,6 +30,7 @@ persistence:
   options:
     dialect: PERSISTENCE_OPTIONS_DIALECT
     storage: PERSISTENCE_OPTIONS_STORAGE
+    benchmark: PERSISTENCE_OPTIONS_BENCHMARK
     host: PERSISTENCE_OPTIONS_HOST
     port: PERSISTENCE_OPTIONS_PORT
     pool:

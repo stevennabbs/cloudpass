@@ -54,6 +54,7 @@ persistence:
   database: cloudpass
   options:
     dialect: postgres
+    benchmark: false
     host: /var/run/postgresql
     port: 5432
     pool:
