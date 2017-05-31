@@ -176,10 +176,6 @@ app.get('/logout', function(req, res){
             }
         }
     );
-//    res.clearCookie(req.user.tenant.id, {path: cookiePath})
-//      .status(302)
-//      .location(req.authInfo.cb_uri)
-//      .send();
 });
 
 app.use(errorHandler);
