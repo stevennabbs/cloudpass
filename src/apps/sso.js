@@ -155,10 +155,31 @@ app.get('/', function(req, res){
 });
 
 app.get('/logout', function(req, res){
-    res.clearCookie(req.user.tenant.id, {path: cookiePath})
-      .status(302)
-      .location(req.authInfo.cb_uri)
-      .send();
+    //clear cookie and redirect to ID Site with a restricted scope
+    res.clearCookie(req.user.tenant.id, {path: cookiePath});
+    req.authInfo.path = '/#/logoutSuccess';
+    redirectToIdSite(
+        res,
+        req.user,
+        null, null,
+        req.authInfo,
+        null,
+        {
+            scope: {
+                applications: {
+                    [models.resolveHref(req.authInfo.sub).id]: [
+                        'get',
+                        { customData: [ 'get' ] },
+                        { idSiteModel: [ 'get' ] }
+                    ]
+                }
+            }
+        }
+    );
+//    res.clearCookie(req.user.tenant.id, {path: cookiePath})
+//      .status(302)
+//      .location(req.authInfo.cb_uri)
+//      .send();
 });
 
 app.use(errorHandler);
@@ -187,7 +208,7 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
                    sof: jwtPayload.sof,
                    require_mfa: jwtPayload.require_mfa,
                    //qualify the account store & invitation hrefs
-                   ash: baseUrl + hrefHelper.unqualifyHref(accountStore.href),
+                   ash: Optional.ofNullable(accountStore).map(_.property('href')).map(hrefHelper.unqualifyHref).map(_.bindKey(baseUrl, 'concat')).orElse(null),
                    inv_href: jwtPayload.inv_href,
                    email: invitationEmail,
                    //only to not make stormpath.js crash

@@ -307,7 +307,7 @@ describe('idSite', function(){
                 })
                 .then(function(res){
                     assert(res.header.location);
-                    assert.strictEqual(res.header.location, callbackUrl);
+                    assert(res.header.location.startsWith(idSiteUrl+'/#/logoutSuccess'));
                     assert(res.header['set-cookie']);
                     //cookie should be empty
                     assert.strictEqual(res.header['set-cookie'][0].split(';')[0].split('=')[1], '');

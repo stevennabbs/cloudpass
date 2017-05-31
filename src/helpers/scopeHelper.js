@@ -5,6 +5,7 @@ var _ = require('lodash');
 //get the scope of requests an ID site is allowed to make with its bearer token
 exports.getIdSiteScope = function(...modelInstances) {
     return _(modelInstances)
+        .filter(_.negate(_.isEmpty))
         .map(i => ({[i.Model.options.name.plural]: {[i.id]: i.Model.getIdSiteScope()}}))
         .reduce(_.merge, {});
 };
