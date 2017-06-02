@@ -115,7 +115,7 @@ module.exports = function (sequelize, DataTypes) {
                             password.split('').filter(function(c){return  c.toUpperCase() !== c;}).length >= this.get('minLowerCase', {role: 'strength'}),
                             ApiError, 400, 400, 'Password requires at least %d lowercase character(s).', this.get('minLowerCase', {role: 'strength'}));
                     ApiError.assert(
-                            password.split('').filter(function(c){return  c.toUpperCase() === c.toLowerCase();}).length >= this.get('minSymbol', {role: 'strength'}),
+                            password.replace(/[0-9]/g, '').split('').filter(c =>  c.toUpperCase() === c.toLowerCase()).length >= this.get('minSymbol', {role: 'strength'}),
                             ApiError, 400, 400, 'Password requires at least %d symbolic character(s).', this.get('minSymbol', {role: 'strength'}));
                     ApiError.assert(
                             password.replace(/[^0-9]/g, '').length >= this.get('minNumeric', {role: 'strength'}),
@@ -144,7 +144,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             classMethods: {
                 getSettableAttributes: function(){
-                    return ['resetEmailStatus', 'resetSuccessEmailStatus', 'resetTokenTtl'];  
+                    return ['resetEmailStatus', 'resetSuccessEmailStatus', 'resetTokenTtl'];
                 },
                 associate: function(models) {
                     models.passwordPolicy.belongsTo(models.tenant, {onDelete: 'cascade'});
