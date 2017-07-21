@@ -43,6 +43,6 @@ module.exports = {
     },
 
     down: function(migration) {
-        return migration.dropTable("passwordPolicies");
+        return migration.dropTable("accountCreationPolicies");
     }
 };

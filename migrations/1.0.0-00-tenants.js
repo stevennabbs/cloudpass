@@ -19,7 +19,7 @@ module.exports = {
                     allowNull: false
                 },
                 customData: {
-                    type: DataTypes.STRING(1000000),
+                    type: DataTypes.TEXT,
                     defaultValue: "{}",
                     allowNull: false
                 },

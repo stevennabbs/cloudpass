@@ -44,6 +44,11 @@ module.exports = {
                     defaultValue: "{}",
                     allowNull: false
                 },
+                providerData: {
+                    type: DataTypes.TEXT,
+                    defaultValue: '{"providerId": "cloudpass"}',
+                    allowNull: false
+                },
                 createdAt: {
                     allowNull: false,
                     type: DataTypes.DATE

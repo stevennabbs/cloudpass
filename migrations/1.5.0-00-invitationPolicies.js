@@ -35,16 +35,6 @@ module.exports = {
                 }
             }
         )
-        .then(function(){
-          return migration.changeColumn(
-            'emailTemplates',
-            'workflowStep',
-            {
-               type: DataTypes.STRING(30),
-               allowNull: true
-            }
-          );
-        })
         .then(() =>
           migration.addColumn(
             'applications',

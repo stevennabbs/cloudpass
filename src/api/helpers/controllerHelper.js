@@ -184,7 +184,7 @@ exports.execute = execute;
 
 function queryAndExpand(query, req, res, inTransaction){
     var expands =  parseExpandParam(_.get(req.swagger.params, 'expand.value', ''));
-    //if expansion must be performed, execute all queries in a REPETABLE-READ transaction
+    //if expansion must be performed, execute all queries in a REPEATABLE-READ transaction
     return execute(
                 () => query()
                     .tap(ApiError.assertFound)

@@ -115,7 +115,9 @@ var sequelize = new Sequelize(config.persistence.database, config.persistence.us
 
 //convenience method to start a transaction only if none is already started
 sequelize.requireTransaction = function(query){
-    return Sequelize.cls.get('transaction') ? query(Sequelize.cls.get('transaction')) : this.transaction(query);
+    return Optional.ofNullable(Sequelize.cls.get('transaction'))
+            .map(query)
+            .orElseGet(() => this.transaction({isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ}, query));
 };
 
 //default Model.count is not working with SSACL (see https://github.com/pumpupapp/ssacl/issues/4)
