@@ -1,9 +1,21 @@
 var assert = require("assert");
+var BluebirdPromise = require('sequelize').Promise;
 var init = require('./init');
 
 describe('Application', function() {
-  var applicationId;
-  var directoryId;
+  let applicationId;
+  let directoryId;
+  let accountLockingPolicyId;
+  let mailServer;
+
+  before(() => {
+      mailServer = init.getMailServer();
+  });
+
+  after(() => {
+    mailServer.stop();
+  });
+
   describe('Creation', function () {
     it('POST to /applications with createDirectory=true should create an application and a directory with the same name', function () {
         var name = init.randomName();
@@ -61,6 +73,7 @@ describe('Application', function() {
             .then(function(res){
                 //create a group in the directory
                 otherDirectoryId = res.body.id;
+                accountLockingPolicyId = res.body.accountLockingPolicyId;
                 return init.postRequest('directories/'+res.body.id+'/groups')
                     .send({name: init.randomName()})
                     .expect(200);
@@ -134,19 +147,6 @@ describe('Application', function() {
                 });
      });
 
-     it('Must fail if username or password are incorrect', function(){
-        return init.postRequest('applications/'+applicationId+'/loginAttempts')
-                .send({
-                    type: 'basic',
-                    value: Buffer.from('test@example.com:Aa12345', 'utf8').toString('base64')
-                })
-                .expect(400)
-                .then(function(res){
-                    assert.strictEqual(res.body.status, 400);
-                    assert.strictEqual(res.body.code, 7100);
-                });
-     });
-
      it('Must return the expanded account if requested', function(){
          return init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .query({expand: 'account'})
@@ -176,5 +176,52 @@ describe('Application', function() {
                     assert.strictEqual(res.body.code, 2014);
                 });
      });
+
+
+    let performFailedLoginAttempt = () =>
+        init.postRequest('applications/'+applicationId+'/loginAttempts')
+                .send({
+                    type: 'basic',
+                    value: Buffer.from('test@example.com:Aa12345', 'utf8').toString('base64')
+                })
+                .expect(400)
+                .then(res => {
+                    assert.strictEqual(res.body.status, 400);
+                    assert.strictEqual(res.body.code, 7100);
+                });
+
+
+     it('Must lock accounts after too many failures', () =>
+
+        //activate lock notification emails
+        init.postRequest('accountLockingPolicies/'+accountLockingPolicyId)
+                .send({
+                    accountLockedEmailStatus: 'ENABLED',
+                    maxFailedLoginAttempts: 2
+                })
+                .expect(200)
+                .then(() =>
+                    BluebirdPromise.join(
+                       init.getEmailPromise(mailServer, 'test@example.com'),
+                       performFailedLoginAttempt().then(performFailedLoginAttempt)
+                    )
+                    .get(0)
+                )
+                .then(email => {
+                    assert.strictEqual(email.headers.subject, 'Account locked');
+                    //subsequent login attempts with the right password should fail because the account is locked
+                    return init.postRequest('applications/'+applicationId+'/loginAttempts')
+                        .send({
+                            type: 'basic',
+                            value: Buffer.from('test@example.com:Aa123456', 'utf8').toString('base64')
+                        })
+                        .expect(400)
+                        .then(res => {
+                            assert.strictEqual(res.body.status, 400);
+                            assert.strictEqual(res.body.code, 7103);
+                        });
+                })
+    );
+
   });
 });

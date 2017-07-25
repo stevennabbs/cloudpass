@@ -43,16 +43,14 @@ module.exports = function(sequelize, DataTypes) {
       hooks: {
         beforeCreate: function(instance) {
           return instance.sequelize.Promise.join(
-              this.sequelize.models.passwordPolicy.create({
-                tenantId: instance.tenantId
-              }),
-              this.sequelize.models.accountCreationPolicy.create({
-                tenantId: instance.tenantId
-              })
+              this.sequelize.models.passwordPolicy.create({tenantId: instance.tenantId}),
+              this.sequelize.models.accountCreationPolicy.create({tenantId: instance.tenantId}),
+              this.sequelize.models.accountLockingPolicy.create({tenantId: instance.tenantId})
             )
-            .spread(function(passwordPolicy, accountCreationPolicy) {
+            .spread(function(passwordPolicy, accountCreationPolicy, accountLockingPolicy) {
               instance.set('passwordPolicyId', passwordPolicy.id);
               instance.set('accountCreationPolicyId', accountCreationPolicy.id);
+              instance.set('accountLockingPolicyId', accountLockingPolicy.id);
             });
         },
         beforeDestroy: function(instance) {
@@ -76,9 +74,9 @@ module.exports = function(sequelize, DataTypes) {
                 id: instance.accountCreationPolicyId
               }
             }),
-            this.sequelize.models.accountCreationPolicy.destroy({
+            this.sequelize.models.accountLockingPolicy.destroy({
               where: {
-                id: instance.accountCreationPolicyId
+                id: instance.accountLockingPolicyId
               }
             })
           );
@@ -99,25 +97,19 @@ module.exports = function(sequelize, DataTypes) {
           return true;
         },
         associate: function(models) {
-          models.directory.belongsTo(models.tenant, {
-            onDelete: 'cascade'
-          });
-          models.directory.hasOne(models.directoryProvider, {
-            as: 'provider',
-            onDelete: 'cascade'
-          });
-          models.directory.belongsTo(models.passwordPolicy, {
-            onDelete: 'cascade'
-          });
-          models.directory.belongsTo(models.accountCreationPolicy, {
-            onDelete: 'cascade'
-          });
-          models.directory.hasMany(models.group, {
-            onDelete: 'cascade'
-          });
-          models.directory.hasMany(models.account, {
-            onDelete: 'cascade'
-          });
+          models.directory.belongsTo(models.tenant, {onDelete: 'cascade'});
+          models.directory.hasOne(
+            models.directoryProvider,
+            {
+                as: 'provider',
+                onDelete: 'cascade'
+            }
+          );
+          models.directory.belongsTo(models.passwordPolicy, {onDelete: 'cascade'});
+          models.directory.belongsTo(models.accountCreationPolicy, {onDelete: 'cascade'});
+          models.directory.belongsTo(models.accountLockingPolicy, {onDelete: 'cascade'});
+          models.directory.hasMany(models.group, {onDelete: 'cascade'});
+          models.directory.hasMany(models.account, {onDelete: 'cascade'});
           models.directory.hasMany(
             models.accountStoreMapping, {
               as: 'applicationMappings',

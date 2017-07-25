@@ -2477,6 +2477,85 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /accountLockingPolicies/{id}:
+    x-swagger-router-controller: accountLockingPolicyController
+    get:
+      summary: retrieve the account locking policy from its ID
+      description: retrieve the account locking policy from its ID
+      tags:
+        - account locking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: account locking policy found
+          schema:
+            $ref: "#/definitions/AccountLockingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update an account locking policy
+      description: update the account locking policy with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - account locking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              accountLockedEmailStatus:
+                $ref: "#/definitions/Status"
+              maxFailedLoginAttempts:
+                type: integer
+              accountLockDuration:
+                type: string
+      responses:
+        "200":
+          description: account locking policy updated
+          schema:
+            $ref: "#/definitions/AccountLockingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLockingPolicies/{id}/{collection}:
+    x-swagger-router-controller: accountLockingPolicyController
+    get:
+      summary: retrieve a collection sub-resource from the policy
+      description: retrieve a collection sub-resource from the policy
+      operationId: getCollection
+      tags:
+        - account locking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: collection
+          in: path
+          description: the collection to retrieve
+          required: true
+          type: string
+          enum:
+            - accountLockedEmailTemplates
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/OrderBy"
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /apiKeys/{id}:
     x-swagger-router-controller: apiKeyController
     get:
@@ -3644,6 +3723,7 @@ definitions:
           - applicationMappings
           - passwordPolicy
           - accountCreationPolicy
+          - accountLockingPolicy
           - customData
         properties:
           name:
@@ -3669,6 +3749,8 @@ definitions:
           passwordPolicy:
             $ref: "#/definitions/ResourceReference"
           accountCreationPolicy:
+            $ref: "#/definitions/ResourceReference"
+          accountLockingPolicy:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3745,6 +3827,8 @@ definitions:
           - passwordChanges
           - customData
           - providerData
+          - failedLoginAttempts
+          - lastLoginAttempt
         properties:
           email:
             type: string
@@ -3767,6 +3851,11 @@ definitions:
               - ENABLED
               - DISABLED
               - UNVERIFIED
+          failedLoginAttempts:
+            type: integer
+          lastLoginAttempt:
+            type: string
+            format: date-time
           directory:
             $ref: "#/definitions/ResourceReference"
           groups:
@@ -3920,6 +4009,24 @@ definitions:
           verificationSuccessEmailTemplates:
             $ref: "#/definitions/ResourceReference"
           welcomeEmailTemplates:
+            $ref: "#/definitions/ResourceReference"
+  AccountLockingPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - accountLockedEmailStatus
+          - maxFailedLoginAttempts
+          - accountLockDuration
+          - accountLockedEmailTemplates
+        properties:
+          accountLockedEmailStatus:
+            $ref: "#/definitions/Status"
+          maxFailedLoginAttempts:
+            type: integer
+          accountLockDuration:
+            type: string
+          accountLockedEmailTemplates:
             $ref: "#/definitions/ResourceReference"
   PasswordResetToken:
     type: object

@@ -12,12 +12,12 @@ textBody: |
     For general inquiries or to request support with your account, please email change-me@example.com
 htmlBody: >
     <p>Hi,</p>
-    
+
     <p>You have been registered for ${account.directory.name}.</p>
-    
+
     <a href="${url}">Click here to verify your account</a>
-    
+
     <p>Once you verify, you will be able to login.</p>
-    
+
     <p>---------------------<br />
     <p>For general inquiries or to request support with your account, please email change-me@example.com</p>

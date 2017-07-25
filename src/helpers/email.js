@@ -12,7 +12,7 @@ var hrefHelper = require('./hrefHelper');
 
 var logger = winston.loggers.get('email');
 var templateSettings = {interpolate : /\${([\w\.]+?)}/g};
-var accountFields = ['givenName', 'surname', 'fullName', 'username', 'email', 'directory'];
+var accountFields = ['givenName', 'surname', 'fullName', 'username', 'email', 'failedLoginAttempts', 'directory'];
 var directoryFields = ['name'];
 
 // create reusable transporter object

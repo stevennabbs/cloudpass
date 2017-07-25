@@ -3,8 +3,10 @@
 var _ = require('lodash');
 var BluebirdPromise = require('sequelize').Promise;
 var Optional = require('optional-js');
+var moment = require('moment');
 var models = require('../../models');
 var ApiError = require('../../ApiError');
+var email = require('../../helpers/email');
 
 
 exports.getSubAccountStore = function(accountStore, subAccountStoreHref){
@@ -29,25 +31,80 @@ exports.getSubAccountStore = function(accountStore, subAccountStoreHref){
             .orElse(accountStore);
 };
 
-exports.findAccount = function(login, applicationId, organizationName, accountStoreHref){
+exports.findAccount = function(login, applicationId, organizationName, accountStoreHref, ...include){
     //username and password are persisted lowercased to allow for case insensitive search
     var lowerCaseLogin = login.toLowerCase();
     return models.application.build({id: applicationId}, {isNewRecord: false})
             .getLookupAccountStore(organizationName)
             .then(as => exports.getSubAccountStore(as, accountStoreHref))
-            .then(as => as.getAccounts({where: { $or: [{email: lowerCaseLogin}, {username: lowerCaseLogin} ]}, limit: 1}))
+            .then(as => as.getAccounts({
+                where: { $or: [{email: lowerCaseLogin}, {username: lowerCaseLogin} ]},
+                limit: 1,
+                include
+            }))
             .get(0);
 };
 
 exports.authenticateAccount = function(login, password, applicationId, organizationName, accountStoreHref){
-    return exports.findAccount(login, applicationId, organizationName, accountStoreHref)
-        .tap(function(account){
+    return exports.findAccount(
+            login,
+            applicationId,
+            organizationName,
+            accountStoreHref,
+            {
+                model: models.directory,
+                include: [{model : models.accountLockingPolicy}]
+            }
+        )
+        .then(function(account){
            ApiError.assert(account, ApiError, 400, 7104, 'Login attempt failed because there is no Account in the Application’s associated Account Stores with the specified username or email.');
-           ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'Login attempt failed because the account is not enabled.');
+           ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'Login attempt failed because the Account is not enabled.');
+           ApiError.assert(
+                account.failedLoginAttempts < account.directory.accountLockingPolicy.maxFailedLoginAttempts ||
+                moment(account.lastLoginAttempt).add(moment.duration(account.directory.accountLockingPolicy.accountLockDuration)).isBefore(moment()),
+                ApiError, 400, 7103, 'Login attempt failed because the Account is locked.');
+
            return account
                    .verifyPassword(password)
-                   .then(function(result){
-                       ApiError.assert(result, ApiError, 400, 7100, 'Login attempt failed because the specified password is incorrect.');
+                   .then(result => {
+                       if(result){
+                           //authentication successful: reset failed login attempts
+                           return account.update({
+                               failedLoginAttempts: 0,
+                               lastLoginAttempt: new Date()
+                           });
+                       } else {
+                           //authentication failed: increment failedLoginAttempts
+                           //can't use account.update(...) here because we will need the value of account.failedLoginAttempts later
+                           return models.account.update(
+                             {
+                                failedLoginAttempts: models.sequelize.literal(`${models.sequelize.getQueryInterface().QueryGenerator.quoteIdentifier('failedLoginAttempts')} + 1`),
+                                lastLoginAttempt: new Date()
+                             },
+                             {
+                                 where: {id: account.id}
+                             }
+                           )
+                           .then(() => {
+                               //if it was the last try, send a email to notify of account locking
+                               if(account.failedLoginAttempts >= account.directory.accountLockingPolicy.maxFailedLoginAttempts - 1 &&
+                                  account.directory.accountLockingPolicy.accountLockedEmailStatus === 'ENABLED'){
+                                   account.directory.accountLockingPolicy
+                                        .getAccountLockedEmailTemplates({limit: 1})
+                                        .spread(template =>
+                                            email.send(
+                                              account,
+                                              account.directory,
+                                              template,
+                                              null,
+                                              {accountLockDuration: moment.duration(account.directory.accountLockingPolicy.accountLockDuration).asMinutes()}
+                                            )
+                                        );
+                               }
+                               throw new ApiError(400, 7100, 'Login attempt failed because the specified password is incorrect.');
+                           });
+
+                       }
                    });
         });
 };

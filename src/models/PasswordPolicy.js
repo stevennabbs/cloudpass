@@ -160,7 +160,7 @@ module.exports = function (sequelize, DataTypes) {
                             }
                         }
                     );
-                     models.passwordPolicy.hasMany(
+                    models.passwordPolicy.hasMany(
                             models.emailTemplate,
                             {
                                 as: 'resetSuccessEmailTemplates',

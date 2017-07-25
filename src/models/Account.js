@@ -19,6 +19,8 @@ module.exports = function (sequelize, DataTypes) {
             email: {
                 type: DataTypes.STRING,
                 allowNull: false,
+                lowercase: true,
+                trim: true,
                 validate: {isEmail: true},
                 //transform to lowercase to allow case insensitive logins
                 set : function(val) {
@@ -67,6 +69,14 @@ module.exports = function (sequelize, DataTypes) {
                     this.setDataValue('providerData', JSON.stringify(val));
                 },
                 defaultValue: '{"providerId": "cloudpass"}'
+            },
+            failedLoginAttempts: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0
+            },
+            lastLoginAttempt : {
+                type: DataTypes.DATE
             },
             status:{
                 type: DataTypes.STRING(10),

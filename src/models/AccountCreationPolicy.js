@@ -57,7 +57,7 @@ module.exports = function (sequelize, DataTypes) {
             },
             classMethods: {
                 getSettableAttributes: function(){
-                    return ['verificationEmailStatus', 'verificationSuccessEmailStatus', 'welcomeEmailStatus'];  
+                    return ['verificationEmailStatus', 'verificationSuccessEmailStatus', 'welcomeEmailStatus'];
                 },
                 associate: function(models) {
                     models.accountCreationPolicy.belongsTo(models.tenant, {onDelete: 'cascade'});
@@ -91,17 +91,6 @@ module.exports = function (sequelize, DataTypes) {
                                 constraints: false,
                                 scope: {
                                     workflowStep: 'welcome'
-                            }
-                        }
-                    );
-                    models.accountCreationPolicy.hasMany(
-                            models.emailTemplate,
-                            {
-                                as: 'invitationEmailTemplates',
-                                foreignKey: 'policyId',
-                                constraints: false,
-                                scope: {
-                                    workflowStep: 'invitation'
                             }
                         }
                     );

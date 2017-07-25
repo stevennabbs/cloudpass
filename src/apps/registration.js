@@ -25,7 +25,7 @@ app.post('/', function(req, res){
                         name: 'Cloudpass',
                         tenantId: tenant.id
                     }),
-                    models.directory.create({  
+                    models.directory.create({
                         name: 'Cloudpass Administrators',
                         tenantId: tenant.id
                     }),
@@ -63,6 +63,7 @@ app.post('/', function(req, res){
 });
 
 app.use(function (err, req, res, next) {
+    console.error('aaaaaaaaaaaaa', err);
     if (res.headersSent) {
         return next(err);
     }

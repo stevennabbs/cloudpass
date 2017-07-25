@@ -17,7 +17,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 workflowStep: {
                     type: DataTypes.STRING(30),
-                    validate: {isIn: [['passwordReset', 'passwordResetSuccess', 'emailVerification', 'emailVerificationSuccess', 'welcome', 'invitation']]},
+                    validate: {isIn: [['passwordReset', 'passwordResetSuccess', 'emailVerification', 'emailVerificationSuccess', 'welcome', 'invitation', 'accountLocked']]},
                     allowNull: false
                 },
                 fromEmailAddress: {
