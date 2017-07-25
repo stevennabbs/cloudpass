@@ -367,6 +367,34 @@
                     </tr>
                 </tbody>
             </table>
+            <h3 id="tag-account-locking-policies" class="swagger-summary-tag">Tag: account locking policies</h3>
+            
+        
+            <table class="table table-bordered table-condensed swagger--summary">
+                <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="#operation--accountLockingPolicies--id--get">GET /accountLockingPolicies/{id}</a></td>
+                        <td><p>retrieve the account locking policy from its ID</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--accountLockingPolicies--id--post">POST /accountLockingPolicies/{id}</a></td>
+                        <td><p>update an account locking policy</p>
+        </td>
+                    </tr>
+                    <tr>
+                        <td><a href="#operation--accountLockingPolicies--id---collection--get">GET /accountLockingPolicies/{id}/{collection}</a></td>
+                        <td><p>retrieve a collection sub-resource from the policy</p>
+        </td>
+                    </tr>
+                </tbody>
+            </table>
             <h3 id="tag-API-keys" class="swagger-summary-tag">Tag: API keys</h3>
             
         
@@ -506,24 +534,6 @@
                     </tr>
                 </tbody>
             </table>
-            <h3 id="tag-saml-service-provider-metadata" class="swagger-summary-tag">Tag: saml service provider metadata</h3>
-            
-        
-            <table class="table table-bordered table-condensed swagger--summary">
-                <thead>
-                <tr>
-                    <th>Operation</th>
-                    <th>Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><a href="#operation--samlServiceProviderMetadatas--id--get">GET /samlServiceProviderMetadatas/{id}</a></td>
-                        <td><p>get the metadata used by cloudpass to act as a SAML service provider</p>
-        </td>
-                    </tr>
-                </tbody>
-            </table>
             <h3 id="tag-ID-sites" class="swagger-summary-tag">Tag: ID sites</h3>
             
         
@@ -553,6 +563,24 @@
                     <tr>
                         <td><a href="#operation--idSites--id--post">POST /idSites/{id}</a></td>
                         <td><p>update an ID site</p>
+        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3 id="tag-saml-service-provider-metadata" class="swagger-summary-tag">Tag: saml service provider metadata</h3>
+            
+        
+            <table class="table table-bordered table-condensed swagger--summary">
+                <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="#operation--samlServiceProviderMetadatas--id--get">GET /samlServiceProviderMetadatas/{id}</a></td>
+                        <td><p>get the metadata used by cloudpass to act as a SAML service provider</p>
         </td>
                     </tr>
                 </tbody>
@@ -1388,6 +1416,457 @@
                                                         <span class="json-property-enum-item">verificationSuccessEmailTemplates</span>
                                                     ,
                                                         <span class="json-property-enum-item">welcomeEmailTemplates</span>
+                                                    
+                                                }
+                                                </span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                offset
+                                            <td><p>resource collection offset</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">integer</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Offset">#/parameters/Offset</a></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                limit
+                                            <td><p>resource collection limit</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">integer</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                                <span class="json-property-default-value">25</span>
+                                            </td>
+                                            <td>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Limit">#/parameters/Limit</a></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                orderBy
+                                            <td><p>resource collection ordering</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">string[]</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                        <span class="sw-param-collection-format">, 
+                                                        comma separated (<code>orderBy=aaa,bbb</code>)
+                                                    </span>    </td>
+                                            <td>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/OrderBy">#/parameters/OrderBy</a></span>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    
+                        <section class="sw-responses">
+                                <p><a href="#sw-default-produces">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> 
+                                </p>
+                            
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>ok</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/CollectionResource">CollectionResource</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-default">
+                                        default 
+                                    
+                                    </dt>
+                                    <dd class="sw-response-default">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>error</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/Error">Error</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                </div>
+            </div>    
+        <span id="path--accountLockingPolicies--id-"></span>
+            <div id="operation--accountLockingPolicies--id--get" class="swagger--panel-operation-get panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">retrieve the account locking policy from its ID</div>
+                    <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/accountLockingPolicies/{id}</strong></h3>
+                        Tags:
+                            <a href="#tag-account-locking-policies">account locking policies</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        <p>retrieve the account locking policy from its ID</p>
+            
+                    </section>
+                    
+                        <section class="sw-request-params">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-param-name"></th>
+                                    <th class="sw-param-description"></th>
+                                    <th class="sw-param-type"></th>
+                                    <th class="sw-param-data-type"></th>
+                                    <th class="sw-param-annotation"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td>
+                                                id
+                                            <td><p>Resource ID</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>    <span class="json-property-format">(uuid)</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Id">#/parameters/Id</a></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                expand
+                                            <td><p>the links to expand</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Expand">#/parameters/Expand</a></span>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    
+                        <section class="sw-responses">
+                                <p><a href="#sw-default-produces">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> 
+                                </p>
+                            
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>account locking policy found</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/AccountLockingPolicy">AccountLockingPolicy</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-default">
+                                        default 
+                                    
+                                    </dt>
+                                    <dd class="sw-response-default">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>error</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/Error">Error</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                </div>
+            </div>    <div id="operation--accountLockingPolicies--id--post" class="swagger--panel-operation-post panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">update an account locking policy</div>
+                    <h3 class="panel-title"><span class="operation-name">POST</span> <strong>/accountLockingPolicies/{id}</strong></h3>
+                        Tags:
+                            <a href="#tag-account-locking-policies">account locking policies</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        <p>update the account locking policy with the given ID using the provided attributes</p>
+            
+                    </section>
+                        
+                            <section class="sw-request-body">
+                                
+                                    <p><a href="#sw-default-consumes">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> <span class="label label-default">application/octet-stream</span> 
+                                    </p>
+                                                <div class="row">
+                                            <div class="col-md-6">
+                                                <p><p>New attributes</p>
+                        </p>
+                                            </div>
+                                            <div class="col-md-6 sw-request-model">
+                            <div  class="panel panel-definition">
+                                <div class="panel-body">
+                                        
+                                                <section class="json-schema-properties">
+                                                    <dl>
+                                                            <dt data-property-name="accountLockedEmailStatus">
+                                                                <span class="json-property-name">accountLockedEmailStatus:</span>
+                                                                
+                                                                <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/Status">Status</a>
+                                                                </span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                            </dt>
+                                                            <dd>
+                                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="maxFailedLoginAttempts">
+                                                                <span class="json-property-name">maxFailedLoginAttempts:</span>
+                                                                
+                                                                <span class="json-property-type">integer</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                            </dt>
+                                                            <dd>
+                                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                            <dt data-property-name="accountLockDuration">
+                                                                <span class="json-property-name">accountLockDuration:</span>
+                                                                
+                                                                <span class="json-property-type">string</span>
+                                                                <span class="json-property-range" title="Value limits"></span>
+                                                                
+                                                            </dt>
+                                                            <dd>
+                                                                
+                                                                <div class="json-inner-schema">
+                                                                    
+                                                                </div>
+                                                            </dd>
+                                                    </dl>
+                                                </section>
+                                </div>
+                            </div></div>
+                                        </div>
+                            </section>        
+                        <section class="sw-request-params">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-param-name"></th>
+                                    <th class="sw-param-description"></th>
+                                    <th class="sw-param-type"></th>
+                                    <th class="sw-param-data-type"></th>
+                                    <th class="sw-param-annotation"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td>
+                                                id
+                                            <td><p>Resource ID</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>    <span class="json-property-format">(uuid)</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Id">#/parameters/Id</a></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                expand
+                                            <td><p>the links to expand</p>
+                                        </td>
+                                            <td>query</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Expand">#/parameters/Expand</a></span>
+                                            </td>
+                                        </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    
+                        <section class="sw-responses">
+                                <p><a href="#sw-default-produces">Uses default content-types: </a>
+                                    <span class="label label-default">application/json</span> 
+                                </p>
+                            
+                            <dl>
+                                    <dt class="sw-response-200">
+                                        200 OK
+                                    
+                                    </dt>
+                                    <dd class="sw-response-200">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>account locking policy updated</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/AccountLockingPolicy">AccountLockingPolicy</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                                    <dt class="sw-response-default">
+                                        default 
+                                    
+                                    </dt>
+                                    <dd class="sw-response-default">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <p>error</p>
+                                            
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                
+                                                <div class="col-md-6 sw-response-model">
+                                                <div  class="panel panel-definition">
+                                                    <div class="panel-body">
+                                                                <a class="json-schema-ref" href="#/definitions/Error">Error</a>
+                                                    </div>
+                                                </div></div>
+                                            
+                                            </div>                </dd>
+                            </dl>
+                        </section>
+                </div>
+            </div>    
+        <span id="path--accountLockingPolicies--id---collection-"></span>
+            <div id="operation--accountLockingPolicies--id---collection--get" class="swagger--panel-operation-get panel">
+                <div class="panel-heading">
+                    <div class="operation-summary">retrieve a collection sub-resource from the policy</div>
+                    <h3 class="panel-title"><span class="operation-name">GET</span> <strong>/accountLockingPolicies/{id}/{collection}</strong></h3>
+                        Tags:
+                            <a href="#tag-account-locking-policies">account locking policies</a>
+                </div>
+                <div class="panel-body">
+                    <section class="sw-operation-description">
+                        <p>retrieve a collection sub-resource from the policy</p>
+            
+                    </section>
+                    
+                        <section class="sw-request-params">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th class="sw-param-name"></th>
+                                    <th class="sw-param-description"></th>
+                                    <th class="sw-param-type"></th>
+                                    <th class="sw-param-data-type"></th>
+                                    <th class="sw-param-annotation"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                        <tr>
+                                            <td>
+                                                id
+                                            <td><p>Resource ID</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>    <span class="json-property-format">(uuid)</span>
+                                        <span class="json-property-range" title="Value limits"></span>
+                                        
+                                            </td>
+                                            <td>
+                                                    <span class="json-property-required"></span>
+                                                    <span class="swagger--global"></span> <span class="json-schema--reference"><a href="#/parameters/Id">#/parameters/Id</a></span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                collection
+                                            <td><p>the collection to retrieve</p>
+                                        </td>
+                                            <td>path</td>
+                                            <td>
+                                        <span class="json-property-type">string</span>    <span class="json-property-enum" title="Possible values">, x &isin; {
+                                                        <span class="json-property-enum-item">accountLockedEmailTemplates</span>
                                                     
                                                 }
                                                 </span>
@@ -20085,6 +20564,34 @@
                                                                             
                                                                         </div>
                                                                     </dd>
+                                                                    <dt data-property-name="failedLoginAttempts">
+                                                                        <span class="json-property-name">failedLoginAttempts:</span>
+                                                                        
+                                                                        <span class="json-property-type">integer</span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                                    <dt data-property-name="lastLoginAttempt">
+                                                                        <span class="json-property-name">lastLoginAttempt:</span>
+                                                                        
+                                                                        <span class="json-property-type">string</span>    <span class="json-property-format">(date-time)</span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
                                                                     <dt data-property-name="directory">
                                                                         <span class="json-property-name">directory:</span>
                                                                         
@@ -20325,6 +20832,92 @@
                                                                     </dd>
                                                                     <dt data-property-name="welcomeEmailTemplates">
                                                                         <span class="json-property-name">welcomeEmailTemplates:</span>
+                                                                        
+                                                                        <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/ResourceReference">ResourceReference</a>
+                                                                        </span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                            </dl>
+                                                        </section>
+                                    </section>
+                                </section>
+                    </div>
+                </div>        
+                <div id="definition-AccountLockingPolicy" class="panel panel-definition">
+                        <div class="panel-heading">
+                                <h3 class="panel-title"><a name="/definitions/AccountLockingPolicy"></a>AccountLockingPolicy:
+                                    <span class="json-property-type">
+                <span class="json-property-type"></span>
+                <span class="json-property-range" title="Value limits"></span>
+                
+                </span>
+                                </h3>
+                        </div>
+                    <div class="panel-body">
+                            
+                                <section class="json-schema-allOf">
+                                    <section class="json-schema-allOf-inherited">
+                                        <ul>
+                                                    <a class="json-schema-ref" href="#/definitions/Resource">Resource</a>
+                                        </ul>
+                                    </section>
+                                    <section class="json-schema-allOf-additional">
+                                                
+                                                        <section class="json-schema-properties">
+                                                            <dl>
+                                                                    <dt data-property-name="accountLockedEmailStatus">
+                                                                        <span class="json-property-name">accountLockedEmailStatus:</span>
+                                                                        
+                                                                        <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/Status">Status</a>
+                                                                        </span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                                    <dt data-property-name="maxFailedLoginAttempts">
+                                                                        <span class="json-property-name">maxFailedLoginAttempts:</span>
+                                                                        
+                                                                        <span class="json-property-type">integer</span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                                    <dt data-property-name="accountLockDuration">
+                                                                        <span class="json-property-name">accountLockDuration:</span>
+                                                                        
+                                                                        <span class="json-property-type">string</span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                                    <dt data-property-name="accountLockedEmailTemplates">
+                                                                        <span class="json-property-name">accountLockedEmailTemplates:</span>
                                                                         
                                                                         <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/ResourceReference">ResourceReference</a>
                                                                         </span>
@@ -21336,6 +21929,21 @@
                                                                     </dd>
                                                                     <dt data-property-name="accountCreationPolicy">
                                                                         <span class="json-property-name">accountCreationPolicy:</span>
+                                                                        
+                                                                        <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/ResourceReference">ResourceReference</a>
+                                                                        </span>
+                                                                        <span class="json-property-range" title="Value limits"></span>
+                                                                        
+                                                                            <span class="json-property-required"></span>
+                                                                    </dt>
+                                                                    <dd>
+                                                                        
+                                                                        <div class="json-inner-schema">
+                                                                            
+                                                                        </div>
+                                                                    </dd>
+                                                                    <dt data-property-name="accountLockingPolicy">
+                                                                        <span class="json-property-name">accountLockingPolicy:</span>
                                                                         
                                                                         <span class="json-property-type">    <a class="json-schema-ref" href="#/definitions/ResourceReference">ResourceReference</a>
                                                                         </span>
