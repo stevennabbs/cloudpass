@@ -74,20 +74,15 @@ exports.authenticateAccount = function(login, password, applicationId, organizat
                                lastLoginAttempt: new Date()
                            });
                        } else {
-                           //authentication failed: increment failedLoginAttempts
-                           //can't use account.update(...) here because we will need the value of account.failedLoginAttempts later
-                           return models.account.update(
-                             {
-                                failedLoginAttempts: models.sequelize.literal(`${models.sequelize.getQueryInterface().QueryGenerator.quoteIdentifier('failedLoginAttempts')} + 1`),
+                            //authentication failed: increment failedLoginAttempts
+                            //can't use account.update(...) here because we will need the value of account.failedLoginAttempts later
+                            return account.update({
+                                failedLoginAttempts: account.failedLoginAttempts + 1,
                                 lastLoginAttempt: new Date()
-                             },
-                             {
-                                 where: {id: account.id}
-                             }
-                           )
+                            })
                            .then(() => {
                                //if it was the last try, send a email to notify of account locking
-                               if(account.failedLoginAttempts >= account.directory.accountLockingPolicy.maxFailedLoginAttempts - 1 &&
+                               if(account.failedLoginAttempts >= account.directory.accountLockingPolicy.maxFailedLoginAttempts &&
                                   account.directory.accountLockingPolicy.accountLockedEmailStatus === 'ENABLED'){
                                    account.directory.accountLockingPolicy
                                         .getAccountLockedEmailTemplates({limit: 1})
