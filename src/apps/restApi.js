@@ -2,6 +2,7 @@
 
 var express = require('express');
 var morgan = require('morgan');
+var nocache = require('nocache');
 var bodyParser = require('body-parser');
 var config = require('config');
 var BluebirdPromise = require('sequelize').Promise;
@@ -22,10 +23,10 @@ var applyIdSiteMiddleware = require('./helpers/applyIdSiteMiddleware');
 var errorHandler = require('./helpers/errorHandler');
 
 module.exports = function(secret){
-    
+
     // register SAuthc1 authentication strategy
     passport.use(new SAuthc1Strategy(config.get('server.rootUrl')));
-    
+
     //ID sites send request with a JWT in the authorization header
     passport.use(
         'bearer-jwt',
@@ -47,7 +48,7 @@ module.exports = function(secret){
             _.property('header.kid')
         )
     );
-    
+
     //SAML identity providers use the 'RelayState' POST param
     passport.use(
         'relay-state-jwt',
@@ -104,6 +105,7 @@ module.exports = function(secret){
                     req.rawBody = buf;
                 }
             }));
+            app.use(nocache());
             app.use(bodyParser.urlencoded({ extended: false }));
             app.use(passport.initialize());
 
