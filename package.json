@@ -43,7 +43,7 @@
     "node-appinfo": "0.2.3",
     "nodemailer": "4.0.1",
     "optional-js": "1.2.1",
-    "passport": "0.3.2",
+    "passport": "0.4.0",
     "passport-http": "0.3.0",
     "passport-jwt-cookiecombo": "1.0.5",
     "pem": "1.9.7",
