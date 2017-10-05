@@ -41,7 +41,7 @@
     "morgan": "1.8.2",
     "nocache": "2.0.0",
     "node-appinfo": "0.2.3",
-    "nodemailer": "4.1.0",
+    "nodemailer": "4.1.1",
     "optional-js": "1.2.1",
     "passport": "0.4.0",
     "passport-http": "0.3.0",
