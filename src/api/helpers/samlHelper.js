@@ -2,6 +2,7 @@
 
 var saml2 =  require('sequelize').Promise.promisifyAll(require('saml2-js'), {suffix: '_async'});
 var signJwt = require('sequelize').Promise.promisify(require('jsonwebtoken').sign);
+var _ = require('lodash');
 
 function getSamlProvider(providerMetadata){
     return new saml2.ServiceProvider({
@@ -51,10 +52,12 @@ exports.getRelayState = function(apiKey, content, expiration){
     return signJwt(
         content,
         apiKey.secret,
-        {
-            expiresIn: expiration,
-            subject: apiKey.id,
-            audience: 'SamlIdp'
-        }
+        _.pickBy(
+            {
+                expiresIn: expiration,
+                subject: apiKey.id,
+                audience: 'SamlIdp'
+            }
+        )
     );
 };
