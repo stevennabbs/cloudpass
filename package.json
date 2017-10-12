@@ -85,7 +85,7 @@
     "superagent": "3.6.3",
     "supertest": "3.0.0",
     "supertest-as-promised": "4.0.2",
-    "tar-fs": "1.15.3",
+    "tar-fs": "1.16.0",
     "thenify": "3.3.0"
   },
   "scripts": {
