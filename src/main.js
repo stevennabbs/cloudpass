@@ -51,9 +51,10 @@ function startServers(secret){
     return require('./apps/restApi')(secret)
         .then(function(apiApp){
           app.use('/v1', apiApp);
-          //start the server
-          return app.listen(config.get('server.port'));
-        })
-        //start monitoring app
-        .tap(() =>  require('./apps/monitoring').listen(config.get('server.monitoringPort')));
+          //start the main & monitoring servers
+          return {
+              main: app.listen(config.get('server.port')),
+              monitoring: require('./apps/monitoring').listen(config.get('server.monitoringPort'))
+          };
+        });
 }

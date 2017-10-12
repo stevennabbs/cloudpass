@@ -81,7 +81,7 @@ describe('idSite', function(){
         it('in application', function(){
             return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 .then(function(bearer){
-                    return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                    return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
                         .set('authorization', 'Bearer '+bearer)
                         .send({
                             type: 'basic',
@@ -109,7 +109,7 @@ describe('idSite', function(){
                 .spread(function(jwtRequest, cookie){
                     return BluebirdPromise.join(
                         //send a a new request with the cookie
-                        request(init.app).get('/sso')
+                        request(init.servers.main).get('/sso')
                             .query({jwtRequest: jwtRequest})
                             .set('Cookie', cookie)
                             .expect(302),
@@ -127,7 +127,7 @@ describe('idSite', function(){
                 })
                 .spread(function(jwtRequest, cookie){
                     //send a a new request requiring MFA with the cookie
-                    return request(init.app).get('/sso')
+                    return request(init.servers.main).get('/sso')
                             .query({ jwtRequest: jwtRequest})
                             .set('Cookie', cookie)
                             .expect(302);
@@ -163,7 +163,7 @@ describe('idSite', function(){
                     })
                     .then(function(bearer){
                        //the bearer should give access to the organization & its ID site model
-                       return request(init.app).get('/v1/organizations/'+organizationId)
+                       return request(init.servers.main).get('/v1/organizations/'+organizationId)
                                 .set('authorization', 'Bearer '+bearer)
                                 .query({ expand: 'idSiteModel'})
                                 .expect(200)
@@ -177,7 +177,7 @@ describe('idSite', function(){
                     })
                     .then(function(bearer){
                         //Cloudpass should return a 400 because the account is not in this organization
-                        return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                        return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 type: 'basic',
@@ -193,7 +193,7 @@ describe('idSite', function(){
                 function getConfiguredFactors(requireMfa){
                     return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: requireMfa})
                         .then(function(bearer){
-                            return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                            return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
                                 .set('authorization', 'Bearer '+bearer)
                                 .send({
                                     type: 'basic',
@@ -207,7 +207,7 @@ describe('idSite', function(){
                             assert(res.header.authorization);
 
                             //we should be able to retrieve the list of 2nd factors with the new bearer
-                            return request(init.app).get('/v1'+res.body.account.href+'/factors')
+                            return request(init.servers.main).get('/v1'+res.body.account.href+'/factors')
                                     .set('authorization', res.header.authorization)
                                     .expect(200);
                         });
@@ -220,7 +220,7 @@ describe('idSite', function(){
                             //no 2nd factor configured yet
                             assert.strictEqual(res.body.size, 0);
                             //add one
-                            return request(init.app).post('/v1'+res.body.href)
+                            return request(init.servers.main).post('/v1'+res.body.href)
                                     .set('authorization', res.header.authorization)
                                     .send({
                                         type: 'google-authenticator',
@@ -232,7 +232,7 @@ describe('idSite', function(){
                             assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
                             secret = res.body.secret;
                             //verify the factor
-                            return request(init.app).post('/v1/factors/'+res.body.id+'/challenges')
+                            return request(init.servers.main).post('/v1/factors/'+res.body.id+'/challenges')
                                     .set('authorization', res.header.authorization)
                                     .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
                                     .expect(200);
@@ -257,14 +257,14 @@ describe('idSite', function(){
                             assert(!res.body.items[0].keyUri);
                             assert(!res.body.items[0].base64QRImage);
 
-                            return request(init.app).post('/v1/factors/'+res.body.items[0].id+'/challenges')
+                            return request(init.servers.main).post('/v1/factors/'+res.body.items[0].id+'/challenges')
                                         .set('authorization', res.header.authorization)
                                         .expect(200);
                         })
                         .then(function(res){
                             assert.strictEqual(res.body.status, 'CREATED');
                             //verify the factor
-                            return request(init.app).post('/v1/challenges/'+res.body.id)
+                            return request(init.servers.main).post('/v1/challenges/'+res.body.id)
                                     .set('authorization', res.header.authorization)
                                     .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
                                     .expect(200);
@@ -284,7 +284,7 @@ describe('idSite', function(){
                         })
                         .spread(function(jwtRequest, cookie){
                             //send a a new request with the cookie
-                            return request(init.app).get('/sso')
+                            return request(init.servers.main).get('/sso')
                                     .query({jwtRequest: jwtRequest})
                                     .set('Cookie', cookie)
                                     .expect(302);
@@ -301,7 +301,7 @@ describe('idSite', function(){
     it('logout', function(){
         return init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl})
                 .then(function(jwtRequest){
-                    return request(init.app).get('/sso/logout')
+                    return request(init.servers.main).get('/sso/logout')
                             .query({ jwtRequest: jwtRequest})
                             .expect(302);
                 })
@@ -319,7 +319,7 @@ describe('idSite', function(){
         .then(function(bearer){
            return BluebirdPromise.join(
               init.getEmailPromise(mailServer, init.adminUser),
-              request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens')
+              request(init.servers.main).post('/v1/applications/'+applicationId+'/passwordResetTokens')
                   .set('authorization', 'Bearer '+bearer)
                   .send({email: init.adminUser})
                   .expect(200)
@@ -332,7 +332,7 @@ describe('idSite', function(){
            assert(tokenId);
            return BluebirdPromise.join(
                    init.getEmailPromise(mailServer, init.adminUser),
-                   request(init.app).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+tokenId)
+                   request(init.servers.main).post('/v1/applications/'+applicationId+'/passwordResetTokens/'+tokenId)
                      .set('authorization', 'Bearer '+jwtParam)
                      .send({password: init.adminPassword})
                      .expect(200)
@@ -347,7 +347,7 @@ describe('idSite', function(){
         .then(function(bearer){
           return BluebirdPromise.join(
                 init.getEmailPromise(mailServer, address.toLowerCase()),
-                request(init.app).post('/v1/applications/'+applicationId+'/accounts')
+                request(init.servers.main).post('/v1/applications/'+applicationId+'/accounts')
                   .set('authorization', 'Bearer '+bearer)
                   .send({
                       email: address,
@@ -363,7 +363,7 @@ describe('idSite', function(){
                   assert(jwtParam);
                   const tokenId = jwt.decode(jwtParam).sp_token;
                   assert(tokenId);
-                  return request(init.app).post('/v1/accounts/emailVerificationTokens/'+tokenId)
+                  return request(init.servers.main).post('/v1/accounts/emailVerificationTokens/'+tokenId)
                     .set('authorization', 'Bearer '+jwtParam)
                     .expect(200);
               });
@@ -373,7 +373,7 @@ describe('idSite', function(){
     it('Requests with bearer authorization must have a limited scope', function(){
         return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 .then(function(bearer){
-                    return request(init.app).get('/v1/applications/'+applicationId+'/accounts')
+                    return request(init.servers.main).get('/v1/applications/'+applicationId+'/accounts')
                         .set('authorization', 'Bearer '+bearer)
                         .expect(403);
                 });
@@ -397,7 +397,7 @@ describe('idSite', function(){
         function getSettingsBearer(){
             return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                 //login
-                .then(bearer => request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+                .then(bearer => request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
                         .set('authorization', 'Bearer '+bearer)
                         .send({
                             type: 'basic',
@@ -412,7 +412,7 @@ describe('idSite', function(){
                 ))
                 //send a a new request to access settings with the cookie
                 .spread((jwtRequest, cookie) =>
-                    request(init.app).get('/sso')
+                    request(init.servers.main).get('/sso')
                         .query({jwtRequest: jwtRequest})
                         .set('Cookie', cookie)
                         .expect(302)
@@ -427,7 +427,7 @@ describe('idSite', function(){
         it('Password Change', function(){
             return getSettingsBearer()
                 //this bearer should give access to the /passwordChanges endpoint
-                .then(bearer => request(init.app).post('/v1/accounts/'+account.id+'/passwordChanges')
+                .then(bearer => request(init.servers.main).post('/v1/accounts/'+account.id+'/passwordChanges')
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 currentPassword: '123456',
@@ -438,7 +438,7 @@ describe('idSite', function(){
                 //the password change must be refused if the current password is incorrect
                 .then(res => {
                     assert.strictEqual(res.body.code, 7100);
-                    return request(init.app).post('/v1/accounts/'+account.id+'/passwordChanges')
+                    return request(init.servers.main).post('/v1/accounts/'+account.id+'/passwordChanges')
                             .set('authorization', res.get('authorization'))
                             .send({
                                 currentPassword: account.password,
@@ -449,7 +449,7 @@ describe('idSite', function(){
                 //the password change must be refused if the new password doesn't satisfy password policy
                 .then(res => {
                     assert.strictEqual(res.body.code, 2007);
-                    return request(init.app).post('/v1/accounts/'+account.id+'/passwordChanges')
+                    return request(init.servers.main).post('/v1/accounts/'+account.id+'/passwordChanges')
                             .set('authorization', res.get('authorization'))
                             .send({
                                 currentPassword: account.password,
@@ -463,7 +463,7 @@ describe('idSite', function(){
         it('MFA configuration', function(){
             return getSettingsBearer()
                 //this bearer should enable us to create factors
-                .then(bearer => request(init.app).post('/v1/accounts/'+account.id+'/factors')
+                .then(bearer => request(init.servers.main).post('/v1/accounts/'+account.id+'/factors')
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 type: 'google-authenticator',
@@ -474,7 +474,7 @@ describe('idSite', function(){
                 .then(res => {
                     assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
                     //verify the factor
-                    return request(init.app).post('/v1/factors/'+res.body.id+'/challenges')
+                    return request(init.servers.main).post('/v1/factors/'+res.body.id+'/challenges')
                             .set('authorization', res.header.authorization)
                             .send({code: speakeasy.totp({secret: res.body.secret, encoding: 'base32'})})
                             .expect(200);
@@ -482,14 +482,14 @@ describe('idSite', function(){
                 .then(res => {
                     //there shouldn't be a redirection URL in the headers since we already are authentified
                     assert(!res.header['stormpath-sso-redirect-location']);
-                    return request(init.app).get('/v1/accounts/'+account.id+'/factors')
+                    return request(init.servers.main).get('/v1/accounts/'+account.id+'/factors')
                         .set('authorization', res.header.authorization)
                         .expect(200);
                 })
                 .then(res => {
                     assert.strictEqual(res.body.size, 1);
                     //delete the factor
-                    return request(init.app).delete('/v1/factors/'+res.body.items[0].id)
+                    return request(init.servers.main).delete('/v1/factors/'+res.body.items[0].id)
                         .set('authorization', res.header.authorization)
                         .expect(204);
                 });

@@ -31,7 +31,7 @@ describe('admin invitation', function(){
                 )
                 .spread(function(email){
                     //consume the invitation
-                    return request(init.app).get('/adminInvitation'+url.parse(email.body).search)
+                    return request(init.servers.main).get('/adminInvitation'+url.parse(email.body).search)
                             .expect(200);
                 })
                 .then(function(res){
@@ -39,7 +39,7 @@ describe('admin invitation', function(){
                     assert(res.body.fromAccount.fullName);
                     assert(res.body.tenant.key);
                     assert.strictEqual(res.body.email, invitedEmail);
-                    return request(init.app).post('/adminInvitation')
+                    return request(init.servers.main).post('/adminInvitation')
                         .send('invitationId='+res.body.id)
                         .send('givenName=test')
                         .send('surname=test')
@@ -48,7 +48,7 @@ describe('admin invitation', function(){
                 })
                 .then(function(){
                     //the new admin should be able to login
-                    return request(init.app)
+                    return request(init.servers.main)
                         .post('/login')
                         .send('tenantNameKey=test-tenant')
                         .send('email='+invitedEmail)
@@ -61,7 +61,7 @@ describe('admin invitation', function(){
     });
 
     it('invalid invitations should be rejected', function(){
-        return request(init.app)
+        return request(init.servers.main)
                 .post('/adminInvitation')
                 .send('invitationId=invalidInvitation')
                 .send('givenName=test')
