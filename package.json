@@ -54,7 +54,7 @@
     "saml2-js": "1.12.1",
     "sequelize": "4.15.0",
     "shimmer": "1.1.0",
-    "speakeasy": "^2.0.0",
+    "speakeasy": "2.0.0",
     "ssacl": "msuret/ssacl",
     "swagger-express-mw": "0.7.0",
     "throw": "1.1.0",
@@ -84,7 +84,6 @@
     "sqlite3": "3.1.13",
     "superagent": "3.6.3",
     "supertest": "3.0.0",
-    "supertest-as-promised": "4.0.2",
     "tar-fs": "1.16.0",
     "thenify": "3.3.0"
   },
