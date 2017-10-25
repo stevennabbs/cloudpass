@@ -1,15 +1,15 @@
 subject: Your registration was successful
 textBody: |
     Welcome ${account.fullName} !
-    
+
     Thanks for signing up.
 
     --------------------
     For general inquiries or to request support with your account, please email change-me@example.com
 htmlBody: >
     <p>Welcome ${account.fullName} !</p>
-    
+
     <p>Thanks for signing up.</p>
-    
+
     <p>--------------------<br />
-    <p>For general inquiries or to request support with your account, please email change-me@example.com</p>
+    For general inquiries or to request support with your account, please email change-me@example.com</p>

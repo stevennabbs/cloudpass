@@ -13,5 +13,5 @@ htmlBody: >
     <p>Your account in ${account.directory.name} has been locked due to ${maxLoginAttempts} consecutive unsuccessful login attempts.</p>
     <p>You can try to login again in ${accountLockDuration} minutes.</p>
 
-    <p>---------------------<br />
-    <p>For general inquiries or to request support with your account, please email change-me@example.com</p>
+    <p>---------------------<br/>
+    For general inquiries or to request support with your account, please email change-me@example.com</p>

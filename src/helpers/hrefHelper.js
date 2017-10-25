@@ -1,10 +1,11 @@
 "use strict";
 
-var config = require('config');
-var _ = require('lodash');
-var Optional = require('optional-js');
+const config = require('config');
+const _ = require('lodash');
+const models = require('../models/');
+const Optional = require('optional-js');
 
-var hrefPattern = /^((.*?)\/v1)(\/.*)$/;
+const hrefPattern = /^((.*?)\/v1)(\/.*)$/;
 
 const getHrefGroup = (groupId, defaultResult) =>
                         href =>  Optional.of(href)
@@ -24,3 +25,14 @@ exports.unqualifyHref = href => href.replace(hrefPattern, '$3');
 exports.baseUrl = Optional.ofNullable(config.get('server.rootUrl'))
                             .map(_.method('concat', '/v1/'))
                             .orElse('/');
+
+exports.resolveHref = href => Optional.of(href)
+        .map(exports.unqualifyHref)
+        .map(_.method('split', '/'))
+        .map(_.compact)
+        .filter(_.matchesProperty('length', 2))
+        .flatMap(hrefSplit =>
+            Optional.ofNullable(_.find(_.values(models.sequelize.models), _.matchesProperty('options.name.plural', hrefSplit[0])))
+                .map(_.method('build', {id :hrefSplit[1]}))
+        ).orElse(null);
+

@@ -1,10 +1,12 @@
 "use strict";
 
-var BluebirdPromise = require('sequelize').Promise;
-var _ = require('lodash');
-var models = require('../../models');
-var ApiError = require('../../ApiError');
-var Optional = require('optional-js');
+const BluebirdPromise = require('sequelize').Promise;
+const Op = require('sequelize').Op;
+const _ = require('lodash');
+const Optional = require('optional-js');
+const models = require('../../models');
+const ApiError = require('../../ApiError');
+const hrefHelper = require('../../helpers/hrefHelper');
 
 var defaultPagination = {offset:0, limit:25};
 
@@ -51,25 +53,19 @@ function getOrderClause(orderParam){
 }
 
 function getWhereClause(query, target){
-     var searcheableAttributes = target.getSearchableAttributes();
     //search in a specific attribute
     var whereClauses =
-        _(searcheableAttributes)
+        _(target.searchableAttributes)
                 .filter(function(a){return query.hasOwnProperty(a);})
-                .map(function(a){
-                    return caseInsensitiveLikeClause(target, a, query[a].replace(/\*/g, '%'));
-                 })
+                .map(a => caseInsensitiveLikeClause(target, a, query[a].replace(/\*/g, '%')))
                 .value();
 
     //'q' paramter = search in all searchable attributes
     if(query.q){
         whereClauses.push({
-            '$or':
-            _(searcheableAttributes)
-                .map(function(a){
-                    return caseInsensitiveLikeClause(target, a, '%'+query.q+'%');
-                })
-                .value()
+            [Op.or]: _(target.searchableAttributes)
+                        .map(a => caseInsensitiveLikeClause(target, a, '%'+query.q+'%'))
+                        .value()
         });
     }
 
@@ -79,7 +75,7 @@ function getWhereClause(query, target){
         case 1:
             return whereClauses[0];
         default:
-            return {$and: whereClauses};
+            return {[Op.and]: whereClauses};
     }
 }
 
@@ -137,7 +133,7 @@ function performExpansion(resource, expands){
             _.map(
                 expands,
                 function(v, k){
-                    var association = _.get(resource, 'Model.associations.'+k) || _.get(resource, 'Model.customAssociations.'+k);
+                    var association = _.get(resource, 'constructor.associations.'+k) || _.get(resource, 'constructor.customAssociations.'+k);
                     var promise;
                     if(association){
                         if(_.includes(['BelongsTo', 'HasOne'], association.associationType)){
@@ -150,7 +146,7 @@ function performExpansion(resource, expands){
                     } else {
                         //the resource must be expanded via a custom getter
                         var getterName = 'get'+_.upperFirst(k);
-                        ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', _.get(resource, 'Model.name', ''), k);
+                        ApiError.assert(resource[getterName], ApiError, 400, 400, '%s %s is not a supported expandable property.', _.get(resource, 'constructor.name', ''), k);
                         promise = BluebirdPromise.resolve(resource[getterName](v));
                     }
 
@@ -199,7 +195,7 @@ exports.queryAndExpand = queryAndExpand;
 function create(model, foreignKeys, attributes){
     return model.fromJSON(
         _(attributes)
-          .pick(model.getSettableAttributes())
+          .pick(model.settableAttributes)
           .defaults(foreignKeys)
           .value()
       )
@@ -221,9 +217,9 @@ function update(model, id, newAttributes){
           resource.update(
             _.mapValues(
                newAttributes,
-               v => Optional.ofNullable(v).map(_.property('href')).map(models.resolveHref).orElse(v)
+               v => Optional.ofNullable(v).map(_.property('href')).map(hrefHelper.resolveHref).orElse(v)
             ),
-            {fields:  model.getSettableAttributes()}
+            {fields:  model.settableAttributes}
           )
       );
 }

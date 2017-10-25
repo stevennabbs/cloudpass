@@ -50,12 +50,12 @@ app.get('/', function(req, res){
 
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
-        var application = models.resolveHref(req.authInfo.sub);
+        var application = hrefHelper.resolveHref(req.authInfo.sub);
         //get the account store in where to login
         //and the invited email (if exists)
         BluebirdPromise.join(
             application.getLookupAccountStore(req.authInfo.onk),
-            Optional.ofNullable(req.authInfo.inv_href).map(href => models.resolveHref(href).reload().then(_.property('email'))).orElse(null)
+            Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
         ).spread(function(accountStore, invitationEmail){
                 var cookie = req.cookies[req.user.tenantId];
                 if(cookie){
@@ -133,7 +133,7 @@ app.get('/', function(req, res){
             },
             req.app.get('secret'),
             {
-                subject: models.resolveHref(req.authInfo.sub).id,
+                subject: hrefHelper.resolveHref(req.authInfo.sub).id,
                 expiresIn: moment.duration(req.user.tenant.idSites[0].sessionTtl).asSeconds()
             }
         )
@@ -167,7 +167,7 @@ app.get('/logout', function(req, res){
         {
             scope: {
                 applications: {
-                    [models.resolveHref(req.authInfo.sub).id]: [
+                    [hrefHelper.resolveHref(req.authInfo.sub).id]: [
                         'get',
                         { customData: [ 'get' ] },
                         { idSiteModel: [ 'get' ] }

@@ -1,7 +1,10 @@
 "use strict";
 
+const ModelDecorator = require('./helpers/ModelDecorator');
+
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'emailTemplate',
             {
                 id: {
@@ -87,13 +90,28 @@ module.exports = function (sequelize, DataTypes) {
                     }
                 },
                 classMethods: {
-                    getSettableAttributes: function(){
-                        return ['fromEmailAddress', 'fromName', 'subject', 'htmlBody', 'textBody', 'mimeType', 'defaultModel', 'linkBaseUrl', 'mandrillTemplate'];
-                     },
                      associate: function(models) {
                          models.emailTemplate.belongsTo(models.tenant, {onDelete: 'cascade'});
                      }
                 }
             }
-    );
+        )
+    )
+    .withInstanceMethods({
+        getUrlTokens : function(cpToken){
+            var cpTokenNameValuePair = 'cpToken='+cpToken;
+            return{
+                url: this.get('linkBaseUrl', {role: 'defaultModel'}) + '?'+cpTokenNameValuePair,
+                cpToken: cpToken,
+                cpTokenNameValuePair: cpTokenNameValuePair
+            };
+        }
+    })
+    .withClassMethods({
+        associate: function(models) {
+            models.emailTemplate.belongsTo(models.tenant, {onDelete: 'cascade'});
+        }
+    })
+    .withSettableAttributes('fromEmailAddress', 'fromName', 'subject', 'htmlBody', 'textBody', 'mimeType', 'defaultModel', 'linkBaseUrl', 'mandrillTemplate')
+    .end();
 };
