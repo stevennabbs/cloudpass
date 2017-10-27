@@ -22,7 +22,8 @@ var persistenceOptions = _.merge(
             }
         },
         //remove the last argument passed to the logging function (which is an option object)
-        logging: (...args) => winston.loggers.get('sql').debug(..._.initial(args))
+        logging: (...args) => winston.loggers.get('sql').debug(..._.initial(args)),
+        operatorsAliases: false
     },
     config.get('persistence.options')
 );

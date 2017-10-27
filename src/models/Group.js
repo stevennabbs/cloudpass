@@ -98,11 +98,10 @@ module.exports = function (sequelize, DataTypes) {
     .end();
 };
 
-function createNewAccount(attributes, registrationWorflowEnabled, authInfo, apiKey){
-    console.log('aaaaaa', this.tenantId);
+let createNewAccount = function(attributes, registrationWorflowEnabled, authInfo, apiKey){
     return this.getDirectory()
              //create an account in the group's directory
             .then(_.method('createNewAccount', attributes, registrationWorflowEnabled, authInfo, apiKey))
              //add the account in the group
             .tap(account => this.addAccount(account, {through: {tenantId: this.tenantId}}));
-}
+};

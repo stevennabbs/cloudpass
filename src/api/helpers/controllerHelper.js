@@ -22,7 +22,7 @@ function createCollectionResource(href, pagination, size, items) {
 
 function caseInsensitiveLikeClause(target, columnName, matchedString){
     var sequelize = models.sequelize;
-    return sequelize.where(sequelize.fn('lower', sequelize.cast(sequelize.col(target.name+'.'+columnName), 'text')), {$like : matchedString.toLowerCase()});
+    return sequelize.where(sequelize.fn('lower', sequelize.cast(sequelize.col(target.name+'.'+columnName), 'text')), {[Op.like] : matchedString.toLowerCase()});
 }
 
 //parse an 'orderBy' query param into sequelize 'order' clause
