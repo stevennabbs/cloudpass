@@ -58,7 +58,7 @@
     "ssacl": "msuret/ssacl",
     "swagger-express-mw": "0.7.0",
     "throw": "1.1.0",
-    "umzug": "2.0.1",
+    "umzug": "2.1.0",
     "winston": "2.4.0",
     "winston-config": "0.5.1"
   },
