@@ -18,7 +18,7 @@ controller.getIdSiteModel = _.partial(controller.getComputedSubResource, 'getIdS
 controller.getSamlPolicy = _.partial(controller.getComputedSubResource, 'getSamlPolicy');
 
 controller.create = function(req, res) {
-  var attributes = _.pick(req.swagger.params.attributes.value, models.application.getSettableAttributes());
+  var attributes = _.pick(req.swagger.params.attributes.value, models.application.settableAttributes);
   attributes.tenantId = req.user.tenantId;
 
   controllerHelper.queryAndExpand(
@@ -279,13 +279,13 @@ controller.samlIdpRedirect = function(req, res) {
 };
 
 function getSamlDirectoryProvider(accountStore) {
-    if (accountStore instanceof models.directory.Instance) {
+  if (accountStore instanceof models.directory) {
     return accountStore.getProvider({
       include: [models.samlServiceProviderMetadata]
     })
     .tap(provider => ApiError.assert(provider.providerId === 'saml', ApiError, 400, 2014, 'The directory %s is not a SAML directory', accountStore.id));
   }
-  ApiError.assert(accountStore.getDirectories, ApiError, 400, 2014, 'SAML login in %s is not supported', accountStore.Model.options.name.plural);
+  ApiError.assert(accountStore.getDirectories, ApiError, 400, 2014, 'SAML login in %s is not supported', accountStore.constructor.options.name.plural);
   return accountStore.getDirectories({
       attributes: [],
       include: [{
@@ -299,7 +299,7 @@ function getSamlDirectoryProvider(accountStore) {
       limit: 1
     })
     .then(_.head)
-    .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'No SAML provider found in %s %s', accountStore.Model.name, accountStore.id))
+    .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'No SAML provider found in %s %s', accountStore.constructor.name, accountStore.id))
     .get('provider');
 }
 

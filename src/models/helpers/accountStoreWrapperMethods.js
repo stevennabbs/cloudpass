@@ -12,7 +12,7 @@ function getProviders(accountStoreWrapper){
             include: [{
                 model: accountStoreWrapper.sequelize.models.directoryProvider,
                 as: 'provider',
-                attributes: ['providerId']
+                attributes: ['providerId', 'directoryId']
             }]
         })
         .filter(_.flow([_.iteratee('provider.providerId'), _.negate(_.isEmpty)]))

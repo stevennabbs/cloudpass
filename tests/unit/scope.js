@@ -22,28 +22,28 @@ describe('scope', function () {
                 scopeHelper.getIdSiteScope(
                     {
                         id: 'application1',
-                        Model: {
+                        constructor: {
                             getIdSiteScope: () => 'application1-scope',
                             options: {name: {plural: 'applications'}}
                         }
                     },
                     {
                         id: 'application1',
-                        Model: {
+                        constructor: {
                             getIdSiteScope: () => 'application1-scope',
                             options: {name: {plural: 'applications'}}
                         }
                     },
                     {
                         id: 'application2',
-                        Model: {
+                        constructor: {
                              getIdSiteScope: () => 'application2-scope',
                             options: {name: {plural: 'applications'}}
                         }
                     },
                     {
                         id: 'organization1',
-                        Model: {
+                        constructor: {
                             getIdSiteScope: () => 'organization1-scope',
                             options: {name: {plural: 'organizations'}}
                         }

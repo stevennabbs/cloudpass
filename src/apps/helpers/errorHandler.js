@@ -1,12 +1,13 @@
 'use strict';
 
-var _ = require('lodash');
-var signJwt = require('sequelize').Promise.promisify(require('jsonwebtoken').sign);
-var winston = require('winston');
-var ApiError = require('../../ApiError.js');
-var sendJwtResponse = require('./sendJwtResponse');
+const _ = require('lodash');
+const signJwt = require('sequelize').Promise.promisify(require('jsonwebtoken').sign);
+const winston = require('winston');
+const ApiError = require('../../ApiError.js');
+const sendJwtResponse = require('./sendJwtResponse');
+const logger = winston.loggers.get('http');
 
-var exceptionToApiError = _.cond([
+const exceptionToApiError = _.cond([
     //HTTP method not suported
     [
         _.property('allowedMethods'),
@@ -32,9 +33,7 @@ var exceptionToApiError = _.cond([
         _.stubTrue,
         ApiError.FROM_ERROR
     ]
- ]);
-
- let logger = winston.loggers.get('http');
+]);
 
 module.exports = function (err, req, res, next) {
     var apiError = exceptionToApiError(err);

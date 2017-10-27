@@ -1,13 +1,15 @@
 "use strict";
 
-var _ = require('lodash');
-var speakeasy = require('speakeasy');
-var qr = require('qr-image');
-var Optional = require('optional-js');
-var hrefHelper = require('../helpers/hrefHelper');
+const _ = require('lodash');
+const speakeasy = require('speakeasy');
+const qr = require('qr-image');
+const Optional = require('optional-js');
+const hrefHelper = require('../helpers/hrefHelper');
+const ModelDecorator = require('./helpers/ModelDecorator');
 
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'factor',
             {
                 id: {
@@ -70,40 +72,40 @@ module.exports = function (sequelize, DataTypes) {
                     beforeCreate: function(instance){
                         instance.set('secret', speakeasy.generateSecret().base32);
                     }
-                },
-                instanceMethods: {
-                    verify: function(code){
-                        return speakeasy.totp.verify({
-                            secret: this.secret,
-                            encoding: 'base32',
-                            token: code,
-                            window: 1
-                        });
-                    },
-                    getChallenge: function(status) {
-                        return {
-                            id: this.id,
-                            href: hrefHelper.baseUrl+'challenges/'+this.id,
-                            createdAt: new Date(),
-                            modifiedAt:new Date(),
-                            status,
-                            type: this.type,
-                            account: {href: hrefHelper.baseUrl+'accounts/'+this.accountId},
-                            factor: {href: hrefHelper.baseUrl+'factors/'+this.id},
-                            getAccount: this.getAccount.bind(this),
-                            getFactor: _.constant(this)
-                        };
-                    }
-                },
-                classMethods: {
-                    getSettableAttributes: function() {
-                        return ['type', 'status', 'accountName', 'issuer'];
-                    },
-                    associate: function (models) {
-                        models.factor.belongsTo(models.tenant, {onDelete: 'cascade'});
-                        models.factor.belongsTo(models.account, {onDelete: 'cascade'});
-                    }
                 }
             }
-    );
+        )
+    )
+    .withInstanceMethods({
+        verify: function(code){
+            return speakeasy.totp.verify({
+                secret: this.secret,
+                encoding: 'base32',
+                token: code,
+                window: 1
+            });
+        },
+        getChallenge: function(status) {
+            return {
+                id: this.id,
+                href: hrefHelper.baseUrl+'challenges/'+this.id,
+                createdAt: new Date(),
+                modifiedAt:new Date(),
+                status,
+                type: this.type,
+                account: {href: hrefHelper.baseUrl+'accounts/'+this.accountId},
+                factor: {href: hrefHelper.baseUrl+'factors/'+this.id},
+                getAccount: this.getAccount.bind(this),
+                getFactor: _.constant(this)
+            };
+        }
+    })
+    .withClassMethods({
+        associate: models => {
+            models.factor.belongsTo(models.tenant, {onDelete: 'cascade'});
+            models.factor.belongsTo(models.account, {onDelete: 'cascade'});
+        }
+    })
+    .withSettableAttributes('type', 'status', 'accountName', 'issuer')
+    .end();
 };

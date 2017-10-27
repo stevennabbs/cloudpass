@@ -1,7 +1,10 @@
 "use strict";
 
+const ModelDecorator = require('./helpers/ModelDecorator');
+
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'adminInvitation',
             {
                 id: {
@@ -15,15 +18,14 @@ module.exports = function (sequelize, DataTypes) {
                     allowNull: false,
                     validate: {isEmail: true}
                 }
-            },
-            {
-                classMethods: {
-                    associate: function(models) {
-                        models.adminInvitation.belongsTo(models.tenant, {onDelete: 'cascade'});
-                        models.adminInvitation.belongsTo(models.account, {as: 'fromAccount', onDelete: 'cascade'});
-                    }
-                }
             }
-    );
+        )
+    )
+    .withClassMethods({
+        associate: models => {
+            models.adminInvitation.belongsTo(models.tenant, {onDelete: 'cascade'});
+            models.adminInvitation.belongsTo(models.account, {as: 'fromAccount', onDelete: 'cascade'});
+        }
+    })
+    .end();
 };
-    

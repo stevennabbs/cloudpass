@@ -1,7 +1,10 @@
 "use strict";
 
+const ModelDecorator = require('./helpers/ModelDecorator');
+
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'invitation',
             {
                 id: {
@@ -19,25 +22,19 @@ module.exports = function (sequelize, DataTypes) {
                     type: DataTypes.STRING,
                     validate: {isUrl: true}
                 }
-            },
-            {
-                classMethods: {
-                   getSearchableAttributes: function(){
-                        return ['email'];
-                   },
-                   getSettableAttributes: function(){
-                        return ['email', 'callbackUri', 'application', 'organization', 'fromAccount', 'customData'];
-                    },
-                    isCustomizable: function(){
-                      return true;
-                    },
-                    associate: function(models) {
-                        models.invitation.belongsTo(models.tenant, {onDelete: 'cascade'});
-                        models.invitation.belongsTo(models.application, {onDelete: 'cascade'});
-                        models.invitation.belongsTo(models.organization, {onDelete: 'cascade'});
-                        models.invitation.belongsTo(models.account, {as: 'fromAccount', onDelete: 'cascade'});
-                    }
-                }
             }
-    );
+        )
+    )
+    .withClassMethods({
+        associate: models => {
+            models.invitation.belongsTo(models.tenant, {onDelete: 'cascade'});
+            models.invitation.belongsTo(models.application, {onDelete: 'cascade'});
+            models.invitation.belongsTo(models.organization, {onDelete: 'cascade'});
+            models.invitation.belongsTo(models.account, {as: 'fromAccount', onDelete: 'cascade'});
+        }
+    })
+    .withSearchableAttributes('email')
+    .withSettableAttributes('email', 'callbackUri', 'application', 'organization', 'fromAccount', 'customData')
+    .withCustomData()
+    .end();
 };

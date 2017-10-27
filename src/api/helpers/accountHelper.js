@@ -1,32 +1,34 @@
 "use strict";
 
-var _ = require('lodash');
-var BluebirdPromise = require('sequelize').Promise;
-var Optional = require('optional-js');
-var moment = require('moment');
-var models = require('../../models');
-var ApiError = require('../../ApiError');
-var email = require('../../helpers/email');
+const _ = require('lodash');
+const BluebirdPromise = require('sequelize').Promise;
+const Op = require('sequelize').Op;
+const Optional = require('optional-js');
+const moment = require('moment');
+const models = require('../../models');
+const ApiError = require('../../ApiError');
+const email = require('../../helpers/email');
+const hrefHelper = require('../../helpers/hrefHelper');
 
 
 exports.getSubAccountStore = function(accountStore, subAccountStoreHref){
     return Optional.ofNullable(subAccountStoreHref)
             .map(ash => {
-                var subAccountStore = models.resolveHref(ash);
+                var subAccountStore = hrefHelper.resolveHref(ash);
                 //if account store & sub account store are the same, just return the former
-                if(subAccountStore instanceof accountStore.Model.Instance){
-                    ApiError.assert(accountStore.id === subAccountStore.id, ApiError, 400, 2014, 'The provided %s have different ID (%s and %s)', accountStore.Model.options.name.plural, accountStore.id, subAccountStore.id);
+                if(subAccountStore instanceof accountStore.constructor){
+                    ApiError.assert(accountStore.id === subAccountStore.id, ApiError, 400, 2014, 'The provided %s have different ID (%s and %s)', accountStore.constructor.options.name.plural, accountStore.id, subAccountStore.id);
                     return BluebirdPromise.resolve(accountStore);
                 }
                 //check that the sub account store actually is an account store
-                ApiError.assert(_.find([models.organization.Instance, models.directory.Instance, models.group.Instance], i => subAccountStore instanceof i), ApiError, 400, 2014, 'Cannot lookup accounts in %s', subAccountStoreHref);
+                ApiError.assert(_.find([models.organization, models.directory, models.group], i => subAccountStore instanceof i), ApiError, 400, 2014, 'Cannot lookup accounts in %s', subAccountStoreHref);
                 //check if the sub-account store belongs to the account store
-                return accountStore['get'+_.upperFirst(subAccountStore.Model.options.name.plural)]({
+                return accountStore['get'+_.upperFirst(subAccountStore.constructor.options.name.plural)]({
                         where: {id : subAccountStore.id},
                         limit: 1
                     })
                     .then(_.head)
-                    .tap(_.partial(ApiError.assert, _, ApiError, 400, 2014, '%s %s does not belong to %s %s', subAccountStore.Model.name, subAccountStore.id, accountStore.Model.name, accountStore.id));
+                    .tap(_.partial(ApiError.assert, _, ApiError, 400, 2014, '%s %s does not belong to %s %s', subAccountStore.constructor.name, subAccountStore.id, accountStore.constructor.name, accountStore.id));
             })
             .orElse(accountStore);
 };
@@ -38,7 +40,7 @@ exports.findAccount = function(login, applicationId, organizationName, accountSt
             .getLookupAccountStore(organizationName)
             .then(as => exports.getSubAccountStore(as, accountStoreHref))
             .then(as => as.getAccounts({
-                where: { $or: [{email: lowerCaseLogin}, {username: lowerCaseLogin} ]},
+                where: { [Op.or]: [{email: lowerCaseLogin}, {username: lowerCaseLogin} ]},
                 limit: 1,
                 include
             }))

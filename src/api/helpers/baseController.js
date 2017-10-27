@@ -10,7 +10,7 @@ module.exports = function (model, transactionalMethods) {
         create: function(req, res){
            return controllerHelper.createAndExpand(
              model,
-             {[model.getAclAttribute()]: req.user.tenantId},
+             {[model.aclAttribute]: req.user.tenantId},
              req,
              res,
              _.includes(transactionalMethods, 'create'));

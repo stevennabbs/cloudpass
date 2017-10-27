@@ -193,7 +193,7 @@ describe('SAML', function(){
                 return readFile(__dirname + '/resources/saml/'+responseFileName, 'utf8')
                         .then(function(samlResponse){
                             //mock an IdP response
-                            return request(init.app)
+                            return request(init.servers.main)
                                 .post('/v1/directories/'+directoryId+'/saml/sso/post')
                                 .send('SAMLResponse='+encodeURIComponent(samlResponse))
                                 .send('RelayState='+encodeURIComponent(relayState))
@@ -231,7 +231,7 @@ describe('SAML', function(){
                     }
                 )
                 .then(function(accessToken){
-                    return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
+                    return request(init.servers.main).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                         .query({accessToken: accessToken})
                         .expect(302);
                 })
@@ -274,7 +274,7 @@ describe('SAML', function(){
                     .then(function(accessToken){
                         //cloudpass should redirect stracight to the callback_uri with an error
                         // because it cannot find a SAML provider associated to the organization
-                        return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
+                        return request(init.servers.main).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                             .query({accessToken: accessToken})
                             .expect(302);
                     })
@@ -293,7 +293,7 @@ describe('SAML', function(){
             it('via ID Site', function(){
                 return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
                     .then(function(bearer){
-                         return request(init.app).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
+                         return request(init.servers.main).get('/v1/applications/'+applicationId+'/saml/sso/idpRedirect')
                             .set('authorization', 'Bearer '+bearer)
                             .expect(200);
                     })

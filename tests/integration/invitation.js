@@ -65,7 +65,7 @@ describe('invitation', () => {
           assert.strictEqual(decodedJwt.inv_href, '/invitations/'+invitationId);
           assert.strictEqual(decodedJwt.email, emailAddress);
           //login with this token
-          return request(init.app).post('/v1/applications/'+applicationId+'/loginAttempts')
+          return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
                             .set('authorization', 'Bearer '+jwtParam)
                             .send({
                                 type: 'basic',
@@ -75,7 +75,7 @@ describe('invitation', () => {
         })
         .then(res => {
           assert(res.header['stormpath-sso-redirect-location']);
-          return request(init.app).get(res.header['stormpath-sso-redirect-location'])
+          return request(init.servers.main).get(res.header['stormpath-sso-redirect-location'])
                   .expect(302);
         })
         .then((res) => {
@@ -96,7 +96,7 @@ describe('invitation', () => {
         }
      )
     .then(jwtRequest =>
-       request(init.app).get('/sso')
+       request(init.servers.main).get('/sso')
           .query({jwtRequest: jwtRequest})
           .expect(302)
     )

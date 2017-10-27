@@ -11,10 +11,10 @@ textBody: |
     For general inquiries or to request support, please email change-me@example.com
 htmlBody: >
     <p>Hi,</p>
-    
+
     <p>You have been invited to ${application.name}.</p>
-    
+
     <a href="${url}">Click here to accept the invitation</a>
-    
+
     <p>---------------------<br/>
-    <p>For general inquiries or to request support, please email change-me@example.com/p>
+    For general inquiries or to request support, please email change-me@example.com</p>

@@ -1,14 +1,15 @@
 "use strict";
 
-var _ = require('lodash');
-var BluebirdPromise = require('sequelize').Promise;
-var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
-var accountStoreController = require('../helpers/accountStoreController');
-var controllerHelper = require('../helpers/controllerHelper');
-var samlHelper = require('../helpers/samlHelper');
-var models = require('../../models');
-var sendJwtResponse = require('../../apps/helpers/sendJwtResponse');
-var ApiError = require('../../ApiError');
+const _ = require('lodash');
+const BluebirdPromise = require('sequelize').Promise;
+const signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
+const accountStoreController = require('../helpers/accountStoreController');
+const controllerHelper = require('../helpers/controllerHelper');
+const samlHelper = require('../helpers/samlHelper');
+const models = require('../../models');
+const sendJwtResponse = require('../../apps/helpers/sendJwtResponse');
+const ApiError = require('../../ApiError');
+const hrefHelper = require('../../helpers/hrefHelper');
 
 
 var controller = accountStoreController(models.directory, ['create', 'delete']);
@@ -55,7 +56,7 @@ controller.updateProvider = function(req, res) {
                         return provider.update(
                             req.swagger.params.newAttributes.value,
                             //the providerId cannot be changed
-                            {fields: _.without(models.directoryProvider.getSettableAttributes(), 'providerId')}
+                            {fields: _.without(models.directoryProvider.settableAttributes, 'providerId')}
                         );
                     }
                 }),
@@ -109,7 +110,7 @@ controller.consumeSamlAssertion = function(req, res){
     })
     //check that the account belongs to the required organization
     .tap(res =>
-        models.resolveHref(req.authInfo.app_href)
+        hrefHelper.resolveHref(req.authInfo.app_href)
                 .getLookupAccountStore(req.authInfo.onk)
                 .then(as => as.getAccounts({
                     where: {id: res[0].id},

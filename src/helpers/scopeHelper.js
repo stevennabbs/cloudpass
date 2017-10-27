@@ -6,7 +6,7 @@ var _ = require('lodash');
 exports.getIdSiteScope = function(...modelInstances) {
     return _(modelInstances)
         .filter(_.negate(_.isEmpty))
-        .map(i => ({[i.Model.options.name.plural]: {[i.id]: i.Model.getIdSiteScope()}}))
+        .map(i => ({[i.constructor.options.name.plural]: {[i.id]: i.constructor.getIdSiteScope()}}))
         .reduce(_.merge, {});
 };
 

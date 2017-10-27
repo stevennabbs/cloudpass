@@ -1,10 +1,12 @@
 "use strict";
 
-var _ = require('lodash');
-var addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
+const _ = require('lodash');
+const addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
+const ModelDecorator = require('./helpers/ModelDecorator');
 
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'group',
             {
                 id: {
@@ -35,73 +37,72 @@ module.exports = function (sequelize, DataTypes) {
                         unique: true,
                         fields: ['name', 'directoryId', 'tenantId']
                     }
-                ],
-                instanceMethods:{
-                    createNewAccount: createNewAccount
-                },
-                classMethods: {
-                    getSearchableAttributes: _.constant(['id', 'name', 'description', 'status']),
-                    getSettableAttributes:  _.constant(['name', 'description', 'status', 'customData']),
-                    isCustomizable: _.stubTrue,
-                    associate: function(models) {
-                        models.group.belongsTo(models.tenant, {onDelete: 'cascade'});
-                        models.group.belongsTo(models.directory, {onDelete: 'cascade'});
-                        models.group.hasMany(models.groupMembership, {as: 'accountMemberships', onDelete: 'cascade'});
-                        models.group.belongsToMany(
-                            models.account,
-                            {
-                                through: models.groupMembership,
-                                onDelete: 'cascade'
-                            }
-                        );
-                        models.group.hasMany(
-                            models.accountStoreMapping,
-                            {
-                                as: 'applicationMappings',
-                                foreignKey: 'accountStoreId',
-                                constraints: false,
-                                scope: {
-                                    accountStoreType: 'group'
-                                }
-                            }
-                        );
-                        models.group.hasMany(
-                            models.organizationAccountStoreMapping,
-                            {
-                                as: 'organizationMappings',
-                                foreignKey: 'accountStoreId',
-                                constraints: false,
-                                scope: {
-                                    accountStoreType: 'group'
-                                }
-                            }
-                        );
-                        models.group.belongsToMany(
-                            models.organization, {
-                                through:{
-                                    model: models.organizationAccountStoreMapping,
-                                    unique: false,
-                                    scope: {
-                                        accountStoreType: 'group'
-                                    }
-                                },
-                                foreignKey: 'accountStoreId',
-                                constraints: false
-                            }
-                        );
-                    },
-                    afterAssociate: function(models){
-                        addAccountStoreAccessors(models.group, models.application);
+                ]
+            }
+        )
+    )
+    .withInstanceMethods({createNewAccount})
+    .withClassMethods({
+        associate: models => {
+            models.group.belongsTo(models.tenant, {onDelete: 'cascade'});
+            models.group.belongsTo(models.directory, {onDelete: 'cascade'});
+            models.group.hasMany(models.groupMembership, {as: 'accountMemberships', onDelete: 'cascade'});
+            models.group.belongsToMany(
+                models.account,
+                {
+                    through: models.groupMembership,
+                    onDelete: 'cascade'
+                }
+            );
+            models.group.hasMany(
+                models.accountStoreMapping,
+                {
+                    as: 'applicationMappings',
+                    foreignKey: 'accountStoreId',
+                    constraints: false,
+                    scope: {
+                        accountStoreType: 'group'
                     }
                 }
-            }
-    );
+            );
+            models.group.hasMany(
+                models.organizationAccountStoreMapping,
+                {
+                    as: 'organizationMappings',
+                    foreignKey: 'accountStoreId',
+                    constraints: false,
+                    scope: {
+                        accountStoreType: 'group'
+                    }
+                }
+            );
+            models.group.belongsToMany(
+                models.organization, {
+                    through:{
+                        model: models.organizationAccountStoreMapping,
+                        unique: false,
+                        scope: {
+                            accountStoreType: 'group'
+                        }
+                    },
+                    foreignKey: 'accountStoreId',
+                    constraints: false
+                }
+            );
+        },
+        afterAssociate: models => addAccountStoreAccessors(models.group, models.application)
+    })
+    .withSearchableAttributes('id', 'name', 'description', 'status')
+    .withSettableAttributes('name', 'description', 'status', 'customData')
+    .withCustomData()
+    .end();
 };
 
 function createNewAccount(attributes, registrationWorflowEnabled, authInfo, apiKey){
+    console.log('aaaaaa', this.tenantId);
     return this.getDirectory()
              //create an account in the group's directory
             .then(_.method('createNewAccount', attributes, registrationWorflowEnabled, authInfo, apiKey))
              //add the account in the group
-            .tap(account => this.addAccount(account, {tenantId: this.tenantId}));
+            .tap(account => this.addAccount(account, {through: {tenantId: this.tenantId}}));
 }
