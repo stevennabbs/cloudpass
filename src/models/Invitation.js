@@ -20,7 +20,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 callbackUri: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true}
+                    validate: {isURL: {require_tld: false}}
                 }
             }
         )

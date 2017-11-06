@@ -15,12 +15,16 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 url: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true},
-                    defaultValue: 'http://id.stormpath.io'
+                    validate: {isURL: {require_tld: false}}
                 },
                 logoUrl: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true}
+                    validate: {isURL: {require_tld: false}}
+                },
+                authorizedRedirectURIs: {
+                    type: DataTypes.JSON,
+                    allowNull: false,
+                    defaultValue: ['*']
                 },
                 sessionTtl: {
                     type: DataTypes.STRING(20),
@@ -38,6 +42,6 @@ module.exports = function (sequelize, DataTypes) {
     .withClassMethods({
         associate: models => models.group.belongsTo(models.tenant, {onDelete: 'cascade'})
     })
-    .withSettableAttributes('url', 'logoUrl', 'sessionTtl', 'sessionCookiePersistent')
+    .withSettableAttributes('url', 'logoUrl', 'authorizedRedirectURIs', 'sessionTtl', 'sessionCookiePersistent')
     .end();
 };

@@ -1,24 +1,25 @@
 'use strict';
 
-var express = require('express');
-var cookieParser = require('cookie-parser');
-var moment = require('moment');
-var BluebirdPromise = require('sequelize').Promise;
-var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
-var _ = require('lodash');
-var passport = require('passport');
-var Optional = require('optional-js');
-var url = require('url');
-var config = require('config');
-var models = require('../models');
-var scopeHelper = require('../helpers/scopeHelper');
-var idSiteHelper = require('./helpers/idSiteHelper');
-var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
-var sendJwtResponse = require('./helpers/sendJwtResponse');
-var errorHandler = require('./helpers/errorHandler');
-var ApiError = require('../ApiError');
-var JwtStrategy = require('./authentication/JwtStrategy');
-var hrefHelper = require('../helpers/hrefHelper');
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const moment = require('moment');
+const BluebirdPromise = require('sequelize').Promise;
+const jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
+const _ = require('lodash');
+const passport = require('passport');
+const Optional = require('optional-js');
+const url = require('url');
+const config = require('config');
+const UrlMatch = require('@fczbkk/url-match').default;
+const models = require('../models');
+const scopeHelper = require('../helpers/scopeHelper');
+const idSiteHelper = require('./helpers/idSiteHelper');
+const ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
+const sendJwtResponse = require('./helpers/sendJwtResponse');
+const errorHandler = require('./helpers/errorHandler');
+const ApiError = require('../ApiError');
+const JwtStrategy = require('./authentication/JwtStrategy');
+const hrefHelper = require('../helpers/hrefHelper');
 
 
 function ssoStrategy(queryParameter, apiKeyIdPath){
@@ -50,79 +51,86 @@ app.get('/', function(req, res){
 
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
-        var application = hrefHelper.resolveHref(req.authInfo.sub);
-        //get the account store in where to login
-        //and the invited email (if exists)
-        BluebirdPromise.join(
-            application.getLookupAccountStore(req.authInfo.onk),
-            Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
-        ).spread(function(accountStore, invitationEmail){
-                var cookie = req.cookies[req.user.tenantId];
-                if(cookie){
-                    //the user already authenticated for this tenant
-                    //check if his account belongs to the requested account store
-                    return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
-                            .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0)))
-                            .spread((verifiedMfa, account) => {
-                                ApiError.assert(account, Error, 'account not found in account store');
-                                ApiError.assert(!invitationEmail || _.eq(invitationEmail.toLowerCase(), account.email), Error, 'user not logged with the invited email');
-                                return _.cond([
-                                    [
-                                        //if the user didn't authenticate with one of the requested factor, redirect to ID site with factors scope
-                                        authInfo => !_.isEmpty(authInfo.require_mfa) && !_.includes(authInfo.require_mfa, verifiedMfa),
-                                        authInfo => redirectToIdSite(
-                                                res,
-                                                req.user,
-                                                application,
-                                                accountStore,
-                                                authInfo,
-                                                invitationEmail,
-                                                {scope: idSiteHelper.getFactorsScope(account.id)}
-                                        )
-                                    ],
-                                    [
-                                        //if the settings page is requested, redirect to ID site with the right scope
-                                        _.matchesProperty('path', '/#/settings'),
-                                        authInfo => redirectToIdSite(
-                                                        res,
-                                                        req.user,
-                                                        application,
-                                                        accountStore,
-                                                        authInfo,
-                                                        invitationEmail,
-                                                        {
-                                                            scope: idSiteHelper.getSecuritySettingsScope(account.id),
-                                                            authenticated: true,
-                                                            require_mfa: ['google-authenticator']
-                                                        }
-                                        )
-                                    ],
-                                    [
-                                        //else redirect to the application directly
-                                        _.stubTrue,
-                                        () => idSiteHelper.getJwtResponse(
-                                                req.user,
-                                                account.href,
-                                                {
-                                                    isNewSub: false,
-                                                    status: "AUTHENTICATED",
-                                                    cb_uri: req.authInfo.cb_uri,
-                                                    irt: req.authInfo.jti,
-                                                    state: req.authInfo.state,
-                                                    inv_href: req.authInfo.inv_href
-                                                }
+
+        //check that the requested redirect URI is authorized
+        if(new UrlMatch(req.user.tenant.idSites[0].authorizedRedirectURIs).test(req.authInfo.cb_uri)){
+            var application = hrefHelper.resolveHref(req.authInfo.sub);
+            //get the account store in where to login
+            //and the invited email (if exists)
+            BluebirdPromise.join(
+                application.getLookupAccountStore(req.authInfo.onk),
+                Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
+            ).spread(function(accountStore, invitationEmail){
+                    var cookie = req.cookies[req.user.tenantId];
+                    if(cookie){
+                        //the user already authenticated for this tenant
+                        //check if his account belongs to the requested account store
+                        return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
+                                .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0)))
+                                .spread((verifiedMfa, account) => {
+                                    ApiError.assert(account, Error, 'account not found in account store');
+                                    ApiError.assert(!invitationEmail || _.eq(invitationEmail.toLowerCase(), account.email), Error, 'user not logged with the invited email');
+                                    return _.cond([
+                                        [
+                                            //if the user didn't authenticate with one of the requested factor, redirect to ID site with factors scope
+                                            authInfo => !_.isEmpty(authInfo.require_mfa) && !_.includes(authInfo.require_mfa, verifiedMfa),
+                                            authInfo => redirectToIdSite(
+                                                    res,
+                                                    req.user,
+                                                    application,
+                                                    accountStore,
+                                                    authInfo,
+                                                    invitationEmail,
+                                                    {scope: idSiteHelper.getFactorsScope(account.id)}
                                             )
-                                            .then(sendJwtResponse(res, req.authInfo.cb_uri))
-                                    ]
-                                ])(req.authInfo);
-                            })
-                        // Either jwt expired or the account does not belong to the account store
-                        //  => re-authentication required
-                        .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail));
-                }
-                return redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail);
-            })
-            .catch(req.next);
+                                        ],
+                                        [
+                                            //if the settings page is requested, redirect to ID site with the right scope
+                                            _.matchesProperty('path', '/#/settings'),
+                                            authInfo => redirectToIdSite(
+                                                            res,
+                                                            req.user,
+                                                            application,
+                                                            accountStore,
+                                                            authInfo,
+                                                            invitationEmail,
+                                                            {
+                                                                scope: idSiteHelper.getSecuritySettingsScope(account.id),
+                                                                authenticated: true,
+                                                                require_mfa: ['google-authenticator']
+                                                            }
+                                            )
+                                        ],
+                                        [
+                                            //else redirect to the application directly
+                                            _.stubTrue,
+                                            () => idSiteHelper.getJwtResponse(
+                                                    req.user,
+                                                    account.href,
+                                                    {
+                                                        isNewSub: false,
+                                                        status: "AUTHENTICATED",
+                                                        cb_uri: req.authInfo.cb_uri,
+                                                        irt: req.authInfo.jti,
+                                                        state: req.authInfo.state,
+                                                        inv_href: req.authInfo.inv_href
+                                                    }
+                                                )
+                                                .then(sendJwtResponse(res, req.authInfo.cb_uri))
+                                        ]
+                                    ])(req.authInfo);
+                                })
+                            // Either jwt expired or the account does not belong to the account store
+                            //  => re-authentication required
+                            .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail));
+                    }
+                    return redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail);
+                })
+                .catch(req.next);
+        } else {
+            //callaback URL not authorized (don't throw because errorHandler would redirect to the unauthorized URL)
+            res.status(400).send("Unauthorized Callback URI: "+req.authInfo.cb_uri);
+        }
 
     } else if (req.query.jwtResponse) {
         //the user was redirected from the ID site to here, and we must redirect it back to the application

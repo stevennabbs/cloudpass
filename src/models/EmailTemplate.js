@@ -56,7 +56,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 linkBaseUrl: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true},
+                    validate: {isURL: {require_tld: false}},
                     roles: { defaultModel : true }
                 },
                 mandrillTemplate: {

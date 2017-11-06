@@ -36,12 +36,12 @@ module.exports = function (sequelize, DataTypes) {
                 // SAML
                 ssoLoginUrl: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true},
+                    validate: {isURL: {require_tld: false}},
                     allowNull: true
                 },
                 ssoLogoutUrl: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true},
+                    validate: {isURL: {require_tld: false}},
                     allowNull: true
                 },
                 encodedX509SigningCert: {

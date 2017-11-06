@@ -53,13 +53,13 @@ exports.getIdSiteJwtRequest = function(applicationId, options){
 
 exports.getIdSiteBearer = function(applicationId, options){
     return exports.getIdSiteJwtRequest(applicationId, options)
-        .then(function(jwtRequest){
+        .then(jwtRequest =>
                 //send it it cloudpass, it should redirect to ID site
-                return request(exports.servers.main).get('/sso')
-                   .query({jwtRequest: jwtRequest})
-                   .expect(302);
-        })
-        .then(function(res){
+                request(exports.servers.main).get('/sso')
+                   .query({jwtRequest})
+                   .expect(302)
+        )
+        .then(res => {
             var fragmentStart = '/#/?jwt=';
             return res.header.location.substring(res.header.location.indexOf(fragmentStart) + fragmentStart.length);
         });
