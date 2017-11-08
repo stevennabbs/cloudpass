@@ -34,7 +34,7 @@
     "cookie-parser": "1.4.3",
     "es6-error": "4.0.2",
     "express": "4.15.2",
-    "health-checkup": "1.0.15",
+    "health-checkup": "1.0.16",
     "js-yaml": "3.10.0",
     "jsonwebtoken": "8.1.0",
     "lodash": "4.17.4",
