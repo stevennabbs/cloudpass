@@ -34,8 +34,9 @@ module.exports = {
                     type: DataTypes.UUID
                 },
                 customData: {
-                    type: DataTypes.TEXT,
-                    defaultValue: "{}"
+                    type: DataTypes.JSON,
+                    defaultValue: {},
+                    allowNull: false
                 },
                 createdAt: {
                     allowNull: false,

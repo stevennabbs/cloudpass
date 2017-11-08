@@ -74,19 +74,20 @@ const defaultInstanceMethods = {
 
 function addCustomData(model){
     model.rawAttributes.customData = {
-            type: model.sequelize.constructor.TEXT,
+            type: model.sequelize.constructor.JSON,
             get: function(){
                 return {href: this.href+'/customData'};
             },
             set: function(val){
-                this.setDataValue('customData', JSON.stringify( _.assign(JSON.parse(this.getDataValue('customData') || "{}"), _.omit(val, 'href', 'createdAt', 'modifiedAt'))));
+                //remove 'href', 'createdAt', 'modifiedAt' attributes and add the remaining attributes to existing customData
+                this.setDataValue('customData', _.assign(this.getDataValue('customData') || {}, _.omit(val, 'href', 'createdAt', 'modifiedAt')));
             },
-            defaultValue: '{}'
+            defaultValue: {}
         };
         model.refreshAttributes ();
         model.prototype.getCustomData = function(){
             return _.assign(
-                JSON.parse(this.getDataValue('customData')),
+                this.getDataValue('customData'),
                 {
                     href: this.href+'/customData',
                     createdAt: this.createdAt,
@@ -97,7 +98,7 @@ function addCustomData(model){
         model.prototype.deleteCustomDataField = function(fieldName){
             this.setDataValue(
                 'customData',
-                JSON.stringify(_.omit(JSON.parse(this.getDataValue('customData')), fieldName)));
+                _.omit(this.getDataValue('customData'), fieldName));
         };
 }
 
