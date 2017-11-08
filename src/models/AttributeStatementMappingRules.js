@@ -16,19 +16,12 @@ module.exports = function (sequelize, DataTypes) {
                     defaultValue: DataTypes.UUIDV4
                 },
                 items: {
-                    type: DataTypes.TEXT,
-                    defaultValue: '[]',
-                    get: function() {
-                        return JSON.parse(this.getDataValue('items'));
-                    },
-                    set: function(val) {
-                        return this.setDataValue('items', JSON.stringify(val));
-                    },
+                    type: DataTypes.JSON,
+                    defaultValue: [],
                     validate: {
                         isRuleArray: function(value){
-                            var items = JSON.parse(value);
-                            ApiError.assert(_.isArray(items), 'Items must be an array '+items);
-                            items.forEach(function(rule){
+                            ApiError.assert(_.isArray(value), 'Items must be an array '+value);
+                            value.forEach(function(rule){
                                 ApiError.assert(rule.name, 'Rule name is required');
                                 ApiError.assert(_.isString(rule.name), 'Rule names must be strings');
                                 ApiError.assert(rule.accountAttributes, 'Rule account attributes are required');

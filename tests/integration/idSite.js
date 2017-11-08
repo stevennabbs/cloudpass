@@ -9,8 +9,8 @@ var init = require('./init');
 
 describe('idSite', function(){
     var applicationId;
-    var idSiteUrl = 'http://www.example.com';
-    var callbackUrl = 'http://www.example.com/callback';
+    const idSiteUrl = 'http://www.example.com';
+    const callbackUrl = 'http://www.example.com/callback';
     var mailServer;
 
     before(function(){
@@ -22,34 +22,37 @@ describe('idSite', function(){
             .expect(200)
             .then(function(res){
                 return init.postRequest('idSites/'+res.body.items[0].id)
-                        .send({url: idSiteUrl})
+                        .send({
+                            url: idSiteUrl,
+                            authorizedRedirectURIs: ['*://*.example.com/*']
+                        })
                         .expect(200);
-        }).then(function(){
-            //get the admin application
-            return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
-                .query({ name: 'Cloudpass', limit: 1, expand: 'defaultAccountStoreMapping'})
-                .expect(200)
-                .then(function(res){
-                    applicationId = res.body.items[0].id;
-                    return init.getRequest('directories/'+res.body.items[0].defaultAccountStoreMapping.accountStoreId)
-                              .query({expand: 'passwordPolicy,accountCreationPolicy'})
-                              .expect(200);
-                })
-                .then(function(res){
-                  //enable password reset workflow
-                  return init.postRequest('passwordPolicies/' + res.body.passwordPolicy.id)
-                    .send({
-                        resetEmailStatus: 'ENABLED',
-                        resetSuccessEmailStatus: 'ENABLED'
-                    })
-                    .expect(200)
-                    .then(function(){
-                      return init.postRequest('accountCreationPolicies/' + res.body.accountCreationPolicy.id)
-                        .send({verificationEmailStatus: 'ENABLED'})
-                        .expect(200);
-                    });
+                }).then(function(){
+                    //get the admin application
+                    return init.getRequest('tenants/'+init.apiKey.tenantId+'/applications')
+                        .query({ name: 'Cloudpass', limit: 1, expand: 'defaultAccountStoreMapping'})
+                        .expect(200)
+                        .then(function(res){
+                            applicationId = res.body.items[0].id;
+                            return init.getRequest('directories/'+res.body.items[0].defaultAccountStoreMapping.accountStoreId)
+                                      .query({expand: 'passwordPolicy,accountCreationPolicy'})
+                                      .expect(200);
+                        })
+                        .then(function(res){
+                          //enable password reset workflow
+                          return init.postRequest('passwordPolicies/' + res.body.passwordPolicy.id)
+                            .send({
+                                resetEmailStatus: 'ENABLED',
+                                resetSuccessEmailStatus: 'ENABLED'
+                            })
+                            .expect(200)
+                            .then(function(){
+                              return init.postRequest('accountCreationPolicies/' + res.body.accountCreationPolicy.id)
+                                .send({verificationEmailStatus: 'ENABLED'})
+                                .expect(200);
+                            });
+                        });
                 });
-        });
     });
 
     after(function () {
@@ -137,175 +140,184 @@ describe('idSite', function(){
                     assert(res.header.location);
                     assert(res.header.location.startsWith(idSiteUrl+'/#/?jwt='));
                 });
-            });
+        });
 
-            it('in organization', function(){
-                //create an organization an map it the the application
-                const organizationName = init.randomName();
-                var organizationId;
-                return init.postRequest('organizations')
-                    .send({
-                        name: organizationName,
-                        nameKey: organizationName
-                    })
-                    .expect(200)
-                    .then(function(res){
-                        organizationId = res.body.id;
-                        return init.postRequest('accountStoreMappings')
-                            .send({
-                                application:{href: '/applications/'+applicationId},
-                                accountStore:{href: '/organizations/'+res.body.id}
+        it('in organization', function(){
+            //create an organization an map it the the application
+            const organizationName = init.randomName();
+            var organizationId;
+            return init.postRequest('organizations')
+                .send({
+                    name: organizationName,
+                    nameKey: organizationName
+                })
+                .expect(200)
+                .then(function(res){
+                    organizationId = res.body.id;
+                    return init.postRequest('accountStoreMappings')
+                        .send({
+                            application:{href: '/applications/'+applicationId},
+                            accountStore:{href: '/organizations/'+res.body.id}
+                        })
+                        .expect(200);
+                })
+                .then(function(){
+                    return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, onk: organizationName});
+                })
+                .then(function(bearer){
+                   //the bearer should give access to the organization & its ID site model
+                   return request(init.servers.main).get('/v1/organizations/'+organizationId)
+                            .set('authorization', 'Bearer '+bearer)
+                            .query({ expand: 'idSiteModel'})
+                            .expect(200)
+                            .then(res => {
+                               assert.strictEqual(res.body.name, organizationName);
+                               assert(res.body.idSiteModel.hasOwnProperty('providers'));
+                               assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
+                               assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
                             })
-                            .expect(200);
-                    })
-                    .then(function(){
-                        return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, onk: organizationName});
-                    })
+                            .then(() => bearer);
+                })
+                .then(function(bearer){
+                    //Cloudpass should return a 400 because the account is not in this organization
+                    return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
+                        .set('authorization', 'Bearer '+bearer)
+                        .send({
+                            type: 'basic',
+                            value: Buffer.from('test@example.com:Aa123456', 'utf8').toString('base64')
+                        })
+                        .expect(400);
+                });
+        });
+
+        describe('MFA', function(){
+            let secret;
+
+            function getConfiguredFactors(requireMfa){
+                return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: requireMfa})
                     .then(function(bearer){
-                       //the bearer should give access to the organization & its ID site model
-                       return request(init.servers.main).get('/v1/organizations/'+organizationId)
-                                .set('authorization', 'Bearer '+bearer)
-                                .query({ expand: 'idSiteModel'})
-                                .expect(200)
-                                .then(res => {
-                                   assert.strictEqual(res.body.name, organizationName);
-                                   assert(res.body.idSiteModel.hasOwnProperty('providers'));
-                                   assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
-                                   assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
-                                })
-                                .then(() => bearer);
-                    })
-                    .then(function(bearer){
-                        //Cloudpass should return a 400 because the account is not in this organization
                         return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
                             .set('authorization', 'Bearer '+bearer)
                             .send({
                                 type: 'basic',
-                                value: Buffer.from('test@example.com:Aa123456', 'utf8').toString('base64')
+                                value: Buffer.from(account.email+':'+account.password, 'utf8').toString('base64')
                             })
-                            .expect(400);
+                            .expect(200);
+                    })
+                    .then(function(res){
+                        //there shouldn't be a redirection URL in the headers
+                        assert(!res.header['stormpath-sso-redirect-location']);
+                        assert(res.header.authorization);
+
+                        //we should be able to retrieve the list of 2nd factors with the new bearer
+                        return request(init.servers.main).get('/v1'+res.body.account.href+'/factors')
+                                .set('authorization', res.header.authorization)
+                                .expect(200);
+                    });
+            }
+
+            it('with new second factor', function(){
+                //require google authenticator mfa in login
+                return getConfiguredFactors(['google-authenticator'])
+                    .then(function(res){
+                        //no 2nd factor configured yet
+                        assert.strictEqual(res.body.size, 0);
+                        //add one
+                        return request(init.servers.main).post('/v1'+res.body.href)
+                                .set('authorization', res.header.authorization)
+                                .send({
+                                    type: 'google-authenticator',
+                                    issuer: init.randomName()
+                                })
+                                .expect(200);
+                    })
+                    .then(function(res){
+                        assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
+                        secret = res.body.secret;
+                        //verify the factor
+                        return request(init.servers.main).post('/v1/factors/'+res.body.id+'/challenges')
+                                .set('authorization', res.header.authorization)
+                                .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
+                                .expect(200);
+                    })
+                    .then(function(res){
+                        //there should be a redirection URL in the headers
+                        assert(res.header['stormpath-sso-redirect-location']);
+                        return request(res.header['stormpath-sso-redirect-location']).get('')
+                            .expect(302);
                     });
             });
 
-            describe('MFA', function(){
-                let secret;
+            it('with existing second factor', function(){
+                //don't require google-authenticator MFA in login
+                //it should be asked for anyway because it has been configured
+                return getConfiguredFactors()
+                    .then(function(res){
+                        //one second factor has already been configured
+                        assert.strictEqual(res.body.size, 1);
+                        //secret should no be exposed
+                        assert(!res.body.items[0].secret);
+                        assert(!res.body.items[0].keyUri);
+                        assert(!res.body.items[0].base64QRImage);
 
-                function getConfiguredFactors(requireMfa){
-                    return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl, require_mfa: requireMfa})
-                        .then(function(bearer){
-                            return request(init.servers.main).post('/v1/applications/'+applicationId+'/loginAttempts')
-                                .set('authorization', 'Bearer '+bearer)
-                                .send({
-                                    type: 'basic',
-                                    value: Buffer.from(account.email+':'+account.password, 'utf8').toString('base64')
-                                })
+                        return request(init.servers.main).post('/v1/factors/'+res.body.items[0].id+'/challenges')
+                                    .set('authorization', res.header.authorization)
+                                    .expect(200);
+                    })
+                    .then(function(res){
+                        assert.strictEqual(res.body.status, 'CREATED');
+                        //verify the factor
+                        return request(init.servers.main).post('/v1/challenges/'+res.body.id)
+                                .set('authorization', res.header.authorization)
+                                .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
                                 .expect(200);
-                        })
-                        .then(function(res){
-                            //there shouldn't be a redirection URL in the headers
-                            assert(!res.header['stormpath-sso-redirect-location']);
-                            assert(res.header.authorization);
-
-                            //we should be able to retrieve the list of 2nd factors with the new bearer
-                            return request(init.servers.main).get('/v1'+res.body.account.href+'/factors')
-                                    .set('authorization', res.header.authorization)
-                                    .expect(200);
-                        });
-                }
-
-                it('with new second factor', function(){
-                    //require google authenticator mfa in login
-                    return getConfiguredFactors(['google-authenticator'])
-                        .then(function(res){
-                            //no 2nd factor configured yet
-                            assert.strictEqual(res.body.size, 0);
-                            //add one
-                            return request(init.servers.main).post('/v1'+res.body.href)
-                                    .set('authorization', res.header.authorization)
-                                    .send({
-                                        type: 'google-authenticator',
-                                        issuer: init.randomName()
-                                    })
-                                    .expect(200);
-                        })
-                        .then(function(res){
-                            assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
-                            secret = res.body.secret;
-                            //verify the factor
-                            return request(init.servers.main).post('/v1/factors/'+res.body.id+'/challenges')
-                                    .set('authorization', res.header.authorization)
-                                    .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
-                                    .expect(200);
-                        })
-                        .then(function(res){
-                            //there should be a redirection URL in the headers
-                            assert(res.header['stormpath-sso-redirect-location']);
-                            return request(res.header['stormpath-sso-redirect-location']).get('')
+                    })
+                    .then(function(res){
+                        //there should be a redirection URL in the headers
+                        assert(res.header['stormpath-sso-redirect-location']);
+                        return request(res.header['stormpath-sso-redirect-location']).get('')
+                            .expect(302);
+                    })
+                    .then(function(res){
+                        //the cookie should give us the right to not re-enter a second factor next time
+                        return BluebirdPromise.join(
+                            init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl}),
+                            res.header['set-cookie'][0].split(';')[0]
+                        );
+                    })
+                    .spread(function(jwtRequest, cookie){
+                        //send a a new request with the cookie
+                        return request(init.servers.main).get('/sso')
+                                .query({jwtRequest: jwtRequest})
+                                .set('Cookie', cookie)
                                 .expect(302);
-                        });
-                });
-
-                it('with existing second factor', function(){
-                    //don't require google-authenticator MFA in login
-                    //it should be asked for anyway because it has been configured
-                    return getConfiguredFactors()
-                        .then(function(res){
-                            //one second factor has already been configured
-                            assert.strictEqual(res.body.size, 1);
-                            //secret should no be exposed
-                            assert(!res.body.items[0].secret);
-                            assert(!res.body.items[0].keyUri);
-                            assert(!res.body.items[0].base64QRImage);
-
-                            return request(init.servers.main).post('/v1/factors/'+res.body.items[0].id+'/challenges')
-                                        .set('authorization', res.header.authorization)
-                                        .expect(200);
-                        })
-                        .then(function(res){
-                            assert.strictEqual(res.body.status, 'CREATED');
-                            //verify the factor
-                            return request(init.servers.main).post('/v1/challenges/'+res.body.id)
-                                    .set('authorization', res.header.authorization)
-                                    .send({code: speakeasy.totp({secret: secret, encoding: 'base32'})})
-                                    .expect(200);
-                        })
-                        .then(function(res){
-                            //there should be a redirection URL in the headers
-                            assert(res.header['stormpath-sso-redirect-location']);
-                            return request(res.header['stormpath-sso-redirect-location']).get('')
-                                .expect(302);
-                        })
-                        .then(function(res){
-                            //the cookie should give us the right to not re-enter a second factor next time
-                            return BluebirdPromise.join(
-                                init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl}),
-                                res.header['set-cookie'][0].split(';')[0]
-                            );
-                        })
-                        .spread(function(jwtRequest, cookie){
-                            //send a a new request with the cookie
-                            return request(init.servers.main).get('/sso')
-                                    .query({jwtRequest: jwtRequest})
-                                    .set('Cookie', cookie)
-                                    .expect(302);
-                        })
-                        .then(function(res){
-                            //cloudpass should redirect directly to the callback URL, not to the ID site
-                            assert(res.header.location);
-                            assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
-                        });
-                });
+                    })
+                    .then(function(res){
+                        //cloudpass should redirect directly to the callback URL, not to the ID site
+                        assert(res.header.location);
+                        assert(res.header.location.startsWith(callbackUrl+'?jwtResponse='));
+                    });
             });
+        });
+
+        it('with unauthorized redirect URL', function(){
+            return init.getIdSiteJwtRequest(applicationId, {cb_uri: 'http://www.example2.com/callback'})
+                .then(jwtRequest =>
+                        request(init.servers.main).get('/sso')
+                            .query({jwtRequest})
+                            .expect(400)
+                );
+        });
     });
 
     it('logout', function(){
         return init.getIdSiteJwtRequest(applicationId, {cb_uri: callbackUrl})
-                .then(function(jwtRequest){
-                    return request(init.servers.main).get('/sso/logout')
-                            .query({ jwtRequest: jwtRequest})
-                            .expect(302);
-                })
-                .then(function(res){
+                .then(jwtRequest =>
+                        request(init.servers.main).get('/sso/logout')
+                            .query({ jwtRequest})
+                            .expect(302)
+                )
+                .then(res => {
                     assert(res.header.location);
                     assert(res.header.location.startsWith(idSiteUrl+'/#/logoutSuccess'));
                     assert(res.header['set-cookie']);

@@ -40,8 +40,8 @@ module.exports = {
                     defaultValue: 'ENABLED'
                 },
                 customData: {
-                    type: DataTypes.TEXT,
-                    defaultValue: "{}",
+                    type: DataTypes.JSON,
+                    defaultValue: {},
                     allowNull: false
                 },
                 providerData: {

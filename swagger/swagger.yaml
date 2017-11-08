@@ -3127,6 +3127,10 @@ paths:
                 type: string
               logoUrl:
                 type: string
+              authorizedRedirectURIs:
+                type: array
+                items:
+                  type: string
               sessionTtl:
                 type: string
               sessionCookiePersistent:
@@ -4153,8 +4157,10 @@ definitions:
             type: string
           logoUrl:
             type: string
-          sessionTti:
-            type: string
+          authorizedRedirectURIs:
+            type: array
+            items:
+              type: string
           sessionTtl:
             type: string
           sessionCookiePersistent:

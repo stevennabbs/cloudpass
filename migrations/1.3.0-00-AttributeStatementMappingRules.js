@@ -10,8 +10,8 @@ module.exports = {
                     allowNull: false
                 },
                 items: {
-                    type: DataTypes.TEXT,
-                    defaultValue: '[]',
+                    type: DataTypes.JSON,
+                    defaultValue: [],
                     allowNull: false
                 },
                 createdAt: {
