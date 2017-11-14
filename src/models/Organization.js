@@ -103,6 +103,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         getIdSiteScope: _.constant([
             "get",
+            { customData: [ 'get' ] },
             { idSiteModel: [ "get" ] },
             { accounts: [ "post" ] }
         ])

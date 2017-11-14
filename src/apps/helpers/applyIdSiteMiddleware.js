@@ -180,7 +180,7 @@ module.exports = function(app) {
     app.post('/applications/:id/loginAttempts', afterAuthentication(_.property('account.href'), false));
     //after account creation, redirect to the application if the email verification workflow is not enabled
     app.post(
-      ['/applications/:id/accounts', '/organization/:id/accounts'],
+      ['/applications/:id/accounts', '/organizations/:id/accounts'],
       afterAuthentication(result => Optional.ofNullable(result.href).filter(_.constant(result.status === 'ENABLED')).orElseGet(_.stubFalse), true)
     );
     //tokens should not be exposed to the user

@@ -50,7 +50,7 @@ describe('invitation', () => {
     })
   );
 
-  function setCallbackUri(emailAddress, expectedPath){
+  function createInvitationWithCbUri(emailAddress, expectedPath){
     //if a callbackUri is specified, the link in the email must redirect to the ID site
     return BluebirdPromise.join(
           init.getEmailPromise(mailServer, emailAddress),
@@ -87,7 +87,7 @@ describe('invitation', () => {
        });
   }
 
-  function idSiteRequestWithInvitation(email, expectedPath){
+  function idSiteRequestWithInvitation(email){
     return init.getIdSiteJwtRequest(
         applicationId,
         {
@@ -101,7 +101,7 @@ describe('invitation', () => {
           .expect(302)
     )
     .then(res =>{
-        const fragmentStart = '/#/'+expectedPath+'?jwt=';
+        const fragmentStart = '/#/?jwt=';
         const startIndex = res.header.location.indexOf(fragmentStart);
         assert(startIndex >= 0);
         const decodedJwt = jwt.decode(res.header.location.substring(startIndex + fragmentStart.length));
@@ -111,18 +111,16 @@ describe('invitation', () => {
     });
   }
 
-  it('idSite request with nonexistent account', () => idSiteRequestWithInvitation(invitedEmail, 'register'));
+  it('idSite request', () => idSiteRequestWithInvitation(invitedEmail));
 
-  it('with Callback URI and nonexistent account', () => setCallbackUri(invitedEmail, 'register'));
+  it('with Callback URI and nonexistent account', () => createInvitationWithCbUri(invitedEmail, 'register'));
 
-  it('idSite request with existing account', () =>
+  it('with Callback URI and existing account', () =>
     init.postRequest('invitations/'+invitationId)
         .send({email: init.adminUser})
         .expect(200)
-        .then(() => idSiteRequestWithInvitation(init.adminUser, ''))
+        .then(() => createInvitationWithCbUri(init.adminUser, ''))
   );
-
-  it('with Callback URI and nonexistent account', () => setCallbackUri(init.adminUser, ''));
 
   it('delete', () => init.deleteRequest('invitations/'+invitationId).expect(204));
 

@@ -43,7 +43,8 @@ exports.getSamlResponse = function(provider, requestBody){
                 {
                   request_body: requestBody,
                   allow_unencrypted_assertion: true,
-                  require_session_index: false
+                  require_session_index: false,
+                  audience: /.*/
                 }
             );
 };

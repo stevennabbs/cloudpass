@@ -1473,6 +1473,7 @@ paths:
             - applications
             - accounts
             - organizations
+            - organizationMappings
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -2969,6 +2970,7 @@ paths:
           type: string
           enum:
             - accountStoreMappings
+            - applicationMappings
             - directories
             - applications
             - invitations
