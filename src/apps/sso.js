@@ -190,17 +190,7 @@ app.use(errorHandler);
 
 function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, invitationEmail, content){
     const baseUrl = hrefHelper.getBaseUrl(jwtPayload.sub);
-
-    //if an invitation has been provided, check if the account already exists in the application
-    //if not, redirect to the registration page
-    BluebirdPromise.resolve(
-        Optional.ofNullable(invitationEmail)
-            .map(e => accountStore.getAccounts({where: {email: _.toLower(e)}, limit:1}).get(0)
-                        .then(account => account ? null : '/#/register')
-            )
-            .orElse(jwtPayload.path)
-    ).then(path =>
-        jwt.signAsync(
+    return  jwt.signAsync(
            _.merge(
                {
                    init_jti: jwtPayload.jti,
@@ -226,8 +216,7 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
                subject: jwtPayload.iss,
                audience: 'idSite'
            }
-       ).then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(path, '/#/')+'?jwt='+token).send())
-    );
+       ).then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send());
 }
 
 module.exports = app;
