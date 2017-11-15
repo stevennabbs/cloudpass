@@ -104,29 +104,29 @@ controller.createPasswordResetToken = function(req, res) {
           }]
         })
         .then(function(directory) {
-          ApiError.assert(directory.passwordPolicy.resetEmailStatus === 'ENABLED', ApiError, 400, 400, 'the password reset workflow is not enabled');
+            ApiError.assert(directory.passwordPolicy.resetEmailStatus === 'ENABLED', ApiError, 400, 400, 'the password reset workflow is not enabled');
 
-          //create a new token
-          var tokenExpiryDate = new Date();
-          tokenExpiryDate.setHours(tokenExpiryDate.getHours() + directory.passwordPolicy.resetTokenTtl);
+            //create a new token
+            var tokenExpiryDate = new Date();
+            tokenExpiryDate.setHours(tokenExpiryDate.getHours() + directory.passwordPolicy.resetTokenTtl);
 
-          return models.passwordResetToken.create({
-              tenantId: req.user.tenantId,
-              applicationId: req.swagger.params.id.value,
-              accountId: account.id,
-              email: account.email,
-              expires: tokenExpiryDate
-            })
-            .tap(function(token) {
-              return email.sendWithToken(
-                account,
-                directory,
-                directory.passwordPolicy.resetEmailTemplates[0],
-                token,
-                req.authInfo,
-                req.user,
-                {expirationWindow: directory.passwordPolicy.resetTokenTtl}
-              );
+            return models.passwordResetToken.create({
+                tenantId: req.user.tenantId,
+                applicationId: req.swagger.params.id.value,
+                accountId: account.id,
+                email: account.email,
+                expires: tokenExpiryDate
+              })
+              .tap(function(token) {
+                return email.sendWithToken(
+                  account,
+                  directory,
+                  directory.passwordPolicy.resetEmailTemplates[0],
+                  token,
+                  req.authInfo,
+                  req.user,
+                  {expirationWindow: directory.passwordPolicy.resetTokenTtl}
+                );
             });
         });
     }),
