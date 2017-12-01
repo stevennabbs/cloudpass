@@ -84,7 +84,9 @@ controller.consumeSamlAssertion = function(req, res){
                     directoryId: req.swagger.params.id.value
                 },
                 defaults:{
-                    tenantId: req.user.tenantId
+                    tenantId: req.user.tenantId,
+                    //disable password authentication by default for SAML accounts
+                    passwordAuthenticationAllowed: false
                 }
            })
            .spread(function(account, created){

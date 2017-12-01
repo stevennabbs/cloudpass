@@ -61,6 +61,7 @@ exports.authenticateAccount = function(login, password, applicationId, organizat
         .then(function(account){
            ApiError.assert(account, ApiError, 400, 7104, 'Login attempt failed because there is no Account in the Application’s associated Account Stores with the specified username or email.');
            ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'Login attempt failed because the Account is not enabled.');
+           ApiError.assert(account.passwordAuthenticationAllowed, ApiError, 400, 7101, 'Login attempt failed because password authentication is disabled for this account.');
            ApiError.assert(
                 account.failedLoginAttempts < account.directory.accountLockingPolicy.maxFailedLoginAttempts ||
                 moment(account.lastLoginAttempt).add(moment.duration(account.directory.accountLockingPolicy.accountLockDuration)).isBefore(moment()),

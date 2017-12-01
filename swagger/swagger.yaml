@@ -1576,6 +1576,8 @@ paths:
                 type: string
               surname:
                 type: string
+              passwordAuthenticationAllowed:
+                type: boolean
               status:
                 type: string
                 enum:
@@ -3835,6 +3837,7 @@ definitions:
           - providerData
           - failedLoginAttempts
           - lastLoginAttempt
+          - passwordAuthenticationAllowed
         properties:
           email:
             type: string
@@ -3862,6 +3865,8 @@ definitions:
           lastLoginAttempt:
             type: string
             format: date-time
+          passwordAuthenticationAllowed:
+            type: boolean
           directory:
             $ref: "#/definitions/ResourceReference"
           groups:

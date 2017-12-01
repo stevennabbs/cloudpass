@@ -80,6 +80,11 @@ module.exports = function (sequelize, DataTypes) {
                 lastLoginAttempt : {
                     type: DataTypes.DATE
                 },
+                passwordAuthenticationAllowed: {
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
                 status:{
                     type: DataTypes.STRING(10),
                     validate: {isIn: [['ENABLED', 'DISABLED', 'UNVERIFIED']]},
@@ -165,7 +170,7 @@ module.exports = function (sequelize, DataTypes) {
         }
     })
     .withSearchableAttributes('id', 'email', 'username',  'givenName', 'middleName', 'surname', 'status')
-    .withSettableAttributes('email', 'username',  'password', 'givenName', 'middleName', 'surname', 'status', 'customData')
+    .withSettableAttributes('email', 'username',  'password', 'givenName', 'middleName', 'surname', 'passwordAuthenticationAllowed', 'status', 'customData')
     .withCustomData()
     .end();
 };

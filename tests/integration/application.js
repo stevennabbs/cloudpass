@@ -6,6 +6,7 @@ describe('Application', function() {
   let applicationId;
   let directoryId;
   let accountLockingPolicyId;
+  let accountId;
   let mailServer;
 
   before(() => {
@@ -118,6 +119,7 @@ describe('Application', function() {
                 assert.strictEqual(res.body.directory.id, otherDirectoryId);
                 assert.strictEqual(res.body.groups.size, 1);
                 assert.strictEqual(res.body.groups.items[0].id, groupId);
+                accountId = res.body.id;
             });
     });
 
@@ -177,7 +179,6 @@ describe('Application', function() {
                 });
      });
 
-
     let performFailedLoginAttempt = () =>
         init.postRequest('applications/'+applicationId+'/loginAttempts')
                 .send({
@@ -223,5 +224,21 @@ describe('Application', function() {
                 })
     );
 
+    it('Must fail if password authentication is disabled', () =>{
+        init.postRequest('accounts/'+accountId)
+                .send({passwordAuthenticationAllowed: false})
+                .then(() => {
+                    init.postRequest('applications/'+applicationId+'/loginAttempts')
+                    .send({
+                        type: 'basic',
+                        value: Buffer.from('test@example.com:Aa12345', 'utf8').toString('base64')
+                    })
+                    .expect(400);
+                })
+                .then(res => {
+                    assert.strictEqual(res.body.status, 400);
+                    assert.strictEqual(res.body.code, 7101);
+                });
+        });
   });
 });

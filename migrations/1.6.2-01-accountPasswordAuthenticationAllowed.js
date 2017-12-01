@@ -2,20 +2,20 @@
 module.exports = {
     up: function(migration, DataTypes) {
         return migration.addColumn(
-            'idSites',
-            'authorizedRedirectURIs',
+            'accounts',
+            'passwordAuthenticationAllowed',
             {
-              type: DataTypes.JSON,
-              allowNull: false,
-              defaultValue: ['*']
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true
             }
           );
     },
 
     down: function(migration) {
         return migration.dropColumn(
-            'idSites',
-            'authorizedRedirectURIs'
+            'accounts',
+            'passwordAuthenticationAllowed'
         );
     }
 };

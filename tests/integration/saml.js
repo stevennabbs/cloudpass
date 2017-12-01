@@ -113,7 +113,7 @@ describe('SAML', function(){
                     });
         });
 
-        it('Attributes cannot be mapped unexistent Account fields', function(){
+        it('Attributes cannot be mapped non-existent Account fields', function(){
             return init.postRequest('attributeStatementMappingRules/'+attributeStatementMappingRulesId)
                     .send({items: [{
                         name:"firstName",
@@ -212,6 +212,7 @@ describe('SAML', function(){
                             assert.strictEqual(res.body.items[0].email, 'test-saml@example.com');
                             assert.strictEqual(res.body.items[0].givenName, 'John');
                             assert.strictEqual(res.body.items[0].surname, 'Doe');
+                            assert.strictEqual(res.body.items[0].passwordAuthenticationAllowed, false);
                             assert.strictEqual(res.body.items[0].customData.company, expectedCompanyName);
                             assert.strictEqual(res.body.items[0].providerData.providerId, 'saml');
                             assert.strictEqual(res.body.items[0].providerData.firstName, 'John');
