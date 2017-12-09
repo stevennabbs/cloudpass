@@ -83,7 +83,7 @@
     "rimraf": "2.6.2",
     "smtp-tester": "1.1.0",
     "sqlite3": "3.1.13",
-    "superagent": "3.8.1",
+    "superagent": "3.8.2",
     "supertest": "3.0.0",
     "tar-fs": "1.16.0",
     "thenify": "3.3.0"
