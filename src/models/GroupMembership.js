@@ -18,7 +18,7 @@ module.exports = function (sequelize, DataTypes) {
                 indexes: [
                     {
                         unique: true,
-                        fields: ['accountId', 'groupId', 'tenantId']
+                        fields: ['accountId', 'groupId']
                     }
                 ]
             }
