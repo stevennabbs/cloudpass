@@ -77,7 +77,7 @@ controller.authenticate = function(req, res) {
     })
     .tap(() => logger.info('%s successfully logged in to application %s', login, applicationId, {username: login, applicationId, action_status: 'login successul'}))
     .catch(e => {
-        logger.info('%s failed to log in to application %s (reason: %s)', login, applicationId, e.message, {username: login, applicationId, action_status: 'login successul', reason: e.message});
+        logger.info('%s failed to log in to application %s (reason: %s)', login, applicationId, e.message, {username: login, applicationId, action_status: 'login failed', reason: e.message});
         req.next(e);
     });
 };
