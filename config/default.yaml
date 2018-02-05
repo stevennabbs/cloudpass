@@ -67,21 +67,32 @@ persistence:
 #    dialect: sqlite
 #    storage: cloudpass.db
 
+
 logging:
-  sql: {}
-  http: {}
-  email: {}
-  login: {}
+  transports: []
+  loggers:
+    sql: {}
+    http: {}
+    email: {}
+    login: {}
 # You can configure logging that way:
 #logging:
-#  sql:
-#    console:
-#      level: warn
-#      colorize: true
-#    file:
-#       level: error
-#       timestamp: true
-#       filename: logs/app.log,
-#       maxfiles: 5
-#       maxsize": 10485760
+#   transports:
+#    - winston-log2gelf
+#   loggers:
+#    sql:
+#      console:
+#        level: warn
+#        colorize: true
+#      file:
+#         level: error
+#         timestamp: true
+#         filename: logs/app.log,
+#         maxfiles: 5
+#         maxsize": 10485760
+#      log2gelf:
+#         level: debug
+#         host: 192.168.0.15
+#         port: 12201
+#         protocol: tls
 

@@ -21,18 +21,19 @@ persistence:
         storage: ':memory:'
 
 logging:
-  sql:
-    console:
-      level: debug
-      colorize: true
-      timestamp: true
-  http:
-    console:
-      level: debug
-      colorize: true
-      timestamp: true
-  email:
-    console:
-      level: debug
-      colorize: true
-      timestamp: true
+  loggers:
+    sql:
+      console:
+        level: debug
+        colorize: true
+        timestamp: true
+    http:
+      console:
+        level: debug
+        colorize: true
+        timestamp: true
+    email:
+      console:
+        level: debug
+        colorize: true
+        timestamp: true

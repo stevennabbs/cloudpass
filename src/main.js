@@ -11,7 +11,8 @@ var randomstring = require('randomstring');
 var _ = require('lodash');
 var loadLoggingConfig = require('sequelize').Promise.promisify(require('winston-config').fromJson);
 
-module.exports = loadLoggingConfig(config.get('logging'))
+config.get('logging.transports').forEach(require);
+module.exports = loadLoggingConfig(config.get('logging.loggers'))
     .then(function(){
         if(cluster.isMaster){
             //run pending migrations and fork clusters

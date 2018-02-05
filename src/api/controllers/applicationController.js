@@ -75,9 +75,9 @@ controller.authenticate = function(req, res) {
     .then(function(account) {
       res.json(expandAccountActionResult(account, req.swagger.params.expand.value));
     })
-    .tap(() => logger.info('%s successfully logged in to application %s', login, applicationId))
+    .tap(() => logger.info('%s successfully logged in to application %s', login, applicationId, {username: login, applicationId, action_status: 'login successul'}))
     .catch(e => {
-        logger.info('%s failed to log in to application %s (reason: %s)', login, applicationId, e.message);
+        logger.info('%s failed to log in to application %s (reason: %s)', login, applicationId, e.message, {username: login, applicationId, action_status: 'login successul', reason: e.message});
         req.next(e);
     });
 };
