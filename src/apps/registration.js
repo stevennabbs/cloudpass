@@ -63,7 +63,6 @@ app.post('/', function(req, res){
 });
 
 app.use(function (err, req, res, next) {
-    console.error('aaaaaaaaaaaaa', err);
     if (res.headersSent) {
         return next(err);
     }
