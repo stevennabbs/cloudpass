@@ -127,7 +127,7 @@ module.exports = function(source, destination){
                         {
                             id: {[Op.or]: _.map(queryTemplates, queryTemplate => ({[Op.in]: this.sequelize.literal(queryTemplate({id: this.id}))}))}
                         },
-                        options.where
+                        _.get(options, 'where')
                     ]
                 }
             },

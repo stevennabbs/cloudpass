@@ -66,8 +66,13 @@ app.get('/', function(req, res){
                         //the user already authenticated for this tenant
                         //check if his account belongs to the requested account store
                         return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
-                                .then(cookieJwt => BluebirdPromise.join(cookieJwt.mfa, accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0)))
-                                .spread((verifiedMfa, account) => {
+                                .then(cookieJwt => BluebirdPromise.join(
+                                                        cookieJwt.mfa,
+                                                        accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0),
+                                                        cookieJwt.org_href
+                                                   )
+                                )
+                                .spread((verifiedMfa, account, orgHref) => {
                                     ApiError.assert(account, Error, 'account not found in account store');
                                     ApiError.assert(!invitationEmail || _.eq(invitationEmail.toLowerCase(), account.email), Error, 'user not logged with the invited email');
                                     return _.cond([
@@ -113,7 +118,8 @@ app.get('/', function(req, res){
                                                         cb_uri: req.authInfo.cb_uri,
                                                         irt: req.authInfo.jti,
                                                         state: req.authInfo.state,
-                                                        inv_href: req.authInfo.inv_href
+                                                        inv_href: req.authInfo.inv_href,
+                                                        org_href: orgHref
                                                     }
                                                 )
                                                 .then(sendJwtResponse(res, req.authInfo.cb_uri))
@@ -137,7 +143,8 @@ app.get('/', function(req, res){
         //make a jwt cookie from the account ID
         jwt.signAsync(
             {
-                mfa: req.authInfo.mfa
+                mfa: req.authInfo.mfa,
+                org_href: req.authInfo.org_href
             },
             req.app.get('secret'),
             {
@@ -200,6 +207,7 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
                    state: jwtPayload.state,
                    asnk: jwtPayload.onk,
                    sof: jwtPayload.sof,
+                   ros: jwtPayload.ros,
                    require_mfa: jwtPayload.require_mfa,
                    //qualify the account store & invitation hrefs
                    ash: Optional.ofNullable(accountStore).map(_.property('href')).map(hrefHelper.unqualifyHref).map(_.bindKey(baseUrl, 'concat')).orElse(null),

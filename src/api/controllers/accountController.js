@@ -134,4 +134,10 @@ controller.changePassword = function(req, res){
     .catch(req.next);
 };
 
+//only for ID site, the actual work is made in applyIdSiteMiddleware
+controller.selectOrganization = (req, res) =>  res.json({
+    account: models.account.build({id: req.swagger.params.id.value}),
+    organization: models.organization.build({id: req.swagger.params.organizationId.value})
+});
+
 module.exports = controller;

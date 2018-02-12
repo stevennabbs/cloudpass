@@ -53,7 +53,7 @@ var handleRedirects = applyToIdSiteRequests(function(req, res) {
   req.next();
 });
 
-var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter){
+var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter, orgHrefGetter){
   return applyToIdSiteRequests(function(req, res) {
     shimmer.wrap(res, 'json', function(original) {
         return function(result) {
@@ -80,7 +80,7 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                 .then(requireMfa => {
                     var secondFactor = Optional.ofNullable(factorTypeGetter)
                                         .map(_.method('call', null, result))
-                                        .orElse(null);
+                                        .orElse(req.authInfo.verified_mfa);
                     //ask for a second factor if requested
                     if(!_.isEmpty(requireMfa) && !_.includes(requireMfa, secondFactor)){
                         req.authInfo.require_mfa = requireMfa;
@@ -93,34 +93,67 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                         return setAuthorizationBearer(req, this)
                                 .then(() => original.call(this, result));
                     } else {
-                        //the user is authenticated: redirect back to the application
-                        return getApiKey(
-                            req.authInfo.sub, {
-                              model: models.tenant,
-                              include: [{
-                                model: models.idSite,
-                                limit: 1
-                              }]
-                            }
-                          )
-                          .then(function(apiKey) {
-                            return idSiteHelper.getJwtResponse(
-                                apiKey,
-                                accountHref,
-                                {
-                                    isNewSub: isNewSub || req.authInfo.isNewSub || false,
-                                    status: "AUTHENTICATED",
-                                    cb_uri: req.authInfo.cb_uri,
-                                    irt: req.authInfo.init_jti,
-                                    state: req.authInfo.state,
-                                    mfa: secondFactor,
-                                    inv_href: req.authInfo.inv_href,
-                                    email: req.authInfo.email
-                                }
-                            );
-                          })
-                          //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
-                          .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
+                        //the user is authenticated
+                        // check if organization selection was requested
+                        return Optional.ofNullable(orgHrefGetter)
+                                .map(_.method('call', null, result))
+                                .map(BluebirdPromise.resolve)
+                                .orElseGet(() => {
+                                    //ros => request organization selection
+                                    if(req.authInfo.ros){
+                                        return  models.account.build({id: accountId}).countOrganizations()
+                                                    .then(_.cond([
+                                                        //no org => no need for selection
+                                                        [_.partial(_.eq, 0), _.constant(null)],
+                                                        //only one org => just take this one
+                                                        [_.partial(_.eq, 1), () => models.account.build({id: accountId}).getOrganizations({limit: 1, attributes: ['id']}).get(0).get('href')],
+                                                        //more than one: selection needed
+                                                        [_.stubTrue, _.stubFalse]
+                                                    ]));
+                                    } else {
+                                        //no org requested
+                                        return BluebirdPromise.resolve(null);
+                                    }
+                                })
+                                .then(orgHref => {
+                                    if(orgHref === false){
+                                        //organization requested but not chosen yet
+                                        //add available organizations to the scope
+                                        req.authInfo.scope = idSiteHelper.getAccountOrganizationsScope(accountId);
+                                        req.authInfo.verified_mfa=secondFactor;
+                                        req.authInfo.isNewSub = isNewSub;
+                                        return setAuthorizationBearer(req, this).then(() => original.call(this, result));
+                                    } else {
+                                        return getApiKey(
+                                            req.authInfo.sub, {
+                                                model: models.tenant,
+                                                include: [{
+                                                    model: models.idSite,
+                                                    limit: 1
+                                                }]
+                                            }
+                                          )
+                                          .then(function(apiKey) {
+                                            return idSiteHelper.getJwtResponse(
+                                                apiKey,
+                                                accountHref,
+                                                {
+                                                    isNewSub: isNewSub || req.authInfo.isNewSub || false,
+                                                    status: "AUTHENTICATED",
+                                                    cb_uri: req.authInfo.cb_uri,
+                                                    irt: req.authInfo.init_jti,
+                                                    state: req.authInfo.state,
+                                                    mfa: secondFactor,
+                                                    inv_href: req.authInfo.inv_href,
+                                                    email: req.authInfo.email,
+                                                    org_href: orgHref
+                                                }
+                                            );
+                                        })
+                                        //don't redirect directly to the app, redirect first to cloudpass so it can set a cookie
+                                        .then(jwtResponse => this.redirect(hrefHelper.getRootUrl(req.authInfo.app_href) + "/sso?jwtResponse=" + jwtResponse));
+                                    }
+                                });
                     }
                 })
                 .catch(req.next);
@@ -212,6 +245,17 @@ module.exports = function(app) {
             false,
             _.property('type')
      ));
-     //redirect to application once the user is done setting up his account (password or multi factor change)
-     app.get('/accounts/:id', afterAuthentication(_.property('href'), false));
+    //redirect to application once the user is done setting up his account (password or multi factor change)
+    app.get('/accounts/:id', afterAuthentication(_.property('href'), false));
+    //allow the user to choose any of his organization
+    app.get('/accounts/:id/organizations', addPathsToScope((r, req) => _(r.items).map(o => ({[`${req.path}/${o.id}`]: 'post'})).reduce(_.merge)));
+    //handle organization choice
+    app.post('/accounts/:accountId/organizations/:organizationId',
+        afterAuthentication(
+            _.property('account.href'),
+            null,
+            null,
+            _.property('organization.href')
+        )
+    );
 };

@@ -32,3 +32,11 @@ exports.getSecuritySettingsScope = accountId => ({
         ]
     }
 });
+
+exports.getAccountOrganizationsScope = accountId => ({
+   accounts: {
+       [accountId]: {
+           organizations: ['get']
+       }
+   }
+});
