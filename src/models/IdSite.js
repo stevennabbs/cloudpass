@@ -15,7 +15,8 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 url: {
                     type: DataTypes.STRING,
-                    validate: {isURL: {require_tld: false}}
+                    validate: {isURL: {require_tld: false}},
+                    defaultValue: 'http://id.example.com'
                 },
                 logoUrl: {
                     type: DataTypes.STRING,
