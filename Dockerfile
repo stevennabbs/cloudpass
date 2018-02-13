@@ -3,6 +3,7 @@ FROM node:6-alpine
 ENV NODE_ENV=production
 ENV NODE_APP_INSTANCE=docker
 
+RUN apk add --no-cache git
 RUN mkdir -p /app
 WORKDIR /app
 COPY package.json .
