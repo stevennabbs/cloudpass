@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const BluebirdPromise = require('sequelize').Promise;
 const signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
+const Optional = require('optional-js');
 const accountStoreController = require('../helpers/accountStoreController');
 const controllerHelper = require('../helpers/controllerHelper');
 const samlHelper = require('../helpers/samlHelper');
@@ -70,15 +71,15 @@ controller.consumeSamlAssertion = function(req, res){
         where: {directoryId: req.swagger.params.id.value},
         include: [models.samlServiceProviderMetadata, models.attributeStatementMappingRules]
     })
-    .then(function(provider){
-        return BluebirdPromise.join(
+    .then(provider =>
+        BluebirdPromise.join(
             samlHelper.getSamlResponse(provider, req.body),
             provider.attributeStatementMappingRules
-        );
-    })
-    .spread(function(samlResponse, mappingRules){
-        return models.sequelize.requireTransaction(function () {
-           return models.account.findOrCreate({
+        )
+    )
+    .spread((samlResponse, mappingRules) =>
+        models.sequelize.requireTransaction(() =>
+           models.account.findOrCreate({
                 where:{
                     email: _.toLower(samlResponse.user.name_id),
                     directoryId: req.swagger.params.id.value
@@ -89,7 +90,7 @@ controller.consumeSamlAssertion = function(req, res){
                     passwordAuthenticationAllowed: false
                 }
            })
-           .spread(function(account, created){
+           .spread((account, created) => {
                var providerData = _.defaults({providerId: 'saml'}, _.mapValues(samlResponse.user.attributes, _.head));
                 return BluebirdPromise.join(
                     account.update(
@@ -105,32 +106,32 @@ controller.consumeSamlAssertion = function(req, res){
                            .value()
                       ))
                     ),
-                    created
+                    created,
+                    hrefHelper.resolveHref(req.authInfo.app_href).getLookupAccountStore(req.authInfo.onk)
               );
-           });
-        });
-    })
-    //check that the account belongs to the required organization
-    .tap(res =>
-        hrefHelper.resolveHref(req.authInfo.app_href)
-                .getLookupAccountStore(req.authInfo.onk)
-                .then(as => as.getAccounts({
-                    where: {id: res[0].id},
+           })
+        )
+    )
+    .tap(([account, created, accountStore]) =>
+        //check that the account belongs to the required application or organization
+        accountStore.getAccounts({
+                    where: {id: account.id},
                     limit:1,
                     attributes: ['id']
-                }))
+                })
                 .get(0)
                 .then(_.partial(ApiError.assert, _, ApiError, 400, 7104, 'This account does not belong to the required account store'))
     )
-    .spread(function(account, created){
-        return signJwt(
+    .spread((account, created, accountStore) =>
+        signJwt(
             {
                 isNewSub: created,
                 status: "AUTHENTICATED",
                 cb_uri: req.authInfo.cb_uri,
                 irt: req.authInfo.init_jti,
                 state: req.authInfo.state,
-                inv_href: req.authInfo.inv_href
+                inv_href: req.authInfo.inv_href,
+                org_href: Optional.of(accountStore).filter(as => as instanceof models.organization).map(_.property('href')).orElse(null)
             },
             req.user.secret,
             {
@@ -143,8 +144,8 @@ controller.consumeSamlAssertion = function(req, res){
                     stt: 'assertion'
                 }
             }
-        );
-    })
+        )
+    )
     .then(sendJwtResponse(res, req.authInfo.cb_uri))
     .catch(req.next);
 };

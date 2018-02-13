@@ -99,7 +99,7 @@ module.exports = function (sequelize, DataTypes) {
                                     limit: 1
                         })
                         .then(_.head)
-                        .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'Organization %s is not linked to application', organizationName, this.id)))
+                        .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'Organization %s is not linked to application %s', organizationName, this.id)))
                         .orElse(this.sequelize.Promise.resolve(this));
                 }
             },
