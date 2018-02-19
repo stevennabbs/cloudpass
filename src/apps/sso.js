@@ -86,7 +86,10 @@ app.get('/', function(req, res){
                                                     accountStore,
                                                     authInfo,
                                                     invitationEmail,
-                                                    {scope: idSiteHelper.getFactorsScope(account.id)}
+                                                    {
+                                                        scope: idSiteHelper.getFactorsScope(account.id),
+                                                        org_href: orgHref
+                                                    }
                                             )
                                         ],
                                         [
@@ -102,7 +105,8 @@ app.get('/', function(req, res){
                                                             {
                                                                 scope: idSiteHelper.getSecuritySettingsScope(account.id),
                                                                 authenticated: true,
-                                                                require_mfa: ['google-authenticator']
+                                                                require_mfa: ['google-authenticator'],
+                                                                org_href: orgHref
                                                             }
                                             )
                                         ],

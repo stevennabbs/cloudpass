@@ -95,26 +95,30 @@ var afterAuthentication = function(accountHrefGetter, isNewSub, factorTypeGetter
                     } else {
                         //the user is authenticated
                         // check if organization selection was requested
-                        return Optional.ofNullable(orgHrefGetter)
-                                .map(_.method('call', null, result))
-                                .map(BluebirdPromise.resolve)
-                                .orElseGet(() => {
-                                    //ros => request organization selection
-                                    if(req.authInfo.ros){
-                                        return  models.account.build({id: accountId}).countOrganizations()
-                                                    .then(_.cond([
-                                                        //no org => no need for selection
-                                                        [_.partial(_.eq, 0), _.constant(null)],
-                                                        //only one org => just take this one
-                                                        [_.partial(_.eq, 1), () => models.account.build({id: accountId}).getOrganizations({limit: 1, attributes: ['id']}).get(0).get('href')],
-                                                        //more than one: selection needed
-                                                        [_.stubTrue, _.stubFalse]
-                                                    ]));
-                                    } else {
-                                        //no org requested
-                                        return BluebirdPromise.resolve(null);
-                                    }
-                                })
+                        return BluebirdPromise.resolve(
+                                Optional.ofNullable(orgHrefGetter)
+                                    .map(_.method('call', null, result))
+                                    .orElseGet(() =>
+                                        //look for orgId in authInfo (account settings or missing 2nd factor)
+                                        Optional.ofNullable(req.authInfo.org_href)
+                                            .orElseGet(() => {
+                                                //ros => request organization selection
+                                                if(req.authInfo.ros){
+                                                    return  models.account.build({id: accountId}).countOrganizations()
+                                                                .then(_.cond([
+                                                                    //no org => no need for selection
+                                                                    [_.partial(_.eq, 0), _.constant(null)],
+                                                                    //only one org => just take this one
+                                                                    [_.partial(_.eq, 1), () => models.account.build({id: accountId}).getOrganizations({limit: 1, attributes: ['id']}).get(0).get('href')],
+                                                                    //more than one: selection needed
+                                                                    [_.stubTrue, _.stubFalse]
+                                                                ]));
+                                                } else {
+                                                    //no org requested
+                                                    return null;
+                                                }
+                                            })
+                                ))
                                 .then(orgHref => {
                                     if(orgHref === false){
                                         //organization requested but not chosen yet
