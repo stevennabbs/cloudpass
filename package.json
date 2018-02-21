@@ -68,7 +68,7 @@
     "bootprint-openapi": "1.1.0",
     "coveralls": "3.0.0",
     "cross-conf-env": "1.1.2",
-    "dockerode": "2.5.3",
+    "dockerode": "2.5.4",
     "dockerode-promise": "0.1.0",
     "env-test": "1.0.0",
     "gh-pages-travis": "1.0.4",
