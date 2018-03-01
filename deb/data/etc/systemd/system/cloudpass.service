@@ -4,7 +4,7 @@ Description=Cloudpass
 [Service]
 Environment=NODE_ENV=production NODE_CONFIG_DIR=/etc/cloudpass
 WorkingDirectory=/usr/share/cloudpass
-StandardOutput=null
+StandardOutput=journal
 StandardError=journal
 User=cloudpass
 Group=cloudpass
