@@ -1,17 +1,18 @@
 'use strict';
 
-var ssaclCls = require('continuation-local-storage').createNamespace('sequelize-cls');
-var express = require('express');
-var cluster = require('cluster');
-var cookieParser = require('cookie-parser');
-var numCPUs = require('os').cpus().length;
-var config = require('config');
-var ssacl = require('ssacl');
-var randomstring = require('randomstring');
-var _ = require('lodash');
-var loadLoggingConfig = require('sequelize').Promise.promisify(require('winston-config').fromJson);
+const ssaclCls = require('continuation-local-storage').createNamespace('sequelize-cls');
+const express = require('express');
+const cluster = require('cluster');
+const cookieParser = require('cookie-parser');
+const numCPUs = require('os').cpus().length;
+const config = require('config');
+const ssacl = require('ssacl');
+const randomstring = require('randomstring');
+const _ = require('lodash');
+const winston = require("winston");
+const loadLoggingConfig = require('sequelize').Promise.promisify(require('winston-config').fromJson);
 
-config.get('logging.transports').forEach(require);
+config.get('logging.transports').forEach(t => winston.transports[_.upperFirst(t)] = require(t));
 module.exports = loadLoggingConfig(config.get('logging.loggers'))
     .then(function(){
         if(cluster.isMaster){
@@ -20,7 +21,7 @@ module.exports = loadLoggingConfig(config.get('logging.loggers'))
             return require('./models').migrate()
                 .then(function(){
                     if(config.get('server.clustering') && numCPUs > 1){
-                        return _.times(Math.min(numCPUs, 4), cluster.fork.bind(cluster, {secret: secret}));
+                        return _.times(Math.min(numCPUs, 4), cluster.fork.bind(cluster, {secret}));
                     } else {
                         return startServers(secret);
                     }
@@ -35,7 +36,7 @@ function startServers(secret){
     require('./models').useSsacl(ssacl, ssaclCls);
 
     //load functional components
-    var app = express();
+    const app = express();
     app.set('secret', secret);
     app.use(cookieParser(secret));
     app.set('ssaclCls', ssaclCls);
