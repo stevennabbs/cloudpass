@@ -43,7 +43,7 @@
     "nocache": "2.0.0",
     "node-appinfo": "0.2.3",
     "nodemailer": "4.5.0",
-    "optional-js": "1.2.1",
+    "optional-js": "2.0.0",
     "passport": "0.4.0",
     "passport-http": "0.3.0",
     "passport-jwt-cookiecombo": "1.0.5",
