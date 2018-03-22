@@ -173,7 +173,11 @@ describe('controllerHelper', function () {
             assert(options.where[Op.and]);
             assert.strictEqual(options.where[Op.and].length, 2);
         });
+    });
 
-
+    it('escapeLikeParam', function(){
+        it('should escape reserved characters in like clause', function(){
+            assert.strictEqual(controllerHelper.__get__("escapeLikeParam")('_foo%\\'), '\\_foo\\%\\\\');
+        });
     });
 });
