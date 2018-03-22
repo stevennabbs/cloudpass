@@ -22,7 +22,7 @@ function createCollectionResource(href, pagination, size, items) {
 
 function caseInsensitiveLikeClause(target, columnName, matchedString){
     var sequelize = models.sequelize;
-    return sequelize.where(sequelize.fn('lower', sequelize.cast(sequelize.col(target.name+'.'+columnName), 'text')), {[Op.like] : matchedString.toLowerCase()});
+    return sequelize.where(sequelize.fn('lower', sequelize.cast(sequelize.col(target.name+'.'+columnName), 'text')), {[Op.like] : sequelize.literal(`${sequelize.escape(matchedString.toLowerCase())} ESCAPE '\\'`)});
 }
 
 //parse an 'orderBy' query param into sequelize 'order' clause
@@ -52,19 +52,23 @@ function getOrderClause(orderParam){
     }
 }
 
+function escapeLikeParam(likeParam){
+    return likeParam.replace(/(_|%|\\)/g, '\\$1');
+}
+
 function getWhereClause(query, target){
     //search in a specific attribute
     var whereClauses =
         _(target.searchableAttributes)
                 .filter(function(a){return query.hasOwnProperty(a);})
-                .map(a => caseInsensitiveLikeClause(target, a, query[a].replace(/\*/g, '%')))
+                .map(a => caseInsensitiveLikeClause(target, a, escapeLikeParam(query[a]).replace(/\*/g, '%')))
                 .value();
 
     //'q' paramter = search in all searchable attributes
     if(query.q){
         whereClauses.push({
             [Op.or]: _(target.searchableAttributes)
-                        .map(a => caseInsensitiveLikeClause(target, a, '%'+query.q+'%'))
+                        .map(a => caseInsensitiveLikeClause(target, a, `%${escapeLikeParam(query.q)}%`))
                         .value()
         });
     }
