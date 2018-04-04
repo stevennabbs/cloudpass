@@ -33,7 +33,7 @@ module.exports = function (sequelize, DataTypes) {
             models.invitation.belongsTo(models.account, {as: 'fromAccount', onDelete: 'cascade'});
         }
     })
-    .withSearchableAttributes('email')
+    .withSearchableAttributes('id', 'email')
     .withSettableAttributes('email', 'callbackUri', 'application', 'organization', 'fromAccount', 'customData')
     .withCustomData()
     .end();
