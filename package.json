@@ -85,7 +85,7 @@
     "sqlite3": "4.0.0",
     "superagent": "3.8.2",
     "supertest": "3.0.0",
-    "tar-fs": "1.16.0",
+    "tar-fs": "1.16.2",
     "thenify": "3.3.0"
   },
   "scripts": {
