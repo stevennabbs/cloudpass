@@ -49,6 +49,11 @@ module.exports = {
                     defaultValue: '{"providerId": "cloudpass"}',
                     allowNull: false
                 },
+                passwordAuthenticationAllowed: {
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
                 createdAt: {
                     allowNull: false,
                     type: DataTypes.DATE

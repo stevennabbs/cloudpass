@@ -15,7 +15,7 @@ const getHrefGroup = (groupId, defaultResult) =>
 //the root URL is only protocol + host
 exports.getRootUrl = getHrefGroup(2, '');
 
-//the base URL also includes the protocol version (/v1)
+//the base URL also includes the API version (/v1)
 exports.getBaseUrl = getHrefGroup(1, '/v1');
 
 //unqualifyHref removes the base URL
@@ -33,6 +33,6 @@ exports.resolveHref = href => Optional.of(href)
         .filter(_.matchesProperty('length', 2))
         .flatMap(hrefSplit =>
             Optional.ofNullable(_.find(_.values(models.sequelize.models), _.matchesProperty('options.name.plural', hrefSplit[0])))
-                .map(_.method('build', {id :hrefSplit[1]}))
+                .map(_.method('build', {id: hrefSplit[1]}))
         ).orElse(null);
 

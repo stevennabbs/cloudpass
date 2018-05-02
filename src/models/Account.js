@@ -4,6 +4,7 @@ const _ = require('lodash');
 const BluebirdPromise = require('sequelize').Promise;
 const bcrypt = BluebirdPromise.promisifyAll(require('bcryptjs'));
 const Optional = require('optional-js');
+const Op = require('sequelize').Op;
 const addAccountStoreAccessors = require('./helpers/addAccountStoreAccessors');
 const ModelDecorator = require('./helpers/ModelDecorator');
 
@@ -165,8 +166,60 @@ module.exports = function (sequelize, DataTypes) {
             );
         },
         afterAssociate: models => {
-            addAccountStoreAccessors(models.account, models.application);
-            addAccountStoreAccessors(models.account, models.organization);
+            const accountModel = models.account;
+            addAccountStoreAccessors(accountModel, models.application);
+            addAccountStoreAccessors(accountModel, models.organization);
+            accountModel.addFindAndCount(
+                models.accountLink,
+                function(options){
+                    return _.defaults(
+                        {
+                            where: {
+                                [Op.and]:[
+                                    {
+                                        [Op.or]: {
+                                            leftAccountId: this.id,
+                                            rightAccountId: this.id
+                                        }
+                                    },
+                                    _.get(options, 'where')
+                                ]
+                            }
+                        },
+                        options
+                    );
+                }
+            );
+            accountModel.addFindAndCount(
+                accountModel,
+                function(options){
+                    return _.defaults(
+                        {
+                            where: {
+                                [Op.and]:[
+                                    {
+                                        [Op.or] : _([['left', 'right'], ['right', 'left']])
+                                                    .map(([idSide, selectedSide]) =>
+                                                        sequelize.dialect.QueryGenerator.selectQuery(
+                                                            models.accountLink.tableName,
+                                                            {
+                                                                attributes: [`${selectedSide}AccountId`],
+                                                                where: { [`${idSide}AccountId`]: this.id }
+                                                            }
+                                                        ).slice(0,-1) // to remove the ';' from the end of the SQL
+                                                    )
+                                                    .map(accountIdSubSelect => ({id: {[Op.in]: sequelize.literal(`(${accountIdSubSelect})`)}}))
+                                                    .value()
+                                    },
+                                    _.get(options, 'where')
+                                ]
+                            }
+                        },
+                       options
+                    );
+                },
+                'linkedAccounts'
+            );
         }
     })
     .withSearchableAttributes('id', 'email', 'username',  'givenName', 'middleName', 'surname', 'status')

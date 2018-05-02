@@ -27,20 +27,20 @@ const defaultClassMethods = {
              }.bind(this),
              this.build({}));
     },
-    addFindAndCount: function(target, transformOptions){
+    addFindAndCount: function(target, transformOptions, as = target.options.name.plural){
         //pseudo association defined by custom accessors
         var accessorTypes = {get: 'findAll', count: 'count'};
         _.set(
              this,
-             'customAssociations.'+target.options.name.plural,
+             `customAssociations.${as}`,
              {
                  target: target,
                  associationType: 'hasMany',
-                 accessors: _.mapValues(accessorTypes, function(v, k){return k+_.upperFirst(target.options.name.plural);})
+                 accessors: _.mapValues(accessorTypes, function(v, k){return k+_.upperFirst(as);})
              }
         );
         Object.keys(accessorTypes).forEach(function(accessorType){
-            this.prototype[this.customAssociations[target.options.name.plural].accessors[accessorType]] = function(options){
+            this.prototype[this.customAssociations[as].accessors[accessorType]] = function(options){
                 return target[accessorTypes[accessorType]](transformOptions.call(this, options));
             };
         }.bind(this));

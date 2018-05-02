@@ -7,6 +7,7 @@ const Optional = require('optional-js');
 const accountStoreController = require('../helpers/accountStoreController');
 const controllerHelper = require('../helpers/controllerHelper');
 const samlHelper = require('../helpers/samlHelper');
+const accountHelper = require('../helpers/accountHelper');
 const models = require('../../models');
 const sendJwtResponse = require('../../apps/helpers/sendJwtResponse');
 const ApiError = require('../../ApiError');
@@ -91,25 +92,27 @@ controller.consumeSamlAssertion = function(req, res){
                 }
            })
            .spread((account, created) => {
-               var providerData = _.defaults({providerId: 'saml'}, _.mapValues(samlResponse.user.attributes, _.head));
+                const providerData = _.defaults({providerId: 'saml'}, _.mapValues(samlResponse.user.attributes, _.head));
+                const application = hrefHelper.resolveHref(req.authInfo.app_href);
                 return BluebirdPromise.join(
                     account.update(
                     //'_.fromPairs' doesn't support property paths (customData.xxx), so we use zipObjectDeep(zip) instead
                       _.spread(_.zipObjectDeep)(_.spread(_.zip)(
                         _(mappingRules.items)
-                           //get account attribute lists and their new value
-                           .map(_.over(_.property('accountAttributes'), _.flow(_.property('name'), _.propertyOf(providerData))))
-                           //make pairs of account attribute/value (obviously)
-                           .flatMap(_.spread(_.overArgs(_.map, [_.identity, _.flow(_.constant, _.partial(_.over, _.identity))])))
-                            //add provider data
-                           .tap(_.method('push', ['providerData', providerData]))
-                           .value()
+                          //get account attribute lists and their new value
+                          .map(_.over(_.property('accountAttributes'), _.flow(_.property('name'), _.propertyOf(providerData))))
+                          //make pairs of account attribute/value (obviously)
+                          .flatMap(_.spread(_.overArgs(_.map, [_.identity, _.flow(_.constant, _.partial(_.over, _.identity))])))
+                           //add provider data
+                          .tap(_.method('push', ['providerData', providerData]))
+                          .value()
                       ))
-                    ),
+                    )
+                    .then(account => accountHelper.getLinkedAccount(account, application.id)),
                     created,
-                    hrefHelper.resolveHref(req.authInfo.app_href).getLookupAccountStore(req.authInfo.onk)
-              );
-           })
+                    application.getLookupAccountStore(req.authInfo.onk)
+                );
+            })
         )
     )
     .tap(([account, created, accountStore]) =>

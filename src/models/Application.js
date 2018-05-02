@@ -41,11 +41,15 @@ module.exports = function (sequelize, DataTypes) {
                         fields: ['name', 'tenantId']
                 }],
                 hooks: {
-                  beforeCreate: function(instance) {
-                    return this.sequelize.models.invitationPolicy.create({tenantId: instance.tenantId})
-                      .then(function(invitationPolicy) {
-                        instance.set('invitationPolicyId', invitationPolicy.id);
-                      });
+                    beforeCreate: function(instance) {
+                        return instance.sequelize.Promise.join(
+                          this.sequelize.models.invitationPolicy.create({tenantId: instance.tenantId}),
+                          this.sequelize.models.accountLinkingPolicy.create({tenantId: instance.tenantId})
+                        )
+                        .spread((invitationPolicy, accountLinkingPolicy) => {
+                           instance.set('invitationPolicyId', invitationPolicy.id);
+                           instance.set('accountLinkingPolicyId', accountLinkingPolicy.id);
+                        });
                   }
                 },
                 getterMethods: {
@@ -127,6 +131,7 @@ module.exports = function (sequelize, DataTypes) {
                }
             );
             models.application.belongsTo(models.invitationPolicy, {onDelete: 'cascade'});
+            models.application.belongsTo(models.accountLinkingPolicy, {onDelete: 'cascade'});
         },
         afterAssociate: models => {
             addAccountStoreAccessors(models.application, models.account);

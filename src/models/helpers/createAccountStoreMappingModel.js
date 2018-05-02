@@ -49,7 +49,7 @@ module.exports = function(mappedModel, mappingModel, accountStoreTypes){
                                 unique: true,
                                 fields: [mappedModel+'Id', 'accountStoreType', 'accountStoreId' ],
                                 //avoid too long index names (max 64 characters for postgres)
-                                name: mappingModel.toLowerCase()+'_'+'accountstore'+'_'+mappedModel.toLowerCase()
+                                name: `${mappingModel.toLowerCase()}_accountstore_${mappedModel.toLowerCase()}`
                             }
                         ],
                         hooks: {

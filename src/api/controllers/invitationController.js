@@ -50,7 +50,7 @@ function sendEmail(invitation, apiKey) {
                                       }
                                     ),
                                     models.idSite.findOne({attributes: ['url']}).get('url'),
-                                    accountHelper.findAccount(invitation.email, application.id)
+                                    accountHelper.findCloudAccount(invitation.email, application.id)
                                   )
                                   .spread((jwt, idSiteUrl, account) => ({url: idSiteUrl + '/#/'+Optional.ofNullable(account).map(_.constant('')).orElse('register')+'?jwt=' + jwt}))
               )

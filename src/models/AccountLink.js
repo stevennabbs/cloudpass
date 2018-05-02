@@ -5,7 +5,7 @@ const ModelDecorator = require('./helpers/ModelDecorator');
 module.exports = function (sequelize, DataTypes) {
     return new ModelDecorator(
         sequelize.define(
-            'groupMembership',
+            'accountLink',
             {
                 id: {
                     primaryKey: true,
@@ -17,18 +17,18 @@ module.exports = function (sequelize, DataTypes) {
             {
                 indexes: [{
                     unique: true,
-                    fields: ['accountId', 'groupId']
+                    fields: ['leftAccountId', 'rightAccountId']
                 }]
             }
         )
     )
     .withClassMethods({
         associate: models => {
-            models.groupMembership.belongsTo(models.tenant, {onDelete: 'cascade'});
-            models.groupMembership.belongsTo(models.account, {onDelete: 'cascade'});
-            models.groupMembership.belongsTo(models.group, {onDelete: 'cascade'});
+            models.accountLink.belongsTo(models.tenant, {onDelete: 'cascade'});
+            models.accountLink.belongsTo(models.account, {as: 'leftAccount', onDelete: 'cascade'});
+            models.accountLink.belongsTo(models.account, {as: 'rightAccount', onDelete: 'cascade'});
         }
     })
-    .withSettableAttributes('group', 'account')
+    .withSettableAttributes('leftAccount', 'rightAccount')
     .end();
 };

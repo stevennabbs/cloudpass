@@ -84,7 +84,7 @@ controller.authenticate = function(req, res) {
 
 controller.createPasswordResetToken = function(req, res) {
   controllerHelper.queryAndExpand(
-    () => accountHelper.findAccount(
+    () => accountHelper.findCloudAccount(
       req.swagger.params.attributes.value.email,
       req.swagger.params.id.value,
       _.defaultTo(_.get(req.authInfo, 'asnk'), _.get(req.swagger.params.attributes.value.accountStore, 'nameKey')),
@@ -211,7 +211,7 @@ controller.consumePasswordResetToken = function(req, res) {
 };
 
 controller.resendVerificationEmail = function(req, res) {
-  accountHelper.findAccount(
+  accountHelper.findCloudAccount(
       req.swagger.params.attributes.value.login,
       req.swagger.params.id.value,
       _.defaultTo(_.get(req.authInfo, 'asnk'), _.get(req.swagger.params.attributes.value.accountStore, 'nameKey')),

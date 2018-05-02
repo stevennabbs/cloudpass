@@ -1,13 +1,25 @@
 "use strict";
 module.exports = {
-    up: function(migration, DataTypes) {
+    up: function(migration, DataTypes, models) {
         return migration.createTable(
-            'groupMemberships',
+            'accountLinks',
             {
                 id: {
                     primaryKey: true,
                     type: DataTypes.UUID,
                     allowNull: false
+                },
+                leftAccountId: {
+                    type: DataTypes.UUID,
+                    allowNull: false,
+                    references: {model: "accounts"},
+                    onDelete: "cascade"
+                },
+                rightAccountId: {
+                    type: DataTypes.UUID,
+                    allowNull: false,
+                    references: {model: "accounts"},
+                    onDelete: "cascade"
                 },
                 createdAt: {
                     allowNull: false,
@@ -22,32 +34,20 @@ module.exports = {
                     allowNull: false,
                     references: {model: "tenants"},
                     onDelete: "cascade"
-                },
-                accountId:{
-                    type: DataTypes.UUID,
-                    allowNull: false,
-                    references: {model: "accounts"},
-                    onDelete: "cascade"
-                },
-                groupId:{
-                    type: DataTypes.UUID,
-                    allowNull: false,
-                    references: {model: "groups"},
-                    onDelete: "cascade"
                 }
             }
         )
         .then(() => migration.addConstraint(
-            'groupMemberships',
-            ['accountId', 'groupId'],
+            'accountLinks',
+            ['leftAccountId', 'rightAccountId'],
             {
               type: 'unique',
-              name: 'groupMemberships_accountId_groupId_uk'
+              name: 'accountLinks_leftAccountId_rightAccountId_uk'
             }
         ));
     },
 
     down: function(migration) {
-        return migration.dropTable("groupMemberships");
+        return migration.dropTable("accountLinks");
     }
 };

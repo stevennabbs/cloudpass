@@ -1892,6 +1892,8 @@ paths:
             - applications
             - organizations
             - factors
+            - accountLinks
+            - linkedAccounts
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -3587,6 +3589,119 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /accountLinkingPolicies/{id}:
+    x-swagger-router-controller: accountLinkingPolicyController
+    get:
+      summary: retrieve the account linking policy from its ID
+      description: retrieve the account linking policy from its ID
+      tags:
+        - account linking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: account linking policy found
+          schema:
+            $ref: "#/definitions/AccountLinkingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update an account linking policy
+      description: update the account linking policy with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - account linking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              status:
+                $ref: "#/definitions/Status"
+              automaticProvisioning:
+                $ref: "#/definitions/Status"
+      responses:
+        "200":
+          description: account linking policy updated
+          schema:
+            $ref: "#/definitions/AccountLinkingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLinks:
+    x-swagger-router-controller: accountLinkController
+    post:
+      summary: create an account link
+      description: create an account link
+      operationId: create
+      tags:
+        - account links
+      parameters:
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - leftAccount
+              - rightAccount
+            properties:
+              leftAccount:
+                $ref: "#/definitions/ResourceReference"
+              rightAccount:
+                $ref: "#/definitions/ResourceReference"
+      responses:
+        "200":
+          description: account link created
+          schema:
+            $ref: "#/definitions/AccountLink"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLinks/{id}:
+    x-swagger-router-controller: accountLinkController
+    get:
+      summary: retrieve an account link from its ID
+      description: retrieve an account link from its ID
+      tags:
+        - account links
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: account link found
+          schema:
+            $ref: "#/definitions/AccountLink"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete an account link
+      description: delete an account link
+      tags:
+        - account links
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: account link deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+
 definitions:
   Resource:
     type: object
@@ -3707,6 +3822,7 @@ definitions:
           - passwordResetTokens
           - samlPolicy
           - invitationPolicy
+          - accountLinkingPolicy
           - customData
         properties:
           name:
@@ -3736,6 +3852,8 @@ definitions:
           samlPolicy:
             $ref: "#/definitions/ResourceReference"
           invitationPolicy:
+            $ref: "#/definitions/ResourceReference"
+          accountLinkingPolicy:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3863,6 +3981,8 @@ definitions:
           - failedLoginAttempts
           - lastLoginAttempt
           - passwordAuthenticationAllowed
+          - accountLinks
+          - linkedAccounts
         properties:
           email:
             type: string
@@ -3909,6 +4029,10 @@ definitions:
           customData:
             $ref: "#/definitions/ResourceReference"
           providerData:
+            $ref: "#/definitions/ResourceReference"
+          accountLinks:
+            $ref: "#/definitions/ResourceReference"
+          linkedAccounts:
             $ref: "#/definitions/ResourceReference"
   AccountStoreMapping:
     allOf:
@@ -4391,6 +4515,30 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           customData:
             type: object
+  AccountLinkingPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - status
+          - automaticProvisioning
+        properties:
+          status:
+            $ref: "#/definitions/Status"
+          automaticProvisioning:
+            $ref: "#/definitions/Status"
+  AccountLink:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - leftAccount
+          - rightAccount
+        properties:
+          leftAccount:
+            $ref: "#/definitions/ResourceReference"
+          rightAccount:
+            $ref: "#/definitions/ResourceReference"
 parameters:
   Id:
     name: id

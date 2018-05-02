@@ -96,7 +96,7 @@ describe('Application', function() {
                     .expect(200);
             })
             .then(function(res){
-                //the should be one directory & one group
+                //there should be one directory & one group
                 assert.strictEqual(res.body.directories.size, 1);
                 assert.strictEqual(res.body.directories.items[0].id, directoryId);
                 assert.strictEqual(res.body.groups.size, 1);

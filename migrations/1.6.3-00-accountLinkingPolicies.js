@@ -1,20 +1,20 @@
 "use strict";
-
-var fs = require("fs");
-var yaml = require('js-yaml');
-var _ = require('lodash');
-
 module.exports = {
     up: function(migration, DataTypes, models) {
         return migration.createTable(
-            'invitationPolicies',
+            'accountLinkingPolicies',
             {
                 id: {
                     primaryKey: true,
                     type: DataTypes.UUID,
                     allowNull: false
                 },
-                invitationEmailStatus: {
+                status: {
+                    type: DataTypes.STRING(8),
+                    allowNull: false,
+                    defaultValue: 'DISABLED'
+                },
+                automaticProvisioning: {
                     type: DataTypes.STRING(8),
                     allowNull: false,
                     defaultValue: 'DISABLED'
@@ -38,21 +38,21 @@ module.exports = {
         .then(() =>
           migration.addColumn(
             'applications',
-            'invitationPolicyId',
+            'accountLinkingPolicyId',
             {
               type: DataTypes.UUID,
-              references: {model: "invitationPolicies"},
+              references: {model: "accountLinkingPolicies"},
               onDelete: "cascade"
             }
           )
         )
         .then(() => models.application
               .findAll({attributes: ['id', 'tenantId']})
-              .map(application => application.createInvitationPolicy({tenantId: application.tenantId}))
+              .map(application => application.createAccountLinkingPolicy({tenantId: application.tenantId}))
         );
     },
 
     down: function(migration) {
-        return migration.dropTable('invitationPolicies');
+        return migration.dropTable("accountLinkingPolicies");
     }
 };

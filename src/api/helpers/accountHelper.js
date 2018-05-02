@@ -33,30 +33,44 @@ exports.getSubAccountStore = function(accountStore, subAccountStoreHref){
             .orElse(accountStore);
 };
 
-exports.findAccount = function(login, applicationId, organizationName, accountStoreHref, ...include){
+exports.findCloudAccount = function(login, applicationId, organizationName, accountStoreHref, ...directoryIncludes){
     //username and password are persisted lowercased to allow for case insensitive search
     var lowerCaseLogin = login.toLowerCase();
     return models.application.build({id: applicationId}, {isNewRecord: false})
             .getLookupAccountStore(organizationName)
             .then(as => exports.getSubAccountStore(as, accountStoreHref))
             .then(as => as.getAccounts({
-                where: { [Op.or]: [{email: lowerCaseLogin}, {username: lowerCaseLogin} ]},
+                where: {
+                    '$directory.provider.id$': null, //cloud directories don't have associated providers
+                    [Op.or]: [{email: lowerCaseLogin}, {username: lowerCaseLogin} ]
+                },
                 limit: 1,
-                include
+                include: [
+                    {
+                        model: models.directory,
+                        required: true,
+                        attributes: ['id'],
+                        include: [
+                            ...directoryIncludes,
+                            {
+                                model: models.directoryProvider,
+                                as: 'provider',
+                                attributes: ['id']
+                            }
+                        ]
+                    }
+                ]
             }))
             .get(0);
 };
 
 exports.authenticateAccount = function(login, password, applicationId, organizationName, accountStoreHref){
-    return exports.findAccount(
+    return exports.findCloudAccount(
             login,
             applicationId,
             organizationName,
             accountStoreHref,
-            {
-                model: models.directory,
-                include: [{model : models.accountLockingPolicy}]
-            }
+            {model : models.accountLockingPolicy}
         )
         .then(function(account){
            ApiError.assert(account, ApiError, 400, 7104, 'Login attempt failed because there is no Account in the Application’s associated Account Stores with the specified username or email.');
@@ -103,6 +117,68 @@ exports.authenticateAccount = function(login, password, applicationId, organizat
                            });
 
                        }
-                   });
+                   })
+                   .then(a => exports.getLinkedAccount(a, applicationId));
         });
 };
+
+// ignore until jshint  supports async/await, c.f. https://github.com/jshint/jshint/issues/2604
+/* jshint ignore:start */
+exports.getLinkedAccount = async (account, applicationId) =>
+    //check that account linking policy is enabled and that the default account store is a directory
+    Optional.ofNullable(await models.application.findById(
+            applicationId,
+            {
+                attributes: [],
+                include: [
+                    {
+                        model: models.accountStoreMapping,
+                        as: 'defaultAccountStoreMapping',
+                        attributes: ['accountStoreId'],
+                        required: true,
+                        where: { accountStoreType: 'directory' }
+                    },
+                    {
+                        model: models.accountLinkingPolicy,
+                        attributes: ['status', 'automaticProvisioning'],
+                        required: true,
+                        where: {status: 'ENABLED'}
+                    }
+                ]
+            }
+    ))
+    //return the authenticated account if it belongs to the default directory
+    .filter(application => application.defaultAccountStoreMapping.accountStoreId !== account.directoryId)
+    .map(async application =>
+        //look for a linked account in the default directory
+        Optional.ofNullable (
+            await account.getLinkedAccounts({
+                where: { directoryId: application.defaultAccountStoreMapping.accountStoreId },
+                limit: 1
+            })
+        )
+        .map(_.head)
+        .orElseGet(() =>
+            //no linked account, create one if automatic provisioning is enabled
+            Optional.of(application.accountLinkingPolicy)
+                .filter(alp => alp.automaticProvisioning === 'ENABLED')
+                .map(async () => {
+                    const linkedAccount = (await models.account.findOrCreate({
+                        where: {
+                            email: account.email,
+                            directoryId: application.defaultAccountStoreMapping.accountStoreId
+                        },
+                        defaults: _.omit(account.dataValues, ['id', 'directoryId', 'createdAt', 'modifiedAt'])
+                    }))[0];
+                    await models.accountLink.create({
+                        leftAccountId: account.id,
+                        rightAccountId: linkedAccount.id,
+                        tenantId: linkedAccount.tenantId
+                    });
+                    return linkedAccount;
+                })
+                .orElse(account)
+        )
+    )
+    .orElse(account);
+/* jshint ignore:end */

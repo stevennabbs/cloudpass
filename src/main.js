@@ -1,6 +1,6 @@
 'use strict';
 
-const ssaclCls = require('continuation-local-storage').createNamespace('sequelize-cls');
+const ssaclCls = require('cls-hooked').createNamespace('sequelize-cls');
 const express = require('express');
 const cluster = require('cluster');
 const cookieParser = require('cookie-parser');
