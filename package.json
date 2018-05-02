@@ -24,7 +24,7 @@
   },
   "main": "src/main.js",
   "dependencies": {
-    "@fczbkk/url-match": "3.3.4",
+    "@fczbkk/url-match": "3.3.5",
     "auth-header": "0.3.1",
     "bcryptjs": "2.4.3",
     "body-parser": "1.18.2",
@@ -37,7 +37,7 @@
     "health-checkup": "1.0.19",
     "js-yaml": "3.11.0",
     "jsonwebtoken": "8.2.1",
-    "lodash": "4.17.5",
+    "lodash": "4.17.9",
     "moment": "2.22.1",
     "morgan": "1.9.0",
     "nocache": "2.0.0",
@@ -66,7 +66,7 @@
   "devDependencies": {
     "bootprint": "1.0.2",
     "bootprint-openapi": "1.1.0",
-    "coveralls": "3.0.0",
+    "coveralls": "3.0.1",
     "cross-conf-env": "1.1.2",
     "dockerode": "2.5.5",
     "dockerode-promise": "0.1.0",
