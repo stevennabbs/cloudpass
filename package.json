@@ -84,7 +84,7 @@
     "smtp-tester": "1.1.0",
     "sqlite3": "3.1.13",
     "superagent": "3.8.2",
-    "supertest": "3.0.0",
+    "supertest": "3.1.0",
     "tar-fs": "1.16.2",
     "thenify": "3.3.0"
   },
