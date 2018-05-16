@@ -209,7 +209,7 @@ You can use in Mandrill templates the same Handlebars placeholders as when you d
 - `{{account.username}}`
 - `{{account.email}}`
 - `{{account.directory.name}}`
-- `{{this.url}}` (the use of `this` is necessary because `url` is also the name of a Handlebar helper function)
+- `{{this.url}}` (the use of `this` is necessary because `url` is also the name of a Handlebars helper function)
 - `{{cptoken}}`
 - `{{cptokennamevaluepair}}`
 
