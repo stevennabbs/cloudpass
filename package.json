@@ -74,7 +74,7 @@
     "gh-pages-travis": "1.0.4",
     "gulp": "3.9.1",
     "gulp-deb": "0.2.1",
-    "gulp-rename": "1.2.2",
+    "gulp-rename": "1.2.3",
     "istanbul": "1.1.0-alpha.1",
     "jshint": "2.9.5",
     "merge-stream": "1.0.1",
