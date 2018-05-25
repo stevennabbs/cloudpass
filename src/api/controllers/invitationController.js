@@ -59,12 +59,12 @@ function sendEmail(invitation, apiKey) {
             .then(placeHolderValues =>
                   //add applications, organization & fromAccount placeholders
                   BluebirdPromise.join(
-                    Optional.ofNullable(invitation.organizationId).map(() => invitation.getOrganization({attributes: ['name']})).orElseGet(_.stubObject),
+                    Optional.ofNullable(invitation.organizationId).map(() => invitation.getOrganization({attributes: ['name', 'nameKey', 'description']})).orElseGet(_.stubObject),
                     Optional.ofNullable(invitation.fromAccountId).map(() => invitation.getFromAccount({attributes: ['givenName', 'surname', 'username', 'email']})).orElseGet(_.stubObject)
                   )
                   .spread((organization, fromAccount) => {
                     placeHolderValues.application = _.pick(application, ['name']);
-                    placeHolderValues.organization = _.pick(organization, ['name']);
+                    placeHolderValues.organization = _.pick(organization, ['name', 'nameKey', 'description']);
                     placeHolderValues.fromAccount = _.pick(fromAccount, ['givenName', 'fullName', 'surname', 'username', 'email']);
                     email.send(
                       {email: invitation.email},
