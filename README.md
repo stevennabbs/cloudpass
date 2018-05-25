@@ -213,6 +213,17 @@ You can use in Mandrill templates the same Handlebars placeholders as when you d
 - `{{cptoken}}`
 - `{{cptokennamevaluepair}}`
 
+Invitation emails can additionnaly use the following placeholders:
+- `{{application.name}}`
+- `{{organization.name}}`
+- `{{organization.namekey}}`
+- `{{organization.description}}`
+- `{{fromAccount.givenName}}`
+- `{{fromAccount.fullName}}`
+- `{{fromAccount.surname}}`
+- `{{fromAccount.username}}`
+- `{{fromAccount.email}}`
+
 ### Logging
 
 Four loggers can be configured in the *logging* section:
