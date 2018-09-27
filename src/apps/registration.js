@@ -54,11 +54,9 @@ app.post('/', function(req, res){
                         tenantId: tenantId
                     })
                 );
-            })
-            .then(function(){
-                return res.status(204).end();
             });
         })
+        .then(function(){ res.status(204).json(); })
         .catch(req.next);
 });
 

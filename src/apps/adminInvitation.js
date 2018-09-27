@@ -58,12 +58,10 @@ app.post('/', function(req, res){
            })
            .then(function(){
                return invitation.destroy();
-           })
-           .then(function(){
-               return res.status(204).end();
            });
        });
     })
+    .then(function(){ res.status(204).json(); })
     .catch(req.next);
 });
 
