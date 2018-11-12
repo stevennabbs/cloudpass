@@ -1,7 +1,10 @@
 "use strict";
 
+const ModelDecorator = require('./helpers/ModelDecorator');
+
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'groupMembership',
             {
                 id: {
@@ -12,27 +15,20 @@ module.exports = function (sequelize, DataTypes) {
                 }
             },
             {
-                indexes: [
-                    {
-                        unique: true,
-                        fields: ['accountId', 'groupId', 'tenantId']
-                    }
-                ],
-                classMethods: {
-                    associatePriority: function(){
-                        //'through' association seem to reset the instance prototypes
-                        //the associations of accountStoreMappings must be declared last
-                        return 1;
-                    },
-                    getSettableAttributes: function(){
-                        return ['group', 'account'];
-                    },
-                    associate: function(models) {
-                        models.groupMembership.belongsTo(models.tenant, {onDelete: 'cascade'});
-                        models.groupMembership.belongsTo(models.account, {onDelete: 'cascade'});
-                        models.groupMembership.belongsTo(models.group, {onDelete: 'cascade'});
-                    }
-                }
+                indexes: [{
+                    unique: true,
+                    fields: ['accountId', 'groupId']
+                }]
             }
-    );
+        )
+    )
+    .withClassMethods({
+        associate: models => {
+            models.groupMembership.belongsTo(models.tenant, {onDelete: 'cascade'});
+            models.groupMembership.belongsTo(models.account, {onDelete: 'cascade'});
+            models.groupMembership.belongsTo(models.group, {onDelete: 'cascade'});
+        }
+    })
+    .withSettableAttributes('group', 'account')
+    .end();
 };

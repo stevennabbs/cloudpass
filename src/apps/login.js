@@ -10,6 +10,7 @@ var url = require('url');
 var models = require('../models');
 var ApiError = require('../ApiError.js');
 var authenticateAccount = require('../api/helpers/accountHelper').authenticateAccount;
+var errorHandler = require('./helpers/errorHandler');
 
 var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
@@ -27,7 +28,7 @@ app.post('/', function(req, res){
     .then(function(tenant){
         ApiError.assert(tenant, ApiError, 400, 400, 'Invalid tenant name');
         req.app.get('ssaclCls').set('actor', tenant.id);
-        return authenticateAccount(tenant.applications[0].id, req.body.email, req.body.password);
+        return authenticateAccount(req.body.email, req.body.password, tenant.applications[0].id);
     })
     .then(function(account){
         return signJwt({tenantId: account.tenantId, accountId: account.id}, req.app.get('secret'), {expiresIn: '1d', audience: 'admin'});
@@ -36,7 +37,11 @@ app.post('/', function(req, res){
         return res.cookie(
                 'sessionToken',
                 token,
-                {httpOnly: true, path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/v1').pathname}
+                {
+                    httpOnly: true,
+                    signed: true,
+                    path: url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/v1/').pathname
+                }
             )
             .status(204)
             .end();
@@ -44,12 +49,6 @@ app.post('/', function(req, res){
     .catch(req.next);
 });
 
-app.use(function (err, req, res, next) {
-    if (res.headersSent) {
-        return next(err);
-    }
-    ApiError.FROM_ERROR(err).write(res);
-    res.end();    
-});
+app.use(errorHandler);
 
 module.exports = app;

@@ -34,7 +34,7 @@ describe('resource CRUD', function () {
                     assert(res.body.modifiedAt);
                 });
     });
-    
+
     it('update custom data', function () {
         return init.postRequest('directories/' + directoryId + '/customData')
                 .send({a: 'b', c: 'd'})
@@ -50,8 +50,7 @@ describe('resource CRUD', function () {
                 .expect(204)
                 .then(function () {
                     return init.getRequest('directories/' + directoryId + '/customData')
-                        .expect(200)
-                        .toPromise();
+                        .expect(200);
                 })
                 .then(function (res) {
                     assert.strictEqual(res.body.a, undefined);
@@ -64,8 +63,7 @@ describe('resource CRUD', function () {
                 .expect(204)
                 .then(function () {
                     return init.getRequest('directories/' + directoryId + '/customData')
-                        .expect(200)
-                        .toPromise();
+                        .expect(200);
                 })
                 .then(function (res) {
                     assert.strictEqual(res.body.a, undefined);
@@ -78,8 +76,7 @@ describe('resource CRUD', function () {
                 .expect(204)
                 .then(function () {
                     return init.getRequest('directories/' + directoryId)
-                        .expect(404)
-                        .toPromise();
+                        .expect(404);
                 });
     });
 

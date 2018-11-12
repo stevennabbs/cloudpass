@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-- stable
+- 8
 addons:
   # c.f. https://docs.travis-ci.com/user/languages/javascript-with-nodejs#Node.js-v4-(or-io.js-v3)-compiler-requirements
   apt:
@@ -29,6 +29,7 @@ after_success:
 - npm run gh-pages
 deploy:
   provider: script
+  skip_cleanup: true
   script: npm run deploy-deb
   on:
     tags: true

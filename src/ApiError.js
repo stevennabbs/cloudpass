@@ -1,22 +1,24 @@
 "use strict";
 
+var ExtendableError = require('es6-error');
+var _ = require('lodash');
 var util = require('util');
 var thr = require('throw');
 
-function ApiError(status, code) {
-    Error.captureStackTrace(this, this.constructor);
-    this.name = this.constructor.name;
-    this.status = status;
-    this.code = code;
-    this.message = util.format.apply(null, Array.prototype.slice.call(arguments, 2));
-    this.developerMessage = this.message;
-    this.moreInfo = '';
+class ApiError extends ExtendableError{
+    constructor(status, code, message, ...messageParams) {
+        super(util.format(message, ...messageParams));
+        this.name = this.constructor.name;
+        this.status = status;
+        this.code = code;
+        this.developerMessage = this.message;
+        this.moreInfo = '';
+    }
+    
+    write(res){
+        return res.status(this.status).json(this);
+    }
 }
-util.inherits(ApiError, Error);
-
-ApiError.prototype.write = function (res) {
-    return res.status(this.status).json(this);
-};
 
 ApiError.BAD_REQUEST = function (message) {
     return new ApiError(400, 400, message);
@@ -28,10 +30,10 @@ ApiError.INVALID_TOKEN = new ApiError(400, 10017, 'Invalid token');
 ApiError.FROM_ERROR = function (error) {
     return (error instanceof ApiError) ? error : new ApiError(500, 500, error.message || 'error');
 };
-ApiError.assert = function(condition){
-     if(!condition){
-         thr.apply(null, Array.prototype.slice.call(arguments, 1));
-     }
+ApiError.assert = function(condition, error, ...errorParams){
+     return condition || thr(error, ...errorParams);
 };
+ApiError.assertFound = _.partial(ApiError.assert, _, ApiError.NOT_FOUND);
+ApiError.assertOrError = _.partial(ApiError.assert, _, ApiError);
 
 module.exports = ApiError;

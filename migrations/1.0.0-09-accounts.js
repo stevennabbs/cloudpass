@@ -17,8 +17,7 @@ module.exports = {
                     type: DataTypes.STRING
                 },
                 password: {
-                    type: DataTypes.STRING(60),
-                    allowNull: false
+                    type: DataTypes.STRING(60)
                 },
                 givenName: {
                     type: DataTypes.STRING,
@@ -41,8 +40,19 @@ module.exports = {
                     defaultValue: 'ENABLED'
                 },
                 customData: {
-                    type: DataTypes.STRING(1024),
-                    defaultValue: "{}"
+                    type: DataTypes.JSON,
+                    defaultValue: {},
+                    allowNull: false
+                },
+                providerData: {
+                    type: DataTypes.TEXT,
+                    defaultValue: '{"providerId": "cloudpass"}',
+                    allowNull: false
+                },
+                passwordAuthenticationAllowed: {
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
                 },
                 createdAt: {
                     allowNull: false,

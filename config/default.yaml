@@ -1,32 +1,52 @@
-# Please do not modify this file !
-# Create instead a 'local.yaml' file in the same directory
-# and override the relevant values
+# Do not modify this file !
+# Create instead a 'local.yaml' file in the same directory and override the relevant values,
+# or alternatively set the relevant environment variables (c.f. custom-environment-variables.yaml)
 
 server:
   # URL of cloudpass, used to prefix hrefs. If null, hrefs will be relative paths
   rootUrl: null
   # Port on which the server will listen
   port: 10010
+  # monintoring port, used to expose current application status
+  monitoringPort: 10011
   # If true, the application will be clustered in a number of processes equals to
   # the number of CPU cores (but not more than 4)
   clustering: true
   # path of the folder containing static UI files. These files will be served under /ui
   uiFolder: public
+  # Secret key used to sign cookies (both for admin interface & SSO).
+  # Will be randomly generated if not set
+  secret: null
 
 email:
-  # List of address that will receive a copy of each email sent
-  bcc: null
   # configuration of email transport
   transport:
-    direct: true   
-# Or To use SMTP server:
+    name: null
+    options:
+      direct: true
+  # Optional E-mail message fields
+  fields: null
+# Or To use SMTP server and send carbon copies of each email:
 #  transport:
-#    direct: false
-#    host: smtp.example.com
-#    port: 587
-#    auth:
-#      user: mailer@example.com
-#      pass: xxxxxxx
+#    name: null
+#    options:
+#      direct: false
+#      host: smtp.example.com
+#      port: 587
+#      auth:
+#        user: mailer@example.com
+#        pass: xxxxxxx
+#  fields:
+#    bcc:
+#      - foo@example.com
+#      - bar@example.com
+
+# Or to use mandrill:
+#  transport:
+#    name: nodemailer-mandrill-transport
+#    options:
+#      auth:
+#        apiKey: key
 
 # PostgreSQL persistence, UNIX socket connection using peer authentication
 # TO use TCP sockets, change the 'host' property and add username and password
@@ -34,6 +54,7 @@ persistence:
   database: cloudpass
   options:
     dialect: postgres
+    benchmark: false
     host: /var/run/postgresql
     port: 5432
     pool:
@@ -45,3 +66,33 @@ persistence:
 #  options:
 #    dialect: sqlite
 #    storage: cloudpass.db
+
+
+logging:
+  transports: []
+  loggers:
+    sql: {}
+    http: {}
+    email: {}
+    login: {}
+# You can configure logging that way:
+#logging:
+#   transports:
+#    - winston-log2gelf
+#   loggers:
+#    sql:
+#      console:
+#        level: warn
+#        colorize: true
+#      file:
+#         level: error
+#         timestamp: true
+#         filename: logs/app.log,
+#         maxfiles: 5
+#         maxsize": 10485760
+#      log2gelf:
+#         level: debug
+#         host: 192.168.0.15
+#         port: 12201
+#         protocol: tls
+

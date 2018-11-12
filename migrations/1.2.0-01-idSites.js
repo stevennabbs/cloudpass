@@ -27,6 +27,11 @@ module.exports = {
                     allowNull: false,
                     defaultValue: true
                 },
+                authorizedRedirectURIs: {
+                    type: DataTypes.JSON,
+                    allowNull: false,
+                    defaultValue: ['*']
+                },
                 createdAt: {
                     allowNull: false,
                     type: DataTypes.DATE
@@ -42,13 +47,13 @@ module.exports = {
                     onDelete: "cascade"
                 }
             }
-        );        
+        );
     },
-    
-    
+
+
     down: function(migration) {
         return migration.dropTable("idSites");
     }
-    
+
 };
 

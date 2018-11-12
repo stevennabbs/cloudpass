@@ -223,7 +223,7 @@ paths:
       parameters:
         - name: attributes
           description: new application attributes
-          in: body          
+          in: body
           required: true
           schema:
             type: object
@@ -235,11 +235,8 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
-        - name: createDirectory 
+                $ref: "#/definitions/Status"
+        - name: createDirectory
           in: query
           description: either the name of the directory to create and map to the application, or 'true' (then directory name = application name)
           required: false
@@ -294,10 +291,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -357,12 +351,17 @@ paths:
               value:
                 type: string
               accountStore:
-                $ref: "#/definitions/ResourceReference"
+                type: object
+                properties:
+                  nameKey:
+                    type: string
+                  href:
+                    type: string
       responses:
         "200":
           description: login success
           schema:
-            type: object            
+            type: object
         "default":
           description: error
           schema:
@@ -391,12 +390,17 @@ paths:
                 type: string
                 format: email
               accountStore:
-                $ref: "#/definitions/ResourceReference"
+                type: object
+                properties:
+                  nameKey:
+                    type: string
+                  href:
+                    type: string
       responses:
         "200":
           description: password reset initiated
           schema:
-            $ref: "#/definitions/PasswordResetToken"            
+            $ref: "#/definitions/PasswordResetToken"
         "default":
           description: error
           schema:
@@ -417,7 +421,7 @@ paths:
         "200":
           description: token found
           schema:
-            $ref: "#/definitions/PasswordResetToken"            
+            $ref: "#/definitions/PasswordResetToken"
         "default":
           description: error
           schema:
@@ -483,10 +487,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: group created
@@ -614,7 +615,12 @@ paths:
               login:
                 type: string
               accountStore:
-                $ref: "#/definitions/ResourceReference"
+                type: object
+                properties:
+                  nameKey:
+                    type: string
+                  href:
+                    type: string
       responses:
         "204":
           description: email sent
@@ -625,8 +631,8 @@ paths:
   /applications/{id}/idSiteModel:
     x-swagger-router-controller: applicationController
     get:
-      summary: retrieve a password strength policy from its ID
-      description: retrieve a password strength policy from its ID
+      summary: retrieve an application ID site model
+      description: retrieve an application ID site model
       operationId: getIdSiteModel
       tags:
         - applications
@@ -721,6 +727,33 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /applications/{id}/saml/sso/idpRedirect:
+    x-swagger-router-controller: applicationController
+    get:
+      summary: redirects to the configured SAML identity provider
+      description: redirects to the configured SAML identity provider
+      operationId: samlIdpRedirect
+      tags:
+        - applications
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: accountStore.href
+          in: query
+          description: the account store where SAML was configured
+          required: false
+          type: string
+        - name: accessToken
+          in: query
+          description: JWT access token
+          required: false
+          type: string
+      responses:
+        "302":
+          description: redirection to the Identity provider
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /applications/{id}/{collection}:
     x-swagger-router-controller: applicationController
     get:
@@ -740,6 +773,7 @@ paths:
             - accountStoreMappings
             - directories
             - organizations
+            - invitations
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -777,10 +811,27 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
+              provider:
+                type: object
+                required:
+                  - providerId
+                properties:
+                  providerId:
+                    type: string
+                    enum:
+                      - cloudpass
+                      - saml
+                  clientId:
+                    type: string
+                  clientSecret:
+                    type: string
+                  ssoLoginUrl:
+                    type: string
+                  ssoLogoutUrl:
+                    type: string
+                  encodedX509SigningCert:
+                    type: string
       responses:
         "200":
           description: directory created
@@ -827,13 +878,10 @@ paths:
             properties:
               name:
                 type: string
-              desciption:
+              description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -859,6 +907,89 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /directories/{id}/provider:
+    x-swagger-router-controller: directoryController
+    get:
+      summary: retrieve the directory provider
+      description: retrieve the directory provider
+      operationId: getProvider
+      tags:
+        - directory providers
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/DirectoryProvider"
+        "default":
+           description: error
+           schema:
+             $ref: "#/definitions/Error"
+    post:
+      summary: updates diectory provider information
+      description: updates diectory provider information
+      operationId: updateProvider
+      tags:
+        - directory providers
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              clientId:
+                type: string
+              clientSecret:
+                type: string
+              ssoLoginUrl:
+                type: string
+              ssoLogoutUrl:
+                type: string
+              encodedX509SigningCert:
+                type: string
+      responses:
+        "200":
+          description: updated
+          schema:
+            $ref: "#/definitions/DirectoryProvider"
+        "default":
+           description: error
+           schema:
+             $ref: "#/definitions/Error"
+  /directories/{id}/saml/sso/post:
+    x-swagger-router-controller: directoryController
+    post:
+      summary: consume a SAML assertion
+      description: consume a SAML assertion
+      operationId: consumeSamlAssertion
+      consumes:
+        - application/x-www-form-urlencoded
+      tags:
+        - directories
+        - SAML
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: SAMLResponse
+          description: SAML response
+          in: formData
+          required: true
+          type: string
+        - name: RelayState
+          description: Relay state
+          in: formData
+          required: true
+          type: string
+      responses:
+        "302":
+          description: redirection to the application
+          schema:
+            $ref: "#/definitions/DirectoryProvider"
   /directories/{id}/customData:
     x-swagger-router-controller: directoryController
     get:
@@ -937,7 +1068,7 @@ paths:
         "default":
           description: error
           schema:
-            $ref: "#/definitions/Error"    
+            $ref: "#/definitions/Error"
   /directories/{id}/groups:
     x-swagger-router-controller: directoryController
     post:
@@ -963,10 +1094,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: group created
@@ -1144,10 +1272,7 @@ paths:
               desciption:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -1169,6 +1294,81 @@ paths:
       responses:
         "204":
           description: group deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /groups/{id}/accounts:
+    x-swagger-router-controller: groupController
+    post:
+      summary: create a new account
+      description: create a new account in the specified group
+      operationId: createAccount
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - $ref: "#/parameters/RegistrationWorkflowEnabled"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - password
+              - givenName
+              - surname
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+              username:
+                type: string
+              givenName:
+                type: string
+              middleName:
+                type: string
+              surname:
+                type: string
+              status:
+                type: string
+                enum:
+                  - ENABLED
+                  - DISABLED
+                  - UNVERIFIED
+              customData:
+                type: object
+      responses:
+        "200":
+          description: account created
+          schema:
+            $ref: "#/definitions/Account"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: retrieve the group accounts
+      description: retrieve the group accounts
+      operationId: getAccounts
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/OrderBy"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/CollectionResource"
         "default":
           description: error
           schema:
@@ -1251,7 +1451,7 @@ paths:
         "default":
           description: error
           schema:
-            $ref: "#/definitions/Error"   
+            $ref: "#/definitions/Error"
   /groups/{id}/{collection}:
     x-swagger-router-controller: groupController
     get:
@@ -1273,6 +1473,7 @@ paths:
             - applications
             - accounts
             - organizations
+            - organizationMappings
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -1297,6 +1498,36 @@ paths:
       responses:
         "302":
           description: redirection to the current account
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accounts/emailVerificationTokens/{tokenId}:
+    x-swagger-router-controller: accountController
+    post:
+      summary: consume an email verification token
+      description: consume an email verification token
+      operationId: consumeEmailVerificationToken
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/TokenId"
+        - name: expand
+          in: query
+          description: if the authentified account must be returned
+          required: false
+          type: string
+          enum:
+            - account
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/ResourceReference"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /accounts/{id}:
     x-swagger-router-controller: accountController
     get:
@@ -1345,6 +1576,8 @@ paths:
                 type: string
               surname:
                 type: string
+              passwordAuthenticationAllowed:
+                type: boolean
               status:
                 type: string
                 enum:
@@ -1423,28 +1656,113 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
-  /accounts/emailVerificationTokens/{tokenId}:
+  /accounts/{id}/providerData:
     x-swagger-router-controller: accountController
-    post:
-      summary: consume an email verification token
-      description: consume an email verification token
-      operationId: consumeEmailVerificationToken
+    get:
+      summary: retrieve account provider data
+      description: retrieve account provider data
+      operationId: getProviderData
       tags:
         - accounts
       parameters:
-        - $ref: "#/parameters/TokenId"
-        - name: expand
-          in: query
-          description: if the authentified account must be returned
-          required: false
-          type: string
-          enum:
-            - account
+        - $ref: "#/parameters/Id"
       responses:
         "200":
-          description: success
+          description: found
           schema:
-            $ref: "#/definitions/ResourceReference"
+            $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accounts/{id}/factors:
+    x-swagger-router-controller: accountController
+    post:
+      summary: create a new authentication factor
+      description: create a new authentication factor
+      operationId: createFactor
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - type
+            properties:
+              type:
+                type: string
+                enum:
+                  - google-authenticator
+              status:
+                $ref: "#/definitions/Status"
+              accountName:
+                type: string
+                format: email
+              issuer:
+                type: string
+      responses:
+        "200":
+          description: api keys created
+          schema:
+            $ref: "#/definitions/Factor"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: retrieve the account authentication factors
+      description: retrieve the account authentication factors
+      operationId: getFactors
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/Expand"
+        - $ref: "#/parameters/OrderBy"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accounts/{id}/passwordChanges:
+    x-swagger-router-controller: accountController
+    post:
+      summary: change the password
+      description: change the password of the given user
+      operationId: changePassword
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - currentPassword
+              - newPassword
+            properties:
+              currentPassword:
+                type: string
+              newPassword:
+                type: string
+      responses:
+        "204":
+          description: password changed
         "default":
           description: error
           schema:
@@ -1527,7 +1845,32 @@ paths:
         "default":
           description: error
           schema:
-            $ref: "#/definitions/Error"   
+            $ref: "#/definitions/Error"
+  /accounts/{id}/organizations/{organizationId}:
+    x-swagger-router-controller: accountController
+    post:
+      summary: Select Organization
+      description: Select Organization, ID site only
+      operationId: selectOrganization
+      tags:
+        - accounts
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: organizationId
+          in: path
+          description: Organization ID
+          required: true
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: organization selected
+          schema:
+            type: object
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /accounts/{id}/{collection}:
     x-swagger-router-controller: accountController
     get:
@@ -1548,6 +1891,9 @@ paths:
             - groups
             - applications
             - organizations
+            - factors
+            - accountLinks
+            - linkedAccounts
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -1623,6 +1969,149 @@ paths:
       responses:
         "204":
           description: group membership deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /factors/{id}:
+    x-swagger-router-controller: factorController
+    get:
+      summary: retrieve a factor its ID
+      description: retrieve an authentication factor its ID
+      tags:
+        - factors
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: factor found
+          schema:
+            $ref: "#/definitions/Factor"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update a factor
+      description: update the authentication factor with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - factors
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              status:
+                $ref: "#/definitions/Status"
+              accountName:
+                type: string
+                format: email
+              issuer:
+                type: string
+      responses:
+        "200":
+          description: factor updated
+          schema:
+            $ref: "#/definitions/Factor"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete a factor
+      description: delete a factor
+      tags:
+        - factor
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: factor deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /factors/{id}/challenges:
+    x-swagger-router-controller: factorController
+    post:
+      summary: create a challenge
+      description: create a second factor challenge. Verify it at the same time if a code is provided
+      operationId: getChallenge
+      tags:
+        - factors
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: false
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+      responses:
+        "200":
+          description: challenge created
+          schema:
+            $ref: "#/definitions/Challenge"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /challenges/{id}:
+    x-swagger-router-controller: factorController
+    get:
+      summary: get a challenge
+      description: get a challenge
+      operationId: getChallenge
+      tags:
+       - challenges
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: challenge found
+          schema:
+            $ref: "#/definitions/Challenge"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: verify a challenge
+      description: verify a challenge using the provided code
+      operationId: getChallenge
+      tags:
+       - challenges
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                type: string
+      responses:
+        "200":
+          description: challenge verified (the verification result is in the status attribute)
+          schema:
+            $ref: "#/definitions/Challenge"
         "default":
           description: error
           schema:
@@ -1781,6 +2270,9 @@ paths:
                 enum:
                   - text/plain
                   - text/html
+# commented out because swagger doesn't allow null values
+#              mandrillTemplate:
+#                type: string
               defaultModel:
                 type: object
                 required:
@@ -2015,6 +2507,85 @@ paths:
           description: error
           schema:
             $ref: "#/definitions/Error"
+  /accountLockingPolicies/{id}:
+    x-swagger-router-controller: accountLockingPolicyController
+    get:
+      summary: retrieve the account locking policy from its ID
+      description: retrieve the account locking policy from its ID
+      tags:
+        - account locking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: account locking policy found
+          schema:
+            $ref: "#/definitions/AccountLockingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update an account locking policy
+      description: update the account locking policy with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - account locking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              accountLockedEmailStatus:
+                $ref: "#/definitions/Status"
+              maxFailedLoginAttempts:
+                type: integer
+              accountLockDuration:
+                type: string
+      responses:
+        "200":
+          description: account locking policy updated
+          schema:
+            $ref: "#/definitions/AccountLockingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLockingPolicies/{id}/{collection}:
+    x-swagger-router-controller: accountLockingPolicyController
+    get:
+      summary: retrieve a collection sub-resource from the policy
+      description: retrieve a collection sub-resource from the policy
+      operationId: getCollection
+      tags:
+        - account locking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: collection
+          in: path
+          description: the collection to retrieve
+          required: true
+          type: string
+          enum:
+            - accountLockedEmailTemplates
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/OrderBy"
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
   /apiKeys/{id}:
     x-swagger-router-controller: apiKeyController
     get:
@@ -2051,13 +2622,10 @@ paths:
             type: object
             properties:
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
-          description: account updated
+          description: API key updated
           schema:
             $ref: "#/definitions/ApiKey"
         "default":
@@ -2089,7 +2657,7 @@ paths:
       parameters:
         - name: attributes
           description: new organization attributes
-          in: body          
+          in: body
           required: true
           schema:
             type: object
@@ -2103,10 +2671,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
         - $ref: "#/parameters/Expand"
@@ -2161,10 +2726,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
               customData:
                 type: object
       responses:
@@ -2215,10 +2777,7 @@ paths:
               description:
                 type: string
               status:
-                type: string
-                enum:
-                  - ENABLED
-                  - DISABLED
+                $ref: "#/definitions/Status"
       responses:
         "200":
           description: group created
@@ -2256,7 +2815,7 @@ paths:
       description: create a new account
       operationId: createAccount
       tags:
-        - organization
+        - organizations
       parameters:
         - $ref: "#/parameters/Id"
         - $ref: "#/parameters/Expand"
@@ -2308,7 +2867,7 @@ paths:
       description: retrieve the organization accounts
       operationId: getAccounts
       tags:
-        - organization
+        - organizations
       parameters:
         - $ref: "#/parameters/Id"
         - $ref: "#/parameters/Offset"
@@ -2320,6 +2879,26 @@ paths:
           description: found
           schema:
             $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /organizations/{id}/idSiteModel:
+    x-swagger-router-controller: organizationController
+    get:
+      summary: retrieve an organization ID site model
+      description: retrieve an organization ID site model
+      operationId: getIdSiteModel
+      tags:
+        - organizations
+        - ID sites
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: ID site model found
+          schema:
+            $ref: "#/definitions/IdSiteModel"
         "default":
           description: error
           schema:
@@ -2420,8 +2999,10 @@ paths:
           type: string
           enum:
             - accountStoreMappings
+            - applicationMappings
             - directories
             - applications
+            - invitations
         - $ref: "#/parameters/Offset"
         - $ref: "#/parameters/Limit"
         - $ref: "#/parameters/OrderBy"
@@ -2577,6 +3158,10 @@ paths:
                 type: string
               logoUrl:
                 type: string
+              authorizedRedirectURIs:
+                type: array
+                items:
+                  type: string
               sessionTtl:
                 type: string
               sessionCookiePersistent:
@@ -2586,6 +3171,532 @@ paths:
           description: ID site updated
           schema:
             $ref: "#/definitions/IdSite"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlServiceProviderMetadatas/{id}:
+    x-swagger-router-controller: samlServiceProviderMetadataController
+    get:
+      summary: get the metadata used by cloudpass to act as a SAML service provider
+      description: get the metadata used by cloudpass to act as a SAML service provider
+      tags:
+        - saml service provider metadata
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/SamlServiceProviderMetadata"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /attributeStatementMappingRules/{id}:
+    x-swagger-router-controller: attributeStatementMappingRulesController
+    get:
+      summary: get rules used to map SAML statements to account attributes
+      description: get rules used to map SAML statements to account attributes
+      tags:
+        - attribute statement mapping rules
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/AttributeStatementMappingRules"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update rules used to map SAML statements to account attributes
+      description: update rules used to map SAML statements to account attributes
+      operationId: update
+      tags:
+        - attribute statement mapping rules
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - items
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/AttributeStatementMappingRule'
+      responses:
+        "200":
+          description: rules updated
+          schema:
+            $ref: "#/definitions/AttributeStatementMappingRules"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlPolicies/{id}:
+    x-swagger-router-controller: applicationController
+    get:
+      summary: retrieve a SAML policy from its ID
+      description: retrieve a SAML policy from its ID
+      operationId: getSamlPolicy
+      tags:
+        - saml policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/SamlPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlServiceProviders/{id}:
+    x-swagger-router-controller: samlServiceProviderController
+    get:
+      summary: retrieve SAML Service Provider endpoints
+      description: retrieve SAML Service Provider endpoints
+      tags:
+        - saml service provider
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/SamlServiceProvider"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /samlServiceProviders/{id}/defaultRelayStates:
+    x-swagger-router-controller: samlServiceProviderController
+    post:
+      summary: generate a default relay state
+      description: generate a default relay state
+      operationId: generateDefaultRelayState
+      tags:
+        - saml service provider
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: properties
+          description: relay state properties
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - callbackUri
+            properties:
+              callbackUri:
+                type: string
+              state:
+                type: string
+              onk:
+                type: string
+      responses:
+        "200":
+          description: found
+          schema:
+            type: object
+            required:
+              - defaultRelayState
+            properties:
+              defaultRelayState:
+                type: string
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitationPolicies/{id}:
+    x-swagger-router-controller: invitationPolicyController
+    get:
+      summary: retrieve the invitation policy from its ID
+      description: retrieve the invitation policy from its ID
+      tags:
+        - invitation policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: invitation policy found
+          schema:
+            $ref: "#/definitions/InvitationPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update an invitation policy
+      description: update the invitation policy with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - invitation policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              invitationEmailStatus:
+                $ref: "#/definitions/Status"
+      responses:
+        "200":
+          description: invitation policy updated
+          schema:
+            $ref: "#/definitions/InvitationPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitationPolicies/{id}/{collection}:
+    x-swagger-router-controller: invitationPolicyController
+    get:
+      summary: retrieve a collection sub-resource from the policy
+      description: retrieve a collection sub-resource from the policy
+      operationId: getCollection
+      tags:
+        - invitation policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: collection
+          in: path
+          description: the collection to retrieve
+          required: true
+          type: string
+          enum:
+            - invitationEmailTemplates
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/Limit"
+        - $ref: "#/parameters/OrderBy"
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: "#/definitions/CollectionResource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations:
+    x-swagger-router-controller: invitationController
+    post:
+      summary: create a new invitation
+      description: create a new invitation
+      operationId: create
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - application
+            properties:
+              email:
+                type: string
+                format: email
+              callbackUri:
+                type: string
+                format: url
+              invitedBy:
+                $ref: "#/definitions/ResourceReference"
+              application:
+                $ref: "#/definitions/ResourceReference"
+              organization:
+                $ref: "#/definitions/ResourceReference"
+              customData:
+                type: object
+      responses:
+        "200":
+          description: invitation created
+          schema:
+            $ref: "#/definitions/Invitation"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations/{id}:
+    x-swagger-router-controller: invitationController
+    get:
+      summary: retrieve invitation
+      description: retrieve invitation
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/Invitation"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update invitation
+      description: update invitation and resend invitation email
+      operationId: update
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+              callbackUri:
+                type: string
+                format: url
+              invitedBy:
+                $ref: "#/definitions/ResourceReference"
+              application:
+                $ref: "#/definitions/ResourceReference"
+              organization:
+                $ref: "#/definitions/ResourceReference"
+              customData:
+                type: object
+      responses:
+        "200":
+          description: invitation updated
+          schema:
+            $ref: "#/definitions/Invitation"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete an invitation
+      description: delete an invitation
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: invitation deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations/{id}/customData:
+    x-swagger-router-controller: invitationController
+    get:
+      summary: retrieve invitation custom data
+      description: retrieve custom data
+      operationId: getCustomData
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: found
+          schema:
+            $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update invitations custom data
+      description: update custom data of the invitation with the given ID using the provided values
+      operationId: updateCustomData
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: newCustomData
+          description: New custom data
+          in: body
+          required: true
+          schema:
+            type: object
+      responses:
+        "200":
+          description: updated
+          schema:
+            $ref: "#/definitions/Resource"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete custom data
+      description: delete custom data
+      operationId: deleteCustomData
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: custom data deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /invitations/{id}/customData/{fieldName}:
+    x-swagger-router-controller: invitationController
+    delete:
+      summary: delete custom data field
+      description: delete custom data field
+      operationId: deleteCustomDataField
+      tags:
+        - invitations
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: fieldName
+          in: path
+          description: field to delete
+          required: true
+          type: string
+      responses:
+        "204":
+          description: custom data field deleted
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLinkingPolicies/{id}:
+    x-swagger-router-controller: accountLinkingPolicyController
+    get:
+      summary: retrieve the account linking policy from its ID
+      description: retrieve the account linking policy from its ID
+      tags:
+        - account linking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "200":
+          description: account linking policy found
+          schema:
+            $ref: "#/definitions/AccountLinkingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: update an account linking policy
+      description: update the account linking policy with the given ID using the provided attributes
+      operationId: update
+      tags:
+        - account linking policies
+      parameters:
+        - $ref: "#/parameters/Id"
+        - name: newAttributes
+          description: New attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              status:
+                $ref: "#/definitions/Status"
+              automaticProvisioning:
+                $ref: "#/definitions/Status"
+      responses:
+        "200":
+          description: account linking policy updated
+          schema:
+            $ref: "#/definitions/AccountLinkingPolicy"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLinks:
+    x-swagger-router-controller: accountLinkController
+    post:
+      summary: create an account link
+      description: create an account link
+      operationId: create
+      tags:
+        - account links
+      parameters:
+        - $ref: "#/parameters/Expand"
+        - name: attributes
+          description: attributes
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - leftAccount
+              - rightAccount
+            properties:
+              leftAccount:
+                $ref: "#/definitions/ResourceReference"
+              rightAccount:
+                $ref: "#/definitions/ResourceReference"
+      responses:
+        "200":
+          description: account link created
+          schema:
+            $ref: "#/definitions/AccountLink"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+  /accountLinks/{id}:
+    x-swagger-router-controller: accountLinkController
+    get:
+      summary: retrieve an account link from its ID
+      description: retrieve an account link from its ID
+      tags:
+        - account links
+      parameters:
+        - $ref: "#/parameters/Id"
+        - $ref: "#/parameters/Expand"
+      responses:
+        "200":
+          description: account link found
+          schema:
+            $ref: "#/definitions/AccountLink"
+        "default":
+          description: error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: delete an account link
+      description: delete an account link
+      tags:
+        - account links
+      parameters:
+        - $ref: "#/parameters/Id"
+      responses:
+        "204":
+          description: account link deleted
         "default":
           description: error
           schema:
@@ -2706,10 +3817,13 @@ definitions:
           - groups
           - directories
           - organizations
+          - invitations
           - loginAttempts
           - passwordResetTokens
+          - samlPolicy
+          - invitationPolicy
+          - accountLinkingPolicy
           - customData
-          - authorizedCallbackUris
         properties:
           name:
             type: string
@@ -2718,10 +3832,7 @@ definitions:
           description:
             type: string
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           accountStoreMappings:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -2732,16 +3843,20 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           organizations:
             $ref: "#/definitions/ResourceReference"
+          invitations:
+            $ref: "#/definitions/ResourceReference"
           loginAttempts:
             $ref: "#/definitions/ResourceReference"
           passwordResetTokens:
             $ref: "#/definitions/ResourceReference"
+          samlPolicy:
+            $ref: "#/definitions/ResourceReference"
+          invitationPolicy:
+            $ref: "#/definitions/ResourceReference"
+          accountLinkingPolicy:
+            $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
-          authorizedCallbackUris:
-            type: array
-            items:
-              type: string
   Directory:
     allOf:
       - $ref: "#/definitions/Resource"
@@ -2750,6 +3865,7 @@ definitions:
           - name
           - tenant
           - description
+          - provider
           - status
           - groups
           - accounts
@@ -2758,6 +3874,7 @@ definitions:
           - applicationMappings
           - passwordPolicy
           - accountCreationPolicy
+          - accountLockingPolicy
           - customData
         properties:
           name:
@@ -2766,11 +3883,10 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           description:
             type: string
+          provider:
+            $ref: "#/definitions/ResourceReference"
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           groups:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -2784,6 +3900,8 @@ definitions:
           passwordPolicy:
             $ref: "#/definitions/ResourceReference"
           accountCreationPolicy:
+            $ref: "#/definitions/ResourceReference"
+          accountLockingPolicy:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -2811,10 +3929,7 @@ definitions:
           description:
             type: string
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           directory:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -2859,7 +3974,15 @@ definitions:
           - groupMemberships
           - applications
           - organizations
+          - factors
+          - passwordChanges
           - customData
+          - providerData
+          - failedLoginAttempts
+          - lastLoginAttempt
+          - passwordAuthenticationAllowed
+          - accountLinks
+          - linkedAccounts
         properties:
           email:
             type: string
@@ -2882,6 +4005,13 @@ definitions:
               - ENABLED
               - DISABLED
               - UNVERIFIED
+          failedLoginAttempts:
+            type: integer
+          lastLoginAttempt:
+            type: string
+            format: date-time
+          passwordAuthenticationAllowed:
+            type: boolean
           directory:
             $ref: "#/definitions/ResourceReference"
           groups:
@@ -2892,7 +4022,17 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           organizations:
             $ref: "#/definitions/ResourceReference"
+          factors:
+            $ref: "#/definitions/ResourceReference"
+          passwordChanges:
+            $ref: "#/definitions/ResourceReference"
           customData:
+            $ref: "#/definitions/ResourceReference"
+          providerData:
+            $ref: "#/definitions/ResourceReference"
+          accountLinks:
+            $ref: "#/definitions/ResourceReference"
+          linkedAccounts:
             $ref: "#/definitions/ResourceReference"
   AccountStoreMapping:
     allOf:
@@ -2944,6 +4084,8 @@ definitions:
         enum:
           - text/plain
           - text/html
+      mandrillTemplate:
+        type: string
       defaultModel:
         type: object
         required:
@@ -3028,6 +4170,24 @@ definitions:
             $ref: "#/definitions/ResourceReference"
           welcomeEmailTemplates:
             $ref: "#/definitions/ResourceReference"
+  AccountLockingPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - accountLockedEmailStatus
+          - maxFailedLoginAttempts
+          - accountLockDuration
+          - accountLockedEmailTemplates
+        properties:
+          accountLockedEmailStatus:
+            $ref: "#/definitions/Status"
+          maxFailedLoginAttempts:
+            type: integer
+          accountLockDuration:
+            type: string
+          accountLockedEmailTemplates:
+            $ref: "#/definitions/ResourceReference"
   PasswordResetToken:
     type: object
     required:
@@ -3090,6 +4250,8 @@ definitions:
           - accounts
           - groups
           - directories
+          - applications
+          - invitations
           - customData
         properties:
           name:
@@ -3101,10 +4263,7 @@ definitions:
           description:
             type: string
           status:
-            type: string
-            enum:
-              - ENABLED
-              - DISABLED
+            $ref: "#/definitions/Status"
           accountStoreMappings:
             $ref: "#/definitions/ResourceReference"
           accounts:
@@ -3112,6 +4271,10 @@ definitions:
           groups:
             $ref: "#/definitions/ResourceReference"
           directories:
+            $ref: "#/definitions/ResourceReference"
+          applications:
+            $ref: "#/definitions/ResourceReference"
+          invitations:
             $ref: "#/definitions/ResourceReference"
           customData:
             $ref: "#/definitions/ResourceReference"
@@ -3150,8 +4313,10 @@ definitions:
             type: string
           logoUrl:
             type: string
-          sessionTti:
-            type: string
+          authorizedRedirectURIs:
+            type: array
+            items:
+              type: string
           sessionTtl:
             type: string
           sessionCookiePersistent:
@@ -3172,6 +4337,208 @@ definitions:
         type: object
       logoUrl:
         type: string
+  DirectoryProvider:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - providerId
+        properties:
+          providerId:
+            type: string
+            enum:
+              - cloudpass
+              - saml
+          clientId:
+            type: string
+          clientSecret:
+            type: string
+          ssoLoginUrl:
+            type: string
+          ssoLogoutUrl:
+            type: string
+          encodedX509SigningCert:
+            type: string
+          samlServiceProviderMetadata:
+            $ref: "#/definitions/ResourceReference"
+          attributeStatementMappingRules:
+            $ref: "#/definitions/ResourceReference"
+  AttributeStatementMappingRule:
+    type: object
+    required:
+      - name
+      - accountAttributes
+    properties:
+      name:
+        type: string
+      accountAttributes:
+        type: array
+        items:
+          type: string
+  AttributeStatementMappingRules:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/definitions/AttributeStatementMappingRule'
+  SamlServiceProviderMetadata:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - entityId
+          - x509SigningCert
+          - assertionConsumerServicePostEndpoint
+        properties:
+          entityId:
+            type: string
+          x509SigningCert:
+            type: string
+          assertionConsumerServicePostEndpoint:
+            $ref: "#/definitions/ResourceReference"
+  SamlPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - serviceProvider
+        properties:
+          serviceProvider:
+            $ref: "#/definitions/ResourceReference"
+  SamlServiceProvider:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - ssoInitiationEndpoint
+          - defaultRelayStates
+        properties:
+          ssoInitiationEndpoint:
+            $ref: "#/definitions/ResourceReference"
+          defaultRelayStates:
+            $ref: "#/definitions/ResourceReference"
+  Factor:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - type
+          - status
+          - verificationStatus
+          - account
+        properties:
+          type:
+            type: string
+            enum:
+              - google-authenticator
+          status:
+            $ref: "#/definitions/Status"
+          verificationStatus:
+            type: string
+            enum:
+              - VERIFIED
+              - UNVERIFIED
+          accountName:
+            type: string
+            format: email
+          issuer:
+            type: string
+          secret:
+            type: string
+          keyUri:
+            type: string
+          base64QRImage:
+            type: string
+          account:
+            $ref: "#/definitions/ResourceReference"
+          tenant:
+            $ref: "#/definitions/ResourceReference"
+  Challenge:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - status
+          - type
+          - account
+          - factor
+        properties:
+          status:
+            type: string
+            enum:
+              - CREATED
+              - SUCCESS
+              - FAILED
+          type:
+            type: string
+          account:
+            $ref: "#/definitions/ResourceReference"
+          factor:
+            $ref: "#/definitions/ResourceReference"
+  InvitationPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - invitationEmailStatus
+          - invitationEmailTemplates
+        properties:
+          invitationEmailStatus:
+            $ref: "#/definitions/Status"
+          invitationEmailTemplates:
+            $ref: "#/definitions/ResourceReference"
+  Invitation:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - email
+          - application
+          - customData
+        properties:
+          email:
+            type: string
+            format: email
+          callbackUri:
+            type: string
+            format: url
+          application:
+            $ref: "#/definitions/ResourceReference"
+          organization:
+            $ref: "#/definitions/ResourceReference"
+          invitedBy:
+            $ref: "#/definitions/ResourceReference"
+          customData:
+            type: object
+  AccountLinkingPolicy:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - status
+          - automaticProvisioning
+        properties:
+          status:
+            $ref: "#/definitions/Status"
+          automaticProvisioning:
+            $ref: "#/definitions/Status"
+  AccountLink:
+    allOf:
+      - $ref: "#/definitions/Resource"
+      - type: object
+        required:
+          - leftAccount
+          - rightAccount
+        properties:
+          leftAccount:
+            $ref: "#/definitions/ResourceReference"
+          rightAccount:
+            $ref: "#/definitions/ResourceReference"
 parameters:
   Id:
     name: id
@@ -3223,4 +4590,3 @@ parameters:
     required: false
     type: boolean
     default: true
-   

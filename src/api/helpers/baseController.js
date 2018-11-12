@@ -8,23 +8,16 @@ var models = require('../../models');
 module.exports = function (model, transactionalMethods) {
     return {
         create: function(req, res){
-            var foreignKeys = {};
-            foreignKeys[model.getAclAttribute()] = req.user.tenantId;
-            return controllerHelper.createAndExpandResource(model, foreignKeys, req, res, _.includes(transactionalMethods, 'create'));
+           return controllerHelper.createAndExpand(
+             model,
+             {[model.aclAttribute]: req.user.tenantId},
+             req,
+             res,
+             _.includes(transactionalMethods, 'create'));
         },
         //get a resource by id (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb)
         get: function (req, res) {
-            var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
-            return model
-                .findById(req.swagger.params.id.value)
-                .then(function (resource) {
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
-                    return controllerHelper.expandResource(expands, resource);
-                })
-                .then(function(expanded){
-                    res.json(expanded);
-                 })
-                .catch(req.next);
+            return controllerHelper.queryAndExpand(() => model.findById(req.swagger.params.id.value), req, res);
         },
         //get a collection associated to a resource (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb/accounts)
         getCollection: function(req, res){
@@ -34,38 +27,19 @@ module.exports = function (model, transactionalMethods) {
         getCustomData: function(req, res){
             return model
                 .findById(req.swagger.params.id.value)
-                .then(function(resource){
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
-                    res.json(resource.getCustomData());
-                })
+                .tap(ApiError.assertFound)
+                .call('getCustomData')
+                .then(res.json.bind(res))
                 .catch(req.next);
         },
         update: function(req, res){
-            var expands = controllerHelper.getExpands(req.swagger.params.expand.value);
-            return controllerHelper.execute(
-                function(){
-                   return model
-                    .findById(req.swagger.params.id.value)
-                    .then(function(resource){
-                        ApiError.assert(resource, ApiError.NOT_FOUND);
-                        return resource.update(req.swagger.params.newAttributes.value, {fields:  model.getSettableAttributes()});
-                    }); 
-                },
-                _.includes(transactionalMethods, 'update')
-            )
-            .then(function(updatedResource){
-                return controllerHelper.expandResource(expands, updatedResource);
-            })
-            .then(function(expanded){
-                res.json(expanded);
-            })
-            .catch(req.next);
+            return controllerHelper.updateAndExpand(model, req, res, _.includes(transactionalMethods, 'update'));
         },
         updateCustomData: function(req, res){
             return model
                 .findById(req.swagger.params.id.value)
+                .tap(ApiError.assertFound)
                 .then(function(resource){
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
                     resource.set('customData', req.swagger.params.newCustomData.value);
                     return resource.save();
                 })
@@ -85,7 +59,8 @@ module.exports = function (model, transactionalMethods) {
             .then(function(rowNb){
                 ApiError.assert(rowNb, ApiError.NOT_FOUND);
                 res.status(204).json();
-            }).catch(req.next);
+            })
+            .catch(req.next);
         },
         deleteCustomData: function(req, res){
             return model
@@ -93,22 +68,45 @@ module.exports = function (model, transactionalMethods) {
                 .spread(function(rowNb){
                     ApiError.assert(rowNb, ApiError.NOT_FOUND);
                     res.status(204).json();
-                }).catch(req.next);
+                })
+                .catch(req.next);
         },
         deleteCustomDataField: function(req, res){
             return model
                 .findById(req.swagger.params.id.value)
+                .tap(ApiError.assertFound)
                 .then(function(resource){
-                    ApiError.assert(resource, ApiError.NOT_FOUND);
                     resource.deleteCustomDataField(req.swagger.params.fieldName.value);
                     return resource.save();
-                }).then(function(updatedResource){
+                })
+                .then(function(updatedResource){
                     if(updatedResource instanceof models.sequelize.ValidationError){
                         throw updatedResource;
                     } else {
                         res.status(204).json();
                     }
-                }).catch(req.next);
+                })
+                .catch(req.next);
+        },
+        //get a sub resource whose computation depends on attributes of the resource
+        //(e.g. idSiteModel)
+        getComputedSubResource: function(getter, req, res){
+          return controllerHelper.queryAndExpand(
+             () => model.findById(req.swagger.params.id.value)
+                          .tap(ApiError.assertFound)
+                          .then(instance => instance[getter]()),
+             req,
+             res
+          );
+        },
+        //get a sub resource wich can be queried only from the ID of the resource
+        //(e.g. directory providers)
+        getSubResource: function(getter, req, res){
+          return  controllerHelper.queryAndExpand(
+            () => model.build({id: req.swagger.params.id.value, tenantId: req.user.tenantId})[getter](),
+            req,
+            res
+          );
         }
     };
 };

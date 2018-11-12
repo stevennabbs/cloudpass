@@ -21,18 +21,20 @@ describe('Account workflows', function () {
         //stop the SMTP server
         mailServer.stop();
     });
-    
+
     describe('Registration', function(){
 
         it('Welcome e-mail should be sent if they are enabled', function () {
             //enable the welcome email
-            return init.postRequest('accountCreationPolicies/' + directory.accountCreationPolicy.id)
-                    .send({
-                        verificationEmailStatus: 'DISABLED',
-                        verificationSuccessEmailStatus: 'DISABLED',
-                        welcomeEmailStatus: 'ENABLED'
-                    })
-                    .expect(200)
+            return BluebirdPromise.resolve(
+                    init.postRequest('accountCreationPolicies/' + directory.accountCreationPolicy.id)
+                        .send({
+                            verificationEmailStatus: 'DISABLED',
+                            verificationSuccessEmailStatus: 'DISABLED',
+                            welcomeEmailStatus: 'ENABLED'
+                        })
+                        .expect(200)
+                    )
                     .then(function () {
                         var address = init.randomName() + '@example.com';
                         return BluebirdPromise.join(
@@ -45,7 +47,6 @@ describe('Account workflows', function () {
                                     surname: init.randomName()
                                 })
                                 .expect(200)
-                                .toPromise()
                         );
                     })
                     .spread(function(email, res){
@@ -56,13 +57,15 @@ describe('Account workflows', function () {
 
         it('Verification and verification success emails should be sent if they are enabled', function(){
              //enable the verification and verification success emails
-            return init.postRequest('accountCreationPolicies/' + directory.accountCreationPolicy.id)
-                    .send({
-                        verificationEmailStatus: 'ENABLED',
-                        verificationSuccessEmailStatus: 'ENABLED',
-                        welcomeEmailStatus: 'DISABLED'
-                    })
-                    .expect(200)
+            return BluebirdPromise.resolve(
+                        init.postRequest('accountCreationPolicies/' + directory.accountCreationPolicy.id)
+                            .send({
+                                verificationEmailStatus: 'ENABLED',
+                                verificationSuccessEmailStatus: 'ENABLED',
+                                welcomeEmailStatus: 'DISABLED'
+                            })
+                            .expect(200)
+                    )
                     .then(function(){
                         var address = init.randomName() + '@example.com';
                         return BluebirdPromise.join(
@@ -75,7 +78,6 @@ describe('Account workflows', function () {
                                     surname: init.randomName()
                                 })
                                 .expect(200)
-                                .toPromise()
                         );
                     })
                     .spread(function(email, res){
@@ -122,8 +124,7 @@ describe('Account workflows', function () {
                                     givenName: init.randomName(),
                                     surname: init.randomName()
                                 })
-                                .expect(200)
-                                .toPromise();
+                                .expect(200);
                     })
                     .then(function(res){
                         //the account should be directly enabled
@@ -131,11 +132,11 @@ describe('Account workflows', function () {
                     });
         });
     });
-    
+
     describe('Password reset', function(){
-        
+
         var account;
-        
+
         before(function(){
             return init.getRequest('directories/'+directory.id+'/accounts')
                         .expect(200)
@@ -143,15 +144,17 @@ describe('Account workflows', function () {
                             account = res.body.items[0];
                         });
         });
-        
+
         it('Password reset and password reset success email should be sent if they are enabled', function(){
             //enable password workflows
-            return init.postRequest('passwordPolicies/' + directory.passwordPolicy.id)
-                .send({
-                    resetEmailStatus: 'ENABLED',
-                    resetSuccessEmailStatus: 'ENABLED'
-                })
-                .expect(200)
+            return BluebirdPromise.resolve(
+                    init.postRequest('passwordPolicies/' + directory.passwordPolicy.id)
+                        .send({
+                            resetEmailStatus: 'ENABLED',
+                            resetSuccessEmailStatus: 'ENABLED'
+                        })
+                        .expect(200)
+                )
                 .then(function(){
                     //send a password reset request
                     return BluebirdPromise.join(
@@ -159,7 +162,6 @@ describe('Account workflows', function () {
                             init.postRequest('applications/'+directory.applications.items[0].id+'/passwordResetTokens')
                                 .send({email: account.email})
                                 .expect(200)
-                                .toPromise()
                         );
                 })
                 .spread(function(email, res){
@@ -167,8 +169,7 @@ describe('Account workflows', function () {
                     assert.strictEqual(/cpToken=(.*?)\n/.exec(email.body)[1], res.body.id);
                     //check if the token is valid
                     return init.getRequest('applications/'+directory.applications.items[0].id+'/passwordResetTokens/'+res.body.id)
-                            .expect(200)
-                            .toPromise();
+                            .expect(200);
                 })
                 .then(function(res){
                     //consume the token
@@ -177,7 +178,6 @@ describe('Account workflows', function () {
                             init.postRequest('applications/'+directory.applications.items[0].id+'/passwordResetTokens/'+res.body.id)
                                 .send({password: 'Aa123456'})
                                 .expect(200)
-                                .toPromise()
                         );
                 })
                 .spread(function(email, res){
@@ -186,7 +186,7 @@ describe('Account workflows', function () {
                     assert(res.body.account.href);
                 });
         });
-        
+
         it('Password resets should fail if there are disabled', function(){
             //disable password workflows
             return init.postRequest('passwordPolicies/' + directory.passwordPolicy.id)
@@ -199,8 +199,7 @@ describe('Account workflows', function () {
                     //send a password reset request
                     return init.postRequest('applications/'+directory.applications.items[0].id+'/passwordResetTokens')
                             .send({email: account.email})
-                            .expect(400)
-                            .toPromise();
+                            .expect(400);
                 })
                 .then(function(res){
                     assert.strictEqual(res.body.status, 400);

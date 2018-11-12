@@ -1,164 +1,234 @@
 'use strict';
 
-var express = require('express');
-var cookieParser = require('cookie-parser');
-var moment = require('moment');
-var BluebirdPromise = require('sequelize').Promise;
-var jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
-var url = require('url');
-var models = require('../models');
-var scopeHelper = require('./helpers/scopeHelper');
-var getApiKey = require('./helpers/getApiKey');
-var idSiteHelper = require('./helpers/idSiteHelper');
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const moment = require('moment');
+const BluebirdPromise = require('sequelize').Promise;
+const jwt = BluebirdPromise.promisifyAll(require('jsonwebtoken'));
+const _ = require('lodash');
+const passport = require('passport');
+const Optional = require('optional-js');
+const url = require('url');
+const config = require('config');
+const UrlMatch = require('@fczbkk/url-match').default;
+const models = require('../models');
+const scopeHelper = require('../helpers/scopeHelper');
+const idSiteHelper = require('./helpers/idSiteHelper');
+const ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
+const sendJwtResponse = require('./helpers/sendJwtResponse');
+const errorHandler = require('./helpers/errorHandler');
+const ApiError = require('../ApiError');
+const JwtStrategy = require('./authentication/JwtStrategy');
+const hrefHelper = require('../helpers/hrefHelper');
+
+
+function ssoStrategy(queryParameter, apiKeyIdPath){
+  return new JwtStrategy(
+      _.property('query.'+queryParameter),
+      _.property(apiKeyIdPath),
+      {
+        model: models.tenant,
+        include: [{
+            model: models.idSite,
+            limit: 1
+        }]
+      }
+  );
+}
+
+passport.use('sso-jwt-request', ssoStrategy('jwtRequest', 'payload.iss'));
+passport.use('sso-jwt-response', ssoStrategy('jwtResponse', 'header.kid'));
 
 var app = express();
 app.use(cookieParser());
+app.use(passport.initialize());
+app.use('/', ssaclAuthenticate('sso-jwt-request', 'sso-jwt-response'));
+app.use('/logout', ssaclAuthenticate('sso-jwt-request'));
 
-
-function verifyApiKeySignedJwt(token, apiKey){
-    return getApiKey(
-            //find the API key the JWT was signed with
-            apiKey,
-            [{
-                model: models.tenant,
-                include: [{
-                    model: models.idSite,
-                    limit: 1
-                }]
-            }]
-        )
-        .then(function(apiKey){
-            //validate the JWT with the API key secret
-            return BluebirdPromise.join(
-                    jwt.verifyAsync(token, apiKey.secret, {algorithms: ["HS256"]}),
-                    apiKey);
-        });
-}
+const cookiePath = url.parse(Optional.ofNullable(config.get('server.rootUrl')).orElse('')+'/sso').pathname;
 
 app.get('/', function(req, res){
-    
+
     if(req.query.jwtRequest){
         // the user was redirected from the application to here, and we must redirect it back to the ID site
-        //the api key is the JWT issuer
-        verifyApiKeySignedJwt(req.query.jwtRequest, jwt.decode(req.query.jwtRequest).iss)
-            .spread(function(payload, apiKey){
-                var application = models.resolveHref(payload.sub);
-                var cookie = req.cookies[apiKey.tenantId];
-                if(cookie){
-                    //the user already authenticated for this tenant
-                    //check if his account belongs to the requested application
-                    return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
-                        .get('sub')
-                        .then(function(accountId){
-                            return application.getAccounts({where: {id: accountId}, limit:1, actor: apiKey.tenantId});
-                        })
-                        .spread(function(account){
-                            if(account){
-                                return idSiteHelper.getJwtResponse(apiKey, payload.cb_uri, payload.jti, false, account.href)
-                                .then(function(redirectUrl){
-                                    res.status(302).location(addParamToUri(payload.cb_uri, 'jwtResponse', redirectUrl)).send();
-                                });
-                            }
-                            throw 'account not found in application';
-                        })
-                        .catch(function(){
-                            // jwt expired or the account does not belong to the application => re-authentication required
-                            redirectToIdSite(payload, application, apiKey, res);
-                        });
-                }
-                redirectToIdSite(payload, application, apiKey, res);
-            })
-            .catch(res.next);
+
+        //check that the requested redirect URI is authorized
+        if(new UrlMatch(req.user.tenant.idSites[0].authorizedRedirectURIs).test(req.authInfo.cb_uri)){
+            var application = hrefHelper.resolveHref(req.authInfo.sub);
+            //get the account store in where to login
+            //and the invited email (if exists)
+            BluebirdPromise.join(
+                application.getLookupAccountStore(req.authInfo.onk),
+                Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
+            ).spread(function(accountStore, invitationEmail){
+                    var cookie = req.cookies[req.user.tenantId];
+                    if(cookie){
+                        //the user already authenticated for this tenant
+                        //check if his account belongs to the requested account store
+                        return jwt.verifyAsync(cookie, req.app.get('secret'), {algorithms: ["HS256"]})
+                                .then(cookieJwt => BluebirdPromise.join(
+                                                        cookieJwt.mfa,
+                                                        accountStore.getAccounts({where: {id: cookieJwt.sub}, limit:1}).get(0),
+                                                        cookieJwt.org_href
+                                                   )
+                                )
+                                .spread((verifiedMfa, account, orgHref) => {
+                                    ApiError.assert(account, Error, 'account not found in account store');
+                                    ApiError.assert(!invitationEmail || _.eq(invitationEmail.toLowerCase(), account.email), Error, 'user not logged with the invited email');
+                                    return _.cond([
+                                        [
+                                            //if the user didn't authenticate with one of the requested factor, redirect to ID site with factors scope
+                                            authInfo => !_.isEmpty(authInfo.require_mfa) && !_.includes(authInfo.require_mfa, verifiedMfa),
+                                            authInfo => redirectToIdSite(
+                                                    res,
+                                                    req.user,
+                                                    application,
+                                                    accountStore,
+                                                    authInfo,
+                                                    invitationEmail,
+                                                    {
+                                                        scope: idSiteHelper.getFactorsScope(account.id),
+                                                        org_href: orgHref
+                                                    }
+                                            )
+                                        ],
+                                        [
+                                            //if the settings page is requested, redirect to ID site with the right scope
+                                            _.matchesProperty('path', '/#/settings'),
+                                            authInfo => redirectToIdSite(
+                                                            res,
+                                                            req.user,
+                                                            application,
+                                                            accountStore,
+                                                            authInfo,
+                                                            invitationEmail,
+                                                            {
+                                                                scope: idSiteHelper.getSecuritySettingsScope(account.id),
+                                                                authenticated: true,
+                                                                require_mfa: ['google-authenticator'],
+                                                                org_href: orgHref
+                                                            }
+                                            )
+                                        ],
+                                        [
+                                            //else redirect to the application directly
+                                            _.stubTrue,
+                                            () => idSiteHelper.getJwtResponse(
+                                                    req.user,
+                                                    account.href,
+                                                    {
+                                                        isNewSub: false,
+                                                        status: "AUTHENTICATED",
+                                                        cb_uri: req.authInfo.cb_uri,
+                                                        irt: req.authInfo.jti,
+                                                        state: req.authInfo.state,
+                                                        inv_href: req.authInfo.inv_href,
+                                                        org_href: orgHref
+                                                    }
+                                                )
+                                                .then(sendJwtResponse(res, req.authInfo.cb_uri))
+                                        ]
+                                    ])(req.authInfo);
+                                })
+                            // Either jwt expired or the account does not belong to the account store
+                            //  => re-authentication required
+                            .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail));
+                    }
+                    return redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail);
+                })
+                .catch(req.next);
+        } else {
+            //callaback URL not authorized (don't throw because errorHandler would redirect to the unauthorized URL)
+            res.status(400).send("Unauthorized Callback URI: "+req.authInfo.cb_uri);
+        }
 
     } else if (req.query.jwtResponse) {
         //the user was redirected from the ID site to here, and we must redirect it back to the application
-        //the api key is the JWT audience
-        verifyApiKeySignedJwt(req.query.jwtResponse, jwt.decode(req.query.jwtResponse, {complete: true}).header.kid)
-                .spread(function(payload, apiKey){
-                    //make a jwt cookie from the account ID
-                    return BluebirdPromise.join(
-                        jwt.signAsync(
-                            {},
-                            req.app.get('secret'),
-                            {
-                                subject: models.resolveHref(payload.sub).id,
-                                expiresIn: moment.duration(apiKey.tenant.idSites[0].sessionTtl).asSeconds()
-                            }
-                        ),
-                        payload,
-                        apiKey
-                    );
-                })
-                .spread(function(cookieToken, payload, apiKey){
-                    var cookieOptions = {
-                        httpOnly: true,
-                        path: '/sso'
-                    };
-                    if(apiKey.tenant.idSites[0].sessionCookiePersistent){
-                        cookieOptions.maxAge =  moment.duration(apiKey.tenant.idSites[0].sessionTtl).asSeconds();
-                    }
-                    res.cookie(apiKey.tenant.id, cookieToken, cookieOptions);
-                    res.status(302).location(addParamToUri(payload.cb_uri, 'jwtResponse', req.query.jwtResponse)).send();
-                })
-                .catch(req.next);
+        //make a jwt cookie from the account ID
+        jwt.signAsync(
+            {
+                mfa: req.authInfo.mfa,
+                org_href: req.authInfo.org_href
+            },
+            req.app.get('secret'),
+            {
+                subject: hrefHelper.resolveHref(req.authInfo.sub).id,
+                expiresIn: moment.duration(req.user.tenant.idSites[0].sessionTtl).asSeconds()
+            }
+        )
+        .then(function(cookieToken){
+            var cookieOptions = {
+                httpOnly: true,
+                path: cookiePath
+            };
+            if(req.user.tenant.idSites[0].sessionCookiePersistent){
+                cookieOptions.maxAge =  moment.duration(req.user.tenant.idSites[0].sessionTtl).asMilliseconds();
+            }
+            res.cookie(req.user.tenant.id, cookieToken, cookieOptions);
+            sendJwtResponse(res, req.authInfo.cb_uri)(req.query.jwtResponse);
+        })
+        .catch(req.next);
     } else {
         req.next();
     }
 });
 
 app.get('/logout', function(req, res){
-    if(req.query.jwtRequest){
-        verifyApiKeySignedJwt(req.query.jwtRequest, jwt.decode(req.query.jwtRequest).iss)
-            .spread(function(payload, apiKey){
-                res.clearCookie(apiKey.tenant.id, {path: '/sso'})
-                   .status(302)
-                   .location(payload.cb_uri)
-                   .send();
-            });
-    } else {
-        req.next();
-    }
+    //clear cookie and redirect to ID Site with a restricted scope
+    res.clearCookie(req.user.tenant.id, {path: cookiePath});
+    req.authInfo.path = '/#/logoutSuccess';
+    redirectToIdSite(
+        res,
+        req.user,
+        null, null,
+        req.authInfo,
+        null,
+        {
+            scope: {
+                applications: {
+                    [hrefHelper.resolveHref(req.authInfo.sub).id]: [
+                        'get',
+                        { customData: [ 'get' ] },
+                        { idSiteModel: [ 'get' ] }
+                    ]
+                }
+            }
+        }
+    );
 });
 
-function addParamToUri(uri, paramName, paramValue){
-    //just replace the placeholder if it exists
-    var placeHolder = '${'+paramName+'}';
-    if(uri.includes(placeHolder)){
-        return uri.replace(placeHolder, paramValue);
-    }
-    //else, either add the param to existing params
-    //or add a query string to the uri if no param exist
-    var parsed = url.parse(uri);
-    if(parsed.search){
-        parsed.search+='&'+paramName+'='+paramValue;
-    } else {
-        parsed.search='?'+paramName+'='+paramValue;
-    }
-    return url.format(parsed);
-}
+app.use(errorHandler);
 
-function redirectToIdSite(jwtPayload, application, apiKey, res){
-    jwt.signAsync(
-        {
-            init_jti: jwtPayload.jti,
-            scope: scopeHelper.getIdSiteScope(application.id),
-            app_href: jwtPayload.sub,
-            cb_uri: jwtPayload.cb_uri,
-            state: jwtPayload.state,
-            sp_token: 'null' //only to not make stormpath.js crash
-        },
-        res.app.get('secret'),
-        {
-            expiresIn: 60,
-            subject: jwtPayload.iss
-        }
-     )
-     .then(function(token){
-        res.status(302).location(apiKey.tenant.idSites[0].url+(jwtPayload.path || '')+'?jwt='+token).send();
-    })
-    .catch(function(){
-        res.status(500).end();
-    });
+function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, invitationEmail, content){
+    const baseUrl = hrefHelper.getBaseUrl(jwtPayload.sub);
+    return  jwt.signAsync(
+           _.merge(
+               {
+                   init_jti: jwtPayload.jti,
+                   scope: scopeHelper.getIdSiteScope(application, accountStore),
+                   app_href: jwtPayload.sub,
+                   cb_uri: jwtPayload.cb_uri,
+                   state: jwtPayload.state,
+                   asnk: jwtPayload.onk, //account store name key
+                   sof: jwtPayload.sof, //show organization field
+                   ros: jwtPayload.ros, //require organization selection
+                   require_mfa: jwtPayload.require_mfa,
+                   //qualify the account store & invitation hrefs
+                   ash: Optional.ofNullable(accountStore).map(_.property('href')).map(hrefHelper.unqualifyHref).map(_.bindKey(baseUrl, 'concat')).orElse(null),
+                   inv_href: jwtPayload.inv_href,
+                   email: invitationEmail,
+                   //only to not make stormpath.js crash
+                   sp_token: 'null'
+               },
+               content
+           ),
+           apiKey.secret,
+           {
+               expiresIn: 60,
+               subject: jwtPayload.iss,
+               audience: 'idSite'
+           }
+       ).then(token => res.status(302).location(apiKey.tenant.idSites[0].url+_.defaultTo(jwtPayload.path, '/#/')+'?jwt='+token).send());
 }
 
 module.exports = app;

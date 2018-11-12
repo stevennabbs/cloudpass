@@ -5,7 +5,7 @@ var crypto = require('crypto');
 var url = require('url');
 var http = require('http');
 var BluebirdPromise = require('sequelize').Promise;
-var request = require('supertest-as-promised');
+var request = require('supertest');
 
 describe('SAuthc1', function(){
     var application;
@@ -17,7 +17,7 @@ describe('SAuthc1', function(){
                 application = res.body.items[0];
             });
      });
-     
+
      it('GET', function(){
          return sendAauthc1Request('/v1/tenants/'+init.apiKey.tenantId, null, 'GET')
               .then(function(res){
@@ -25,7 +25,7 @@ describe('SAuthc1', function(){
                     assert(res.body.href);
               });
      });
-     
+
      it('GET with query', function(){
          return sendAauthc1Request('/v1/tenants/'+init.apiKey.tenantId, "expand=applications", 'GET')
               .then(function(res){
@@ -34,23 +34,20 @@ describe('SAuthc1', function(){
                     assert(res.body.applications.items);
               });
      });
-     
+
      it('POST', function(){
          return sendAauthc1Request('/v1/tenants/'+init.apiKey.tenantId, null, 'POST', {customData: {}})
               .then(function(res){
-                    assert.strictEqual(res.status, 200);                    
+                    assert.strictEqual(res.status, 200);
               });
      });
-     
+
      it('Invalid digest', function(){
-         return request(init.app).get('/v1/tenants/'+init.apiKey.tenantId)
+         return request(init.servers.main).get('/v1/tenants/'+init.apiKey.tenantId)
                     .set('authorization', 'SAuthc1 sauthc1Id=201c2ec2-6d42-47b1-ba85-3b5ca3700b38/20160223/2639dabba1390038/sauthc1_request, sauthc1SignedHeaders=content-type;host;x-stormpath-date, sauthc1Signature=51d68f16f209d1ac4ba3cfcdcb476d36cfa1eeecae976e749c889af0738dbe41')
-                    .expect(401)
-                    .toPromise();
+                    .expect(401);
      });
 });
-
-
 
 //strongly inspired from https://github.com/stormpath/stormpath-sdk-node/blob/master/lib/authc/Sauthc1RequestAuthenticator.js
 function sendAauthc1Request(path, query, method, body) {
@@ -74,23 +71,14 @@ function sendAauthc1Request(path, query, method, body) {
     }
 
     function sha256(string) {
-        return crypto.createHash('sha256').update(new Buffer(string)).digest('binary');
+        return crypto.createHash('sha256').update(Buffer.from(string, 'utf8')).digest();
     }
-
-    function toHex(data) {
-        var out = [];
-        for (var i = 0; i < data.length; i++) {
-            out.push(('0' + data.charCodeAt(i).toString(16)).substr(-2, 2));
-        }
-        return out.join('');
-    }
-    ;
 
     function sign(data, key) {
         if (typeof data === 'string') {
-            data = new Buffer(data);
+            data = Buffer.from(data, 'utf8');
         }
-        return crypto.createHmac('sha256', key).update(data).digest('binary');
+        return crypto.createHmac('sha256', key).update(data).digest();
     }
 
 
@@ -116,14 +104,14 @@ function sendAauthc1Request(path, query, method, body) {
     var canonicalResourcePath = encodeUrl(path);
     var canonicalQueryString = query ? encodeUrl(query): '';
     var signedHeadersString = sortedHeaderKeys.join(';').toLowerCase();
-    var requestPayloadHashHex = toHex(sha256(bodyString));
+    var requestPayloadHashHex = sha256(bodyString).toString('hex');
     var canonicalRequest = [method, canonicalResourcePath, canonicalQueryString,
         canonicalHeadersString, signedHeadersString, requestPayloadHashHex]
             .join(NL);
 
     var id = [apiKey.id, dateStamp, nonce, ID_TERMINATOR].join('/');
 
-    var canonicalRequestHashHex = toHex(sha256(canonicalRequest));
+    var canonicalRequestHashHex = sha256(canonicalRequest).toString('hex');
 
     var stringToSign = [ALGORITHM, timeStamp, id, canonicalRequestHashHex].join(NL);
 
@@ -136,14 +124,14 @@ function sendAauthc1Request(path, query, method, body) {
     var kSigning = sign(ID_TERMINATOR, kNonce);
 
     var signature = sign(stringToSign, kSigning);
-    var signatureHex = toHex(signature);
+    var signatureHex = signature.toString('hex');
 
     var authorizationHeader = [
         AUTHENTICATION_SCHEME + ' ' + SAUTHC1_ID + '=' + id,
         SAUTHC1_SIGNED_HEADERS + '=' + signedHeadersString,
         SAUTHC1_SIGNATURE + '=' + signatureHex
     ].join(', ');
-    
+
     headers[AUTHORIZATION_HEADER] = authorizationHeader;
 
     return BluebirdPromise.fromCallback(function(callback){
@@ -175,7 +163,7 @@ function sendAauthc1Request(path, query, method, body) {
         );
 
         if(bodyString){
-            req.write(new Buffer(bodyString));
+            req.write(Buffer.from(bodyString, 'utf8'));
         }
         req.end();
     });

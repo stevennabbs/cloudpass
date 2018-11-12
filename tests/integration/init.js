@@ -1,22 +1,23 @@
-var request = require('supertest-as-promised');
+var request = require('supertest');
 var randomstring = require("randomstring");
 var ms = require('smtp-tester');
 var BluebirdPromise = require('sequelize').Promise;
-var models = require('../../src/models');
+var signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
+var _ = require('lodash');
 
 exports.postRequest = function(path){
-    return request(exports.app).post('/v1/'+path)
+    return request(exports.servers.main).post('/v1/'+path)
         .auth(exports.apiKey.id, exports.apiKey.secret)
         .set('Content-Type', 'application/json');
 };
 
 exports.getRequest = function(path){
-        return request(exports.app).get('/v1/'+path)
+        return request(exports.servers.main).get('/v1/'+path)
         .auth(exports.apiKey.id, exports.apiKey.secret);
 };
 
 exports.deleteRequest = function(path){
-        return request(exports.app).del('/v1/'+path)
+        return request(exports.servers.main).del('/v1/'+path)
         .auth(exports.apiKey.id, exports.apiKey.secret);
 };
 
@@ -33,49 +34,75 @@ exports.getEmailPromise = function (mailServer, address) {
                     callback(null, email);
                 });
             }
-        ).timeout(1000);
+        ).timeout(10000);
     };
 
 exports.randomName = randomstring.generate;
 
+exports.getIdSiteJwtRequest = function(applicationId, options){
+    return signJwt(
+        options,
+        exports.apiKey.secret,
+        {
+            issuer: exports.apiKey.id,
+            subject: 'http://localhost:20020/v1/applications/'+applicationId,
+            header: {kid: exports.apiKey.id}
+        }
+    );
+};
+
+exports.getIdSiteBearer = function(applicationId, options){
+    return exports.getIdSiteJwtRequest(applicationId, options)
+        .then(jwtRequest =>
+                //send it it cloudpass, it should redirect to ID site
+                request(exports.servers.main).get('/sso')
+                   .query({jwtRequest})
+                   .expect(302)
+        )
+        .then(res => {
+            var fragmentStart = '/#/?jwt=';
+            return res.header.location.substring(res.header.location.indexOf(fragmentStart) + fragmentStart.length);
+        });
+};
+
+exports.adminUser = 'test@example.com';
+exports.adminPassword = 'Aa123456';
+
 before(function(){
-    this.timeout(0);
     return require('../../src/main')
-        .then(function(app){
+        .then(function(servers){
             //register (create a tenant)
-            exports.app = app;
-            return request(app)
+            exports.servers = servers;
+            return request(exports.servers.main)
                 .post('/registration')
                 .send('tenantNameKey=test-tenant')
-                .send('email=test@example.com')
+                .send('email='+exports.adminUser)
                 .send('givenName=test')
                 .send('surname=test')
-                .send('password=Aa123456')
-                .expect(204)
-                .toPromise();
+                .send('password='+exports.adminPassword)
+                .expect(204);
         })
         .then(function(){
             //login
-            return request(exports.app)
+            return request(exports.servers.main)
                 .post('/login')
                 .send('tenantNameKey=test-tenant')
                 .send('email=test@example.com')
                 .send('password=Aa123456')
-                .expect(204)
-                .toPromise();
+                .expect(204);
         })
         .then(function(res){
             var cookie = res.header['set-cookie'][0].split(';')[0];
-            return request(exports.app)
+            return request(exports.servers.main)
                     .get('/v1/accounts/current')
                     .set('Cookie', cookie)
                     .expect(302)
                     .then(function(res){
-                        return request(exports.app)
-                            .post('/v1/accounts/'+res.header.location+'/apiKeys')
+                        exports.adminUserId = res.header.location;
+                        return request(exports.servers.main)
+                            .post('/v1/accounts/'+ exports.adminUserId +'/apiKeys')
                             .set('Cookie', cookie)
-                            .expect(200)
-                            .toPromise();
+                            .expect(200);
                     });
         })
         .then(function(res){
@@ -83,14 +110,14 @@ before(function(){
         })
         .then(function(){
             //logout
-            return request(exports.app)
+            return request(exports.servers.main)
                 .get('/logout')
                 .expect(204);
         });
-            
+
 });
 
 after(function(){
-    exports.app.close();
-    models.sequelize.close();
+    _.values(exports.servers).forEach(_.method('close'));
+    require('../../src/models').sequelize.close();
 });

@@ -14,7 +14,7 @@ module.exports = {
                     allowNull: false
                 },
                 workflowStep: {
-                    type: DataTypes.ENUM('passwordReset', 'passwordResetSuccess', 'emailVerification', 'emailVerificationSuccess', 'welcome'),
+                    type: DataTypes.STRING(30),
                     allowNull: false
                 },
                 fromEmailAddress: {
@@ -30,15 +30,15 @@ module.exports = {
                 subject: {
                     type: DataTypes.STRING(78),
                     validate: {len: [1, 78]},
-                    allowNull: false                    
+                    allowNull: false
                 },
                 htmlBody: {
-                    type: DataTypes.STRING(1024),
+                    type: DataTypes.TEXT,
                     allowNull: false,
                     defaultValue: ''
                 },
                 textBody: {
-                    type: DataTypes.STRING(1024),
+                    type: DataTypes.TEXT,
                     allowNull: false,
                     defaultValue: ''
                 },

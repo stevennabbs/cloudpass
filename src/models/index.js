@@ -7,114 +7,40 @@ var Sequelize = require('sequelize');
 var _ = require('lodash');
 var Umzug = require('umzug');
 var Optional = require('optional-js');
-var ApiError = require('../ApiError');
+var winston = require('winston');
 
-var baseUrl = Optional.ofNullable(config.get('server.rootUrl')).map(function(url){return url+'/v1/';}).orElse('/');
 
-var sequelizeConfig = config.get('persistence');
-sequelizeConfig.options.define = {
-    updatedAt: 'modifiedAt',
-    //add href to all resources
-    getterMethods: {
-        href: function () {
-            return this.Model.getHref(this.id);
-        }
-    },
-    classMethods: {
-        getHref: function (id) {
-            return  baseUrl + this.options.name.plural + '/' + id;
-        },
-       getAclAttribute: function(){
-           return 'tenantId';
-       },
-       getSearchableAttributes: function(){
-            return [];  
-       },
-       getSettableAttributes: function(){
-            return this.getSearchableAttributes();
-       },
-       isCustomizable: function(){
-            return false;  
-       },
-       associatePriority: function(){
-           return 0;
-       },
-       fromJSON: function(object){
-           return _.transform(
-                object,
-                function(instance, v, k){
-                    if(v.href){
-                        //turn href into instances
-                        var refInstance = resolveHref(v.href);
-                        ApiError.assert(refInstance, ApiError, 400, 2002, '%s href has an invalid value', k);
-                        //if the object corresponds to an association, set the corresponding foreign key
-                        if(this.associations[k]){
-                            instance.set(this.associations[k].foreignKey, refInstance.id);
-                        } else {
-                            instance.set(k, refInstance);
-                        }
-                    } else {
-                        instance.set(k, v);
-                    }
-                }.bind(this),
-                this.build({}));
-       },
-       addFindAndCount: function(target, transformOptions){
-           //pseudo association defined by custom accessors
-           var accessorTypes = {get: 'findAll', count: 'count'};
-           _.set(
-                this,
-                'customAssociations.'+target.options.name.plural,
-                {
-                    target: target,
-                    associationType: 'hasMany',
-                    accessors: _.mapValues(accessorTypes, function(v, k){return k+_.upperFirst(target.options.name.plural);})
+var persistenceOptions = _.merge(
+    {
+        define: {
+            updatedAt: 'modifiedAt',
+            //add href to all resources
+            getterMethods: {
+                href: function () {
+                    return this.constructor.getHref(this.id);
                 }
-           );
-           Object.keys(accessorTypes).forEach(function(accessorType){
-               this.Instance.prototype[this.customAssociations[target.options.name.plural].accessors[accessorType]] = function(options){
-                   return target[accessorTypes[accessorType]](transformOptions.call(this, options));
-               };
-           }.bind(this));
-       }
+            }
+        },
+        //remove the last argument passed to the logging function (which is an option object)
+        logging: (...args) => winston.loggers.get('sql').debug(..._.initial(args)),
+        operatorsAliases: false
     },
-    //override toJSON
-    instanceMethods: {
-        toJSON: function () {
-            //"clean" the object to not expand unwanted associations
-            this.dataValues = _.pick(this.dataValues, _.keys(this.Model.attributes));
-            var values = this.get();
-            [this.Model.associations, this.Model.customAssociations].forEach(function(associations){
-                _.forOwn(
-                associations,
-                function (association, associationName) {
-                    if(!values[associationName]){
-                        if(association.associationType === 'BelongsTo'){
-                            values[associationName] = this[association.foreignKey]?
-                                {'href': association.target.getHref(this[association.foreignKey], this.id)}:
-                                null;
-                        } else {
-                            values[associationName] = {'href': this.href + "/" + associationName};
-                        }
-                    }
-                }.bind(this));
-            }.bind(this));
-            return values;
-        }
-    }
-};
+    config.get('persistence.options')
+);
 
-var sequelize = new Sequelize(sequelizeConfig.database, sequelizeConfig.username, sequelizeConfig.password, sequelizeConfig.options);
+var sequelize = new Sequelize(config.persistence.database, config.persistence.username, config.persistence.password, persistenceOptions);
 
 //convenience method to start a transaction only if none is already started
 sequelize.requireTransaction = function(query){
-    return Sequelize.cls.get('transaction') ? query() : this.transaction(query);
+    return Optional.ofNullable(Sequelize.cls.get('transaction'))
+            .map(query)
+            .orElseGet(() => this.transaction({isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ}, query));
 };
 
 //default Model.count is not working with SSACL (see https://github.com/pumpupapp/ssacl/issues/4)
-Sequelize.Model.prototype.count = function(options){
+Sequelize.Model.count = function(options){
     return this.findAll(
-            _.merge(
+            _.defaults(
                 {
                     attributes: [[sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col(this.name+'.'+this.primaryKeyAttribute))), 'count']],
                     raw: true,
@@ -127,7 +53,7 @@ Sequelize.Model.prototype.count = function(options){
         .then(parseInt);
 };
 
-Sequelize.Model.prototype.findAndCountAll = function(options){
+Sequelize.Model.findAndCountAll = function(options){
     var self = this;
     return this.sequelize.requireTransaction(function(){
         return self.sequelize.Promise.join(
@@ -140,8 +66,6 @@ Sequelize.Model.prototype.findAndCountAll = function(options){
     });
 };
 
-var db = {};
-
 //load all models in the folder
 fs
     .readdirSync(__dirname)
@@ -150,47 +74,14 @@ fs
     })
     .forEach(function (file) {
         var model = sequelize.import(path.join(__dirname, file));
-        db[model.name] = model;
+        exports[model.name] = model;
     });
 
-//add custom data attrribute
-_.values(db)
-    .filter(function(m){
-        return m.isCustomizable();
-    })
-    .forEach(function(m){
-        m.rawAttributes.customData = {
-            type: Sequelize.STRING(1024),
-            get: function(){
-                return {href: this.href+'/customData'};
-            },
-            set: function(val){
-                this.setDataValue('customData',JSON.stringify( _.assign(JSON.parse(this.getDataValue('customData') || "{}"), _.omit(val, 'href', 'createdAt', 'modifiedAt'))));
-            },
-            defaultValue: '{}'
-        };
-        m.refreshAttributes ();
-        m.Instance.prototype.getCustomData = function(){
-            return _.assign(
-                JSON.parse(this.getDataValue('customData')),
-                {
-                    href: this.href+'/customData',
-                    createdAt: this.createdAt,
-                    modifiedAt: this.modifiedAt
-                }
-            );
-        };
-        m.Instance.prototype.deleteCustomDataField = function(fieldName){
-            this.setDataValue(
-                'customData',
-                JSON.stringify(_.omit(JSON.parse(this.getDataValue('customData')), fieldName)));
-        };
-    });
+
 // set up the associations between models
 _(sequelize.models)
         .values()
         .filter(function(m){return m.associate;})
-        .sortBy(function(m){return m.associatePriority;})
         .forEach(function(m){m.associate(sequelize.models);});
 
 //post-association hooks
@@ -199,7 +90,7 @@ _(sequelize.models)
         .filter(function(m){return m.afterAssociate;})
         .forEach(function(m){m.afterAssociate(sequelize.models);});
 
-db.migrate = function(){
+exports.migrate = function(){
     return new Umzug({
         storage: 'sequelize',
         storageOptions: {
@@ -207,52 +98,28 @@ db.migrate = function(){
             modelName: 'completedMigrations'
         },
         migrations:{
-            params: [ sequelize.getQueryInterface(), Sequelize, db ],
+            params: [ sequelize.getQueryInterface(), Sequelize, sequelize.models ],
             pattern: /\.js$/
         }
     })
     .up();
 };
 
-db.useSsacl = function(ssacl, cls){
-    _.forIn(sequelize.models, function(value){
-        if(value.getAclAttribute){
-            var aclAttribute = value.getAclAttribute();
-            ssacl(
-                    value,
+exports.useSsacl = function(ssacl, cls){
+    _(sequelize.models)
+            .values()
+            .filter(_.property('aclAttribute'))
+            .forEach(model => {
+                ssacl(
+                    model,
                     {
                         cls: cls,
-                        //paranoia: false,
-                        read: {attribute: aclAttribute},
-                        write: {attribute: aclAttribute}
-                    }
-                    
-            );
-        }
-    });
+                        read: {attribute: model.aclAttribute},
+                        write: {attribute: model.aclAttribute}
+                    },
+                    require('sequelize')
+                );
+            });
 };
 
-var hrefPattern = /^(.*?)\/v1\/(.*)$/;
-
-db.getRootUrl = function(href){
-    return href.replace(hrefPattern, '$1');
-};
-
-db.unqualifyHref = function(href){
-    return href.replace(hrefPattern, '$2');
-};
-
-function resolveHref(href){
-    //unqualify href
-    var split = _.compact(db.unqualifyHref(href).split('/'));
-    if(split.length === 2){
-        var model = _.find(_.values(sequelize.models), function(m){return m.options.name.plural === split[0];});
-        if(model){
-            return model.build({id:split[1]});
-        }
-    }
-}
-db.resolveHref = resolveHref;
-
-db.sequelize = sequelize;
-module.exports = db;
+exports.sequelize = sequelize;

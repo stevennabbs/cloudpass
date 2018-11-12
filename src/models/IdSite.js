@@ -1,7 +1,10 @@
 "use strict";
 
+const ModelDecorator = require('./helpers/ModelDecorator');
+
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define(
+    return new ModelDecorator(
+        sequelize.define(
             'idSite',
             {
                 id: {
@@ -12,11 +15,17 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 url: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true}
+                    validate: {isURL: {require_tld: false}},
+                    defaultValue: 'http://id.example.com'
                 },
                 logoUrl: {
                     type: DataTypes.STRING,
-                    validate: {isUrl: true}
+                    validate: {isURL: {require_tld: false}}
+                },
+                authorizedRedirectURIs: {
+                    type: DataTypes.JSON,
+                    allowNull: false,
+                    defaultValue: ['*']
                 },
                 sessionTtl: {
                     type: DataTypes.STRING(20),
@@ -28,16 +37,12 @@ module.exports = function (sequelize, DataTypes) {
                     allowNull: false,
                     defaultValue: true
                 }
-            },
-            {
-                classMethods: {
-                    getSettableAttributes: function(){
-                        return ['url', 'logoUrl', 'sessionTtl', 'sessionCookiePersistent'];  
-                    },
-                    associate: function(models) {
-                        models.group.belongsTo(models.tenant, {onDelete: 'cascade'});
-                    }
-                }
             }
-    );
+        )
+    )
+    .withClassMethods({
+        associate: models => models.group.belongsTo(models.tenant, {onDelete: 'cascade'})
+    })
+    .withSettableAttributes('url', 'logoUrl', 'authorizedRedirectURIs', 'sessionTtl', 'sessionCookiePersistent')
+    .end();
 };

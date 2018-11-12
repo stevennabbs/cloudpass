@@ -25,7 +25,7 @@ app.post('/', function(req, res){
                         name: 'Cloudpass',
                         tenantId: tenant.id
                     }),
-                    models.directory.create({  
+                    models.directory.create({
                         name: 'Cloudpass Administrators',
                         tenantId: tenant.id
                     }),

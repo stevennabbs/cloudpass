@@ -1,11 +1,12 @@
 "use strict";
 
-var _ = require('lodash');
+const _ = require('lodash');
+const Op = require('sequelize').Op;
 
 function sign(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
 
 function findPaths(source, destination){
-    
+
     var models = source.sequelize.models;
     var accountStoreHierarchy = [
             models.account,
@@ -17,7 +18,7 @@ function findPaths(source, destination){
             models.accountStoreMapping,
             models.application
         ];
-        
+
     return _(source.associations)
             .values()
             .filter(function(a){
@@ -56,7 +57,7 @@ function addIncludes(parent, associations){
         required: true,
         parent: parent
     };
-    
+
     if(association.options.scope){
         if(association.associationType === 'BelongsTo'){
             //add a condition on the parent
@@ -67,9 +68,9 @@ function addIncludes(parent, associations){
             //e.g. for the association directory => accountStoreMapping, we need to add a condition on accountStoreMapping.accountStoreType
             include.where = association.options.scope;
         }
-        
+
     }
-    
+
     if(_.isEmpty(associations)){
         //last model: that's the one we want to get the IDs from
         include.attributes = ['id'];
@@ -120,18 +121,17 @@ module.exports = function(source, destination){
     });
     source.addFindAndCount(destination, function(options){
         return _.defaults(
-             {
-                 where: {
-                     $and:[
-                         {id: {
-                           $or: _.map(queryTemplates, function(queryTemplate){
-                                    return {$in: this.sequelize.literal(queryTemplate({id: this.id}))};
-                                }.bind(this))
-                         }},
-                         options.where
-                     ]
-                 }
-             },
-             options);
+            {
+                where: {
+                    [Op.and]:[
+                        {
+                            id: {[Op.or]: _.map(queryTemplates, queryTemplate => ({[Op.in]: this.sequelize.literal(queryTemplate({id: this.id}))}))}
+                        },
+                        _.get(options, 'where')
+                    ]
+                }
+            },
+            options
+        );
     });
 };

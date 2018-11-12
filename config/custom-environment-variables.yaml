@@ -1,0 +1,43 @@
+# These environments variables can be used to override configuration values
+
+server:
+  rootUrl: SERVER_ROOT_URL
+  port: SERVER_PORT
+  monitoringPort: SERVER_MONITORING_PORT
+  clustering:
+    __name: SERVER_CLUSTERING
+    __format: json
+  uiFolder: SERVER_UI_FOLDER
+  secret: SERVER_SECRET
+
+email:
+  fields:
+    __name: EMAIL_FIELDS
+    __format: json
+  transport:
+    options:
+      direct: EMAIL_TRANSPORT_DIRECT
+      host: EMAIL_TRANSPORT_HOST
+      port: EMAIL_TRANSPORT_PORT
+      auth:
+        user: EMAIL_TRANSPORT_AUTH_USER
+        pass: EMAIL_TRANSPORT_AUTH_PASS
+
+persistence:
+  database: PERSISTENCE_DATABASE
+  username: PERSISTENCE_USERNAME
+  password: PERSISTENCE_PASSWORD
+  options:
+    dialect: PERSISTENCE_OPTIONS_DIALECT
+    storage: PERSISTENCE_OPTIONS_STORAGE
+    benchmark: PERSISTENCE_OPTIONS_BENCHMARK
+    host: PERSISTENCE_OPTIONS_HOST
+    port: PERSISTENCE_OPTIONS_PORT
+    pool:
+      minConnections: PERSISTENCE_OPTIONS_POOL_MIN_CONNECTIONS
+      maxConnections: PERSISTENCE_OPTIONS_POOL_MAX_CONNECTIONS
+      maxIdleTime: PERSISTENCE_OPTIONS_POOL_MAX_IDLE_TIME
+
+logging:
+  __name: LOGGING
+  __format: json

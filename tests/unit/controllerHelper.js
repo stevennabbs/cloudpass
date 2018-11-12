@@ -1,10 +1,11 @@
 var assert = require("assert");
+const Op = require('sequelize').Op;
 var controllerHelper = require('rewire')('../../src/api/helpers/controllerHelper');
 
 describe('controllerHelper', function () {
-    
+
     var getOrderClause = controllerHelper.__get__("getOrderClause");
-    
+
     describe('getOrderClause', function(){
         it('should preserve clause order', function(){
             assert.deepStrictEqual(
@@ -12,14 +13,14 @@ describe('controllerHelper', function () {
                     ['id', 'name', 'description']
             );
         });
-        
+
         it('should take into account ordering direction', function(){
             assert.deepStrictEqual(
                     getOrderClause(['id', 'name ASC', 'description DESC']),
                     ['id', 'name', ['description',  'DESC']]
             );
         });
-        
+
         it('should throw an error in case of invalid clause', function(){
             assert.throws(
                  function(){
@@ -29,61 +30,65 @@ describe('controllerHelper', function () {
                     return error.status === 400 && error.code === 2104;
                 }
             );
-            
+
         });
-        
+
         it('should return a default ordering clause if none is provided', function(){
             assert.deepStrictEqual(
-                    getOrderClause(),
-                    ['id']
+                getOrderClause(),
+                [[ 'id', 'ASC' ]]
             );
         });
     });
-    
-    describe('getExpands', function () {
+
+    describe('parseExpandParam', function () {
 
         it('should return an empty object if no expand parameter is provided', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands(),
+                    controllerHelper.parseExpandParam(),
+                    {}
+            );
+            assert.deepStrictEqual(
+                    controllerHelper.parseExpandParam(''),
                     {}
             );
         });
 
         it('should correctly parse pagination options', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(offset:2,limit:10)'),
+                    controllerHelper.parseExpandParam('groups(offset:2,limit:10)'),
                     {groups: {offset: 2, limit: 10}}
             );
         });
 
         it('should add default pagination options if some are missing', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(limit:10)'),
+                    controllerHelper.parseExpandParam('groups(limit:10)'),
                     {groups: {offset: 0, limit: 10}}
             );
 
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(offset:2)'),
+                    controllerHelper.parseExpandParam('groups(offset:2)'),
                     {groups: {offset: 2, limit: 25}}
             );
         });
 
         it('should add default pagination options if all are missing', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups'),
+                    controllerHelper.parseExpandParam('groups'),
                     {groups: {offset: 0, limit: 25}}
             );
         });
 
         it('should fail if an invalid pagination option is passed', function () {
             assert.throws(function () {
-                controllerHelper.getExpands('groups(size:10)');
+                controllerHelper.parseExpandParam('groups(size:10)');
             });
         });
 
         it('should parse multiple expand parameters', function () {
             assert.deepStrictEqual(
-                    controllerHelper.getExpands('groups(limit:10),directories,tenants(limit:3,offset:8)'),
+                    controllerHelper.parseExpandParam('groups(limit:10),directories,tenants(limit:3,offset:8)'),
                     {
                         groups: {offset: 0, limit: 10},
                         directories: {offset: 0, limit: 25},
@@ -155,20 +160,24 @@ describe('controllerHelper', function () {
             assert(options.where === undefined);
         });
 
-        it('should one where clause per searchable attributes if "q" parameter is provided', function () {
+        it('should add one where clause per searchable attributes if "q" parameter is provided', function () {
             var options = getCollectionQueryOptions(forgeRequest(undefined, undefined, undefined, {q: 'test'}), models.account);
             assert(options.where);
-            assert(options.where.$or);
-            assert.strictEqual(options.where.$or.length, models.account.getSearchableAttributes().length);
+            assert(options.where[Op.or]);
+            assert.strictEqual(options.where[Op.or].length, models.account.searchableAttributes.length);
         });
-        
+
         it('should mix "q" and other where clauses', function () {
             var options = getCollectionQueryOptions(forgeRequest(undefined, undefined, undefined, {q: 'test', email: 'test'}), models.account);
             assert(options.where);
-            assert(options.where.$and);
-            assert.strictEqual(options.where.$and.length, 2);
+            assert(options.where[Op.and]);
+            assert.strictEqual(options.where[Op.and].length, 2);
         });
+    });
 
-
+    it('escapeLikeParam', function(){
+        it('should escape reserved characters in like clause', function(){
+            assert.strictEqual(controllerHelper.__get__("escapeLikeParam")('_foo%\\'), '\\_foo\\%\\\\');
+        });
     });
 });

@@ -19,8 +19,9 @@ module.exports = {
                     allowNull: false
                 },
                 customData: {
-                    type: DataTypes.STRING(1024),
-                    defaultValue: "{}"
+                    type: DataTypes.JSON,
+                    defaultValue: {},
+                    allowNull: false
                 },
                 createdAt: {
                     allowNull: false,

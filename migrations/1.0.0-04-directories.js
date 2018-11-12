@@ -14,7 +14,7 @@ module.exports = {
                     allowNull: false
                 },
                 description: {
-                    type: DataTypes.STRING(1022),
+                    type: DataTypes.TEXT,
                     defaultValue: ''
                 },
                 status:{
@@ -23,8 +23,9 @@ module.exports = {
                     defaultValue: 'ENABLED'
                 },
                 customData: {
-                    type: DataTypes.STRING(1024),
-                    defaultValue: "{}"
+                    type: DataTypes.JSON,
+                    defaultValue: {},
+                    allowNull: false
                 },
                 createdAt: {
                     allowNull: false,

@@ -36,7 +36,15 @@ module.exports = {
                     onDelete: "cascade"
                 }
             }
-        );
+        )
+        .then(() => migration.addConstraint(
+            'groupMemberships',
+            ['accountId', 'groupId'],
+            {
+              type: 'unique',
+              name: 'groupMemberships_accountId_groupId_uk'
+            }
+        ));
     },
 
     down: function(migration) {

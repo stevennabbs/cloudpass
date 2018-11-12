@@ -1,10 +1,9 @@
 var assert = require("assert");
-var models = require('../../src/models');
-var addAccountStoreAccessors = require('rewire')('../../src/apps/sso');
+var sendJwtResponse = require('rewire')('../../src/apps/helpers/sendJwtResponse');
 
 describe('sso', function(){
     describe('addParamToUri', function(){
-       var addParamToUri = addAccountStoreAccessors.__get__('addParamToUri');
+       var addParamToUri = sendJwtResponse.__get__('addParamToUri');
        
        it('should add the given param to existing query string', function(){
            assert.deepStrictEqual(addParamToUri('http://a/t/h?query=string#hash', 'foo', 'bar'), 'http://a/t/h?query=string&foo=bar#hash');

@@ -3,8 +3,9 @@ var PasswordPolicy = require('../../src/models').passwordPolicy;
 var ApiError = require('../../src/ApiError');
 
 describe('Password policy', function(){
+
     describe('Password validation', function(){
-        
+
         it('Passwords length cannot exceed the maximum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 0,
@@ -15,7 +16,7 @@ describe('Password policy', function(){
                 minSymbol: 0,
                 minDiacritic: 0
             });
-            
+
             assert.throws(
                 function(){
                     policy.validatePassword('aa');
@@ -34,7 +35,7 @@ describe('Password policy', function(){
                 ApiError
             );
         });
-        
+
         it('Passwords length cannot be less than the minimum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 2,
@@ -64,7 +65,7 @@ describe('Password policy', function(){
                 ApiError
             );
         });
-        
+
         it('Passwords cannot contain less lower case characters than the minimum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 0,
@@ -94,7 +95,7 @@ describe('Password policy', function(){
                 ApiError
             );
         });
-        
+
         it('Passwords cannot contain less upper case characters than the minimum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 0,
@@ -124,7 +125,7 @@ describe('Password policy', function(){
                 ApiError
             );
         });
-        
+
         it('Passwords cannot contain less numeric characters than the minimum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 0,
@@ -154,7 +155,7 @@ describe('Password policy', function(){
                 ApiError
             );
         });
-        
+
         it('Passwords cannot contain less symbolic characters than the minimum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 0,
@@ -177,14 +178,21 @@ describe('Password policy', function(){
                             && error.message === 'Password requires at least 1 symbolic character(s).';
                 }
             );
+            assert.throws(
+                () => policy.validatePassword('1'),
+                function(error){
+                    return error instanceof ApiError
+                            && error.status === 400
+                            && error.code === 400
+                            && error.message === 'Password requires at least 1 symbolic character(s).';
+                }
+            );
             assert.doesNotThrow(
-                function(){
-                    policy.validatePassword('#');
-                },
+                () => policy.validatePassword('#'),
                 ApiError
             );
         });
-        
+
         it('Passwords cannot contain less diacritic characters than the minimum specified in the password policy', function(){
             var policy = PasswordPolicy.build({
                 minLength: 0,
@@ -214,6 +222,6 @@ describe('Password policy', function(){
                 ApiError
             );
         });
-        
+
     });
 });
