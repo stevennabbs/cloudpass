@@ -60,7 +60,7 @@ gulp.task('deb', function () {
     .pipe(gulp.dest('build/'));
 });
 
-gulp.task('deploy-deb', ['deb'], function(){
+gulp.task('deploy-deb', gulp.series('deb', function(){
     var stream =  fs.createReadStream('build/'+debFileName);
     stream.pipe(
         request.put('https://api.bintray.com/content/dhatim/deb/pool/main/c/cloudpass/'+debFileName)
@@ -75,7 +75,7 @@ gulp.task('deploy-deb', ['deb'], function(){
             .set('X-Bintray-Debian-Architecture', 'all')
     );
     return stream;
-});
+}));
 
 
 gulp.task('build-docker-image', function(){
