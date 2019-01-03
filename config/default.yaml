@@ -69,30 +69,45 @@ persistence:
 
 
 logging:
-  transports: []
+  transports:
+    console:
+      level: debug
   loggers:
-    sql: {}
-    http: {}
-    email: {}
-    login: {}
+    sql:
+      transports: [console]
+      level: warn
+    http:
+      transports: [console]
+      level: info
+    email:
+      transports: [console]
+      level: info
+    login:
+      transports: [console]
+      level: info
 # You can configure logging that way:
 #logging:
-#   transports:
-#    - winston-log2gelf
-#   loggers:
+#  transports:
+#    console:
+#      level: debug
+#    graylog:
+#      class: ovh-winston-ldp
+#      level: debug
+#      graylogHost: gra2.logs.ovh.com
+#      graylogPort: 12202
+#      graylogOvhTokenValue: 5c2b5cd8-837a-4d2c-a61e-8bdbca90f19a
+#      graylogFacility: cloudpass
+#      graylogFlag: production-sso
+#  loggers:
 #    sql:
-#      console:
-#        level: warn
-#        colorize: true
-#      file:
-#         level: error
-#         timestamp: true
-#         filename: logs/app.log,
-#         maxfiles: 5
-#         maxsize": 10485760
-#      log2gelf:
-#         level: debug
-#         host: 192.168.0.15
-#         port: 12201
-#         protocol: tls
-
+#      transports: [console, graylog]
+#      level: warn
+#    http:
+#      transports: [console, graylog]
+#      level: info
+#    email:
+#      transports: [console, graylog]
+#      level: info
+#    login:
+#      transports: [console, graylog]
+#      level: info

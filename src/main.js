@@ -9,11 +9,10 @@ const config = require('config');
 const ssacl = require('ssacl');
 const randomstring = require('randomstring');
 const _ = require('lodash');
-const winston = require("winston");
-const loadLoggingConfig = require('sequelize').Promise.promisify(require('winston-config').fromJson);
+const loggingHelper = require('./helpers/loggingHelper');
+const loadLoggingConfig = require('sequelize').Promise.promisify(loggingHelper.fromConfig);
 
-config.get('logging.transports').forEach(t => winston.transports[_.upperFirst(t)] = require(t));
-module.exports = loadLoggingConfig(config.get('logging.loggers'))
+module.exports = loadLoggingConfig(config.get('logging'))
     .then(function(){
         if(cluster.isMaster){
             //run pending migrations and fork clusters
