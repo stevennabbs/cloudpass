@@ -90,11 +90,11 @@ logging:
 #  transports:
 #    graylog:
 #      module: ovh-winston-ldp
-#      graylogHost: gra2.logs.ovh.com
-#      graylogPort: 12202
-#      graylogOvhTokenValue: 5c2b5cd8-837a-4d2c-a61e-8bdbca90f19a
-#      graylogFacility: cloudpass
-#      graylogFlag: production-sso
+#      graylogHost: host
+#      graylogPort: 1234
+#      graylogOvhTokenValue: ...
+#      graylogFacility: ...
+#      graylogFlag: ...
 #  loggers:
 #    sql:
 #      transports: [console, graylog]
