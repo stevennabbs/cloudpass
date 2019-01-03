@@ -126,7 +126,7 @@ exports.authenticateAccount = function(login, password, applicationId, organizat
 /* jshint ignore:start */
 exports.getLinkedAccount = async (account, applicationId) =>
     //check that account linking policy is enabled and that the default account store is a directory
-    Optional.ofNullable(await models.application.findById(
+    Optional.ofNullable(await models.application.findByPk(
             applicationId,
             {
                 attributes: [],

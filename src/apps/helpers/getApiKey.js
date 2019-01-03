@@ -4,7 +4,7 @@ var models = require('../../models');
 var ssacl = require('ssacl');
 
 module.exports = function(apiKeyId, ...includes){
-    return models.apiKey.findById(
+    return models.apiKey.findByPk(
         apiKeyId,
         {
             actor: new ssacl.Omnipotent(),

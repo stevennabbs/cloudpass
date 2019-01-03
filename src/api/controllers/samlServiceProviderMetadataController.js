@@ -23,7 +23,7 @@ shimmer.wrap(controller, 'get', function (original) {
 
 function sendXmlMetadata(req, res){
     models.samlServiceProviderMetadata
-        .findById(req.swagger.params.id.value)
+        .findByPk(req.swagger.params.id.value)
         .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
         .then(function(providerMetadata){
             res.type('xml').send(samlHelper.getXmlMetadata(providerMetadata));

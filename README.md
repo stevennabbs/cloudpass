@@ -226,14 +226,45 @@ Invitation emails can additionnaly use the following placeholders:
 
 ### Logging
 
-Four loggers can be configured in the *logging* section:
-- *sql*: logs the SQL queries before execution,
-- *http*: logs the HTTP requests via [morgan](https://github.com/expressjs/morgan),
-- *email*: logs when email are sent,
-- *login*: logs the result of logg.
+Loggers can be configured in the *logging* section:
+- *sql*: SQL queries before execution,
+- *http*: HTTP requests via [morgan](https://github.com/expressjs/morgan),
+- *email*: sent emails,
+- *login*: login operations,
+- *sso*: SSO operations.
 
-Cloudpass uses [winston-config](https://github.com/triplem/winston-config) to configure logging. Please refer to the module documentation for the accepted configuration options.
+Each logger can use multiple [transports](https://github.com/winstonjs/winston/blob/master/docs/transports.md).
+- Default transports without configuration (e.g. a naked `console`) can be omitted.
+- Non-default transports have to define their module.
 
+For example:
+```yaml
+logging:
+  transports:
+    graylog:
+      module: ovh-winston-ldp
+      graylogHost: hostname
+      graylogPort: 1234
+      graylogOvhTokenValue: ...
+      graylogFacility: ...
+      graylogFlag: ...
+  loggers:
+    sql:
+      transports: [console, graylog]
+      level: warn
+    http:
+      transports: [console, graylog]
+      level: info
+    email:
+      transports: [console, graylog]
+      level: info
+    login:
+      transports: [console, graylog]
+      level: info
+    sso:
+      transports: [console, graylog]
+      level: info
+```
 
 ## Getting Started
 

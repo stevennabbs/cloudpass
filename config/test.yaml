@@ -21,9 +21,6 @@ persistence:
     storage: ':memory:'
 
 logging:
-  transports:
-    console:
-      level: debug
   loggers:
     sql:
       transports: [console]
@@ -35,5 +32,8 @@ logging:
       transports: [console]
       level: debug
     login:
+      transports: [console]
+      level: debug
+    sso:
       transports: [console]
       level: debug

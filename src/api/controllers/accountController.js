@@ -37,7 +37,7 @@ controller.createFactor = function(req, res){
     //if accountName is not set, take the account email
     BluebirdPromise.resolve(
       Optional.ofNullable(factorAttributes.accountName)
-        .orElseGet(() => models.account.findById(accountId, {attributes: ['email']})
+        .orElseGet(() => models.account.findByPk(accountId, {attributes: ['email']})
                         .tap(ApiError.assertFound)
                         .get('email'))
     ).then(email => {
@@ -53,7 +53,7 @@ controller.consumeEmailVerificationToken = function(req, res){
     models.sequelize.transaction(function(){
         //account creation policy cannot be eagerly loaded here
         //see https://github.com/sequelize/sequelize/issues/2084
-        return models.emailVerificationToken.findById(
+        return models.emailVerificationToken.findByPk(
             req.swagger.params.tokenId.value,
             {
                 include: [{
@@ -108,7 +108,7 @@ controller.consumeEmailVerificationToken = function(req, res){
 controller.getProviderData = _.partial(controller.getComputedSubResource, 'getProviderData');
 
 controller.changePassword = function(req, res){
-    models.account.findById(
+    models.account.findByPk(
         req.swagger.params.id.value,
         {
             include: [{

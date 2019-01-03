@@ -11,7 +11,7 @@ describe('SAML', function(){
     var idpSsoLogoutUrl = 'http://idp.example.com/logout';
     var directoryId;
     describe('directory creation', function(){
-        it('specifying providerId = "saml" should creatte a SAML directory', function(){
+        it('specifying providerId = "saml" should create a SAML directory', function(){
             return readFile(__dirname + '/resources/saml/idp.crt', 'utf8')
                 .then(function(idpCertificate){
                     return init.postRequest('directories')

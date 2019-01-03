@@ -7,7 +7,7 @@ var ApiError = require('../../ApiError');
 exports.get = function(req, res){
     // SAML service provider ID = application ID
     models.application
-        .findById(req.swagger.params.id.value)
+        .findByPk(req.swagger.params.id.value)
         .tap(ApiError.assertFound)
         .call('getSamlPolicy')
         .call('getServiceProvider')

@@ -17,7 +17,7 @@ module.exports = function (model, transactionalMethods) {
         },
         //get a resource by id (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb)
         get: function (req, res) {
-            return controllerHelper.queryAndExpand(() => model.findById(req.swagger.params.id.value), req, res);
+            return controllerHelper.queryAndExpand(() => model.findByPk(req.swagger.params.id.value), req, res);
         },
         //get a collection associated to a resource (e.g. /directories/f6f7ee4a-0861-4873-a8d8-fc58245f93bb/accounts)
         getCollection: function(req, res){
@@ -26,7 +26,7 @@ module.exports = function (model, transactionalMethods) {
         //get custom data associated to a resource
         getCustomData: function(req, res){
             return model
-                .findById(req.swagger.params.id.value)
+                .findByPk(req.swagger.params.id.value)
                 .tap(ApiError.assertFound)
                 .call('getCustomData')
                 .then(res.json.bind(res))
@@ -37,7 +37,7 @@ module.exports = function (model, transactionalMethods) {
         },
         updateCustomData: function(req, res){
             return model
-                .findById(req.swagger.params.id.value)
+                .findByPk(req.swagger.params.id.value)
                 .tap(ApiError.assertFound)
                 .then(function(resource){
                     resource.set('customData', req.swagger.params.newCustomData.value);
@@ -73,7 +73,7 @@ module.exports = function (model, transactionalMethods) {
         },
         deleteCustomDataField: function(req, res){
             return model
-                .findById(req.swagger.params.id.value)
+                .findByPk(req.swagger.params.id.value)
                 .tap(ApiError.assertFound)
                 .then(function(resource){
                     resource.deleteCustomDataField(req.swagger.params.fieldName.value);
@@ -92,7 +92,7 @@ module.exports = function (model, transactionalMethods) {
         //(e.g. idSiteModel)
         getComputedSubResource: function(getter, req, res){
           return controllerHelper.queryAndExpand(
-             () => model.findById(req.swagger.params.id.value)
+             () => model.findByPk(req.swagger.params.id.value)
                           .tap(ApiError.assertFound)
                           .then(instance => instance[getter]()),
              req,

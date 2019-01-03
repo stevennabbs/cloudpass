@@ -69,9 +69,6 @@ persistence:
 
 
 logging:
-  transports:
-    console:
-      level: debug
   loggers:
     sql:
       transports: [console]
@@ -85,14 +82,14 @@ logging:
     login:
       transports: [console]
       level: info
+    sso:
+      transports: [console]
+      level: info
 # You can configure logging that way:
 #logging:
 #  transports:
-#    console:
-#      level: debug
 #    graylog:
-#      class: ovh-winston-ldp
-#      level: debug
+#      module: ovh-winston-ldp
 #      graylogHost: gra2.logs.ovh.com
 #      graylogPort: 12202
 #      graylogOvhTokenValue: 5c2b5cd8-837a-4d2c-a61e-8bdbca90f19a
@@ -109,5 +106,8 @@ logging:
 #      transports: [console, graylog]
 #      level: info
 #    login:
+#      transports: [console, graylog]
+#      level: info
+#    sso:
 #      transports: [console, graylog]
 #      level: info

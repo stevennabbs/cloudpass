@@ -10,7 +10,7 @@ let controller = baseController(models.factor);
 
 controller.getChallenge = function(req, res){
     return controllerHelper.queryAndExpand(
-            () => models.factor.findById(req.swagger.params.id.value)
+            () => models.factor.findByPk(req.swagger.params.id.value)
                     .tap(ApiError.assertFound)
                     .then(factor => {
                         let code = _.get(req.swagger.params, 'attributes.value.code');

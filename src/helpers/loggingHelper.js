@@ -3,30 +3,30 @@
 const winston = require('winston');
 const _ = require('lodash');
 
-const {format} = winston;
-const {combine, label, timestamp, colorize, printf} = format;
+const {combine, splat, simple, label, timestamp, colorize, printf} = winston.format;
 
 exports.fromConfig = function (winstonConf, callback) {
-    const transports = {};
-    for (const transportName in winstonConf.transports) {
-        if (Object.prototype.hasOwnProperty.call(winstonConf.transports, transportName)) {
-            const transportConf = winstonConf.transports[transportName];
-            const className = transportConf.class || transportName;
-            try {
-                transports[transportName] = new (require(className))(transportConf);
-            } catch (e) {
-                if (e instanceof Error) {
-                    transports[transportName] = new winston.transports[_.upperFirst(className)](transportConf);
-                } else {
-                    throw e;
-                }
+    function createTransport(transportName) {
+        const transportsConf = winstonConf.transports || {};
+        const transportConf = transportsConf[transportName] || {};
+        const moduleName = transportConf.module || transportName;
+        try {
+            return new (require(moduleName))(transportConf);
+        } catch (e) {
+            if (e instanceof Error) {
+                return new winston.transports[_.upperFirst(moduleName)](transportConf);
+            } else {
+                throw e;
             }
         }
     }
     for (const loggerName in winstonConf.loggers) {
         if (Object.prototype.hasOwnProperty.call(winstonConf.loggers, loggerName)) {
+            const loggerConf = winstonConf.loggers[loggerName];
             winston.loggers.add(loggerName, {
                 format: combine(
+                    splat(),
+                    simple(),
                     label({label: loggerName}),
                     timestamp(),
                     colorize(),
@@ -34,7 +34,8 @@ exports.fromConfig = function (winstonConf, callback) {
                         return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
                     })
                 ),
-                transports: winstonConf.loggers[loggerName].transports.map(t => transports[t])
+                level: loggerConf.level,
+                transports: loggerConf.transports.map(createTransport)
             });
         }
     }

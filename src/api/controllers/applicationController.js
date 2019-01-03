@@ -147,7 +147,7 @@ function validatePasswordResetToken(token) {
 
 controller.getPasswordResetToken = function(req, res) {
   controllerHelper.queryAndExpand(
-    () => models.passwordResetToken.findById(
+    () => models.passwordResetToken.findByPk(
       req.swagger.params.tokenId.value, {
         where: {
           applicationId: req.swagger.params.id.value
@@ -162,7 +162,7 @@ controller.getPasswordResetToken = function(req, res) {
 controller.consumePasswordResetToken = function(req, res) {
   models.sequelize.transaction(function() {
       //find the token
-      return models.passwordResetToken.findById(
+      return models.passwordResetToken.findByPk(
           req.swagger.params.tokenId.value, {
             where: {
               applicationId: req.swagger.params.id.value

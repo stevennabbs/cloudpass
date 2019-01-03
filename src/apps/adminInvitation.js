@@ -10,7 +10,7 @@ var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.get('/', function(req, res){
-    models.adminInvitation.findById(
+    models.adminInvitation.findByPk(
             req.query.cpToken,
             {
                 include: [
@@ -35,7 +35,7 @@ app.get('/', function(req, res){
 
 app.post('/', function(req, res){
     models.sequelize.transaction(function(){
-        return models.adminInvitation.findById(
+        return models.adminInvitation.findByPk(
             req.body.invitationId,
             {actor: new ssacl.Omnipotent()}
         )

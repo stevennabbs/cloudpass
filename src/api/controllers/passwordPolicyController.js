@@ -8,7 +8,7 @@ var controller = baseController(models.passwordPolicy, ['create', 'delete']);
 
 controller.getStrength = function(req, res){
   models.passwordPolicy
-        .findById(req.swagger.params.id.value)
+        .findByPk(req.swagger.params.id.value)
         .then(function(passwordPolicy){
             ApiError.assert(passwordPolicy, ApiError.NOT_FOUND);
             res.json(passwordPolicy.getStrength());
@@ -18,7 +18,7 @@ controller.getStrength = function(req, res){
 
 controller.setStrength = function(req, res) {
     models.passwordPolicy
-        .findById(req.swagger.params.id.value)
+        .findByPk(req.swagger.params.id.value)
         .then(function(passwordPolicy){
             ApiError.assert(passwordPolicy, ApiError.NOT_FOUND);
             return passwordPolicy.update({strength: req.swagger.params.newAttributes.value});
