@@ -14,6 +14,7 @@ const ApiError = require('../../ApiError');
 const hrefHelper = require('../../helpers/hrefHelper');
 const winston = require('winston');
 const logger = winston.loggers.get('sso');
+const isemail = require('isemail');
 
 var controller = accountStoreController(models.directory, ['create', 'delete']);
 
@@ -68,6 +69,37 @@ controller.updateProvider = function (req, res) {
     );
 };
 
+function getEmail(samlResponse) {
+    const user = samlResponse.user;
+    if (isemail.validate(_.toLower(user.name_id))) {
+        return _.toLower(user.name_id);
+    } else {
+        // name_id is not an email address: search for email in attributes
+        const emails = new Set();
+        for (const key in user.attributes) {
+            if (user.attributes.hasOwnProperty(key)) {
+                for (const v of user.attributes[key]) {
+                    if (isemail.validate(_.toLower(v))) {
+                        emails.add(_.toLower(v));
+                    }
+                }
+            }
+        }
+        if (emails.size === 1) {
+            return emails.values().next().value;
+        } else {
+            // multiple email addresses are present in attributes: search for specific attributes
+            for (const key of ['email', 'mail']) {
+                if (user.attributes.hasOwnProperty(key) && isemail.validate(_.toLower(user.attributes[key]))) {
+                    return _.toLower(user.attributes[key]);
+                }
+            }
+            logger.error('cannot find user email in SAML response: %s', JSON.stringify(samlResponse));
+            throw new ApiError(400, 400, "User email not found in SAML assertion");
+        }
+    }
+}
+
 controller.consumeSamlAssertion = function (req, res) {
     models.directoryProvider.findOne({
         where: {directoryId: req.swagger.params.id.value},
@@ -84,7 +116,7 @@ controller.consumeSamlAssertion = function (req, res) {
                 logger.debug('incoming SAML response: %s', JSON.stringify(samlResponse));
                 return models.account.findOrCreate({
                     where: {
-                        email: _.toLower(samlResponse.user.name_id),
+                        email: getEmail(samlResponse),
                         directoryId: req.swagger.params.id.value
                     },
                     defaults: {
