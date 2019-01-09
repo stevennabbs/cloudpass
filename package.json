@@ -43,7 +43,7 @@
     "morgan": "1.9.1",
     "nocache": "2.0.0",
     "node-appinfo": "0.2.3",
-    "nodemailer": "5.0.0",
+    "nodemailer": "5.0.1",
     "nodemailer-mandrill-transport": "1.2.0",
     "optional-js": "2.0.0",
     "ovh-winston-ldp": "0.3.3",
