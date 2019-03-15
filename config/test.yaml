@@ -22,18 +22,21 @@ persistence:
 
 logging:
   loggers:
+    audit:
+      transports: [console]
+      level: info
     sql:
       transports: [console]
-      level: debug
+      level: info
     http:
       transports: [console]
-      level: debug
+      level: info
     email:
       transports: [console]
-      level: debug
+      level: info
     login:
       transports: [console]
-      level: debug
+      level: info
     sso:
       transports: [console]
-      level: debug
+      level: info
