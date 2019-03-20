@@ -82,8 +82,8 @@ exports.send = function (account, directory, template, tokenId, additionalPlaceH
     );
 
     return transporterSendEmail(emailFields)
-        .tap(_.partial(logger('email').info, 'email sent:\n%j'))
-        .catch(_.partial(logger('email').error, 'could not send email: %s'));
+        .tap(() => logger('email').info('sent email: %s', JSON.stringify(emailFields)))
+        .catch(e => logger('email').error('could not send email (reason: %s)', e.message));
 };
 
 exports.sendWithToken = function (account, directory, template, token, authInfo, apiKey, additionalPlaceHolderValues) {
@@ -124,5 +124,6 @@ exports.sendWithToken = function (account, directory, template, token, authInfo,
                 token.id,
                 _.merge({url}, additionalPlaceHolderValues)
             );
+            return null;
         });
 };

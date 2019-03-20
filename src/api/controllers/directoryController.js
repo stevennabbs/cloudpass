@@ -1,7 +1,7 @@
 "use strict";
 
-const _ = require('lodash');
 const BluebirdPromise = require('sequelize').Promise;
+const _ = require('lodash');
 const signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
 const Optional = require('optional-js');
 const accountStoreController = require('../helpers/accountStoreController');
@@ -159,7 +159,7 @@ controller.consumeSamlAssertion = function (req, res) {
                 attributes: ['id']
             })
                 .get(0)
-                .then(_.partial(ApiError.assert, _, ApiError, 400, 7104, 'This account does not belong to the required account store'))
+                .then(() => ApiError.assert(_, ApiError, 400, 7104, 'This account does not belong to the required account store'))
         )
         .spread((account, created, accountStore) =>
             signJwt(

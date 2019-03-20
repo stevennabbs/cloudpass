@@ -107,6 +107,7 @@ before(function () {
         })
         .then(function (res) {
             exports.apiKey = res.body;
+            return res;
         })
         .then(function () {
             //logout
@@ -120,4 +121,5 @@ before(function () {
 after(function () {
     _.values(exports.servers).forEach(_.method('close'));
     require('../../src/models').sequelize.close();
+    return null;
 });

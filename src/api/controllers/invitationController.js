@@ -75,6 +75,7 @@ function sendEmail(invitation, apiKey) {
                             );
                         })
                 );
+
         });
 }
 

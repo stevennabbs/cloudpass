@@ -21,12 +21,12 @@ const controller = _.mapValues(
     function (baseAction) {
         return function (req, res) {
             ApiError.assert(req.swagger.params.id.value === req.user.tenantId, ApiError.FORBIDDEN);
-            baseAction(req, res);
+            return baseAction(req, res);
         };
     });
 
 controller.getCurrent = function (req, res) {
-    res.status(302)
+    return res.status(302)
         .location(
             Optional.ofNullable(config.get('server.rootUrl'))
                 .map(_.method('concat', '/v1/tenants/', req.user.tenantId))
@@ -57,13 +57,12 @@ controller.inviteAdmin = function (req, res) {
                     .then(function (adminInvitation) {
                         //asynchronously send an email with the token
                         email.send({email: emailAddress}, null, emailTemplate, adminInvitation.id);
+                        return null;
                     });
             }
         )
     )
-        .then(function () {
-            res.status(204).json();
-        })
+        .then(() => res.status(204).json())
         .catch(req.next);
 };
 

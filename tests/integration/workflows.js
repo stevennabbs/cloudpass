@@ -18,6 +18,7 @@ describe('Account workflows', function () {
             .expect(200)
             .then(function (res) {
                 directory = res.body.items[0];
+                return null;
             });
     });
 
@@ -133,6 +134,7 @@ describe('Account workflows', function () {
                 .then(function (res) {
                     //the account should be directly enabled
                     assert.strictEqual(res.body.status, 'ENABLED');
+                    return null;
                 });
         });
     });
@@ -146,6 +148,7 @@ describe('Account workflows', function () {
                 .expect(200)
                 .then(function (res) {
                     account = res.body.items[0];
+                    return null;
                 });
         });
 
@@ -208,6 +211,7 @@ describe('Account workflows', function () {
                 .then(function (res) {
                     assert.strictEqual(res.body.status, 400);
                     assert.strictEqual(res.body.code, 400);
+                    return null;
                 });
         });
     });

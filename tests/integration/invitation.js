@@ -25,7 +25,7 @@ describe('invitation', () => {
                 //enable invitation emails
                 return init.postRequest('invitationPolicies/' + res.body.items[0].invitationPolicy.id)
                     .send({invitationEmailStatus: "ENABLED"})
-                    .expect(200);
+                    .expect(200)
             });
     });
 
@@ -78,12 +78,13 @@ describe('invitation', () => {
                 return request(init.servers.main).get(res.header['stormpath-sso-redirect-location'])
                     .expect(302);
             })
-            .then((res) => {
+            .then(res => {
                 assert(res.header.location);
                 const locationStart = callbackUri + '?jwtResponse=';
                 assert(res.header.location.startsWith(locationStart));
                 const jwtResponse = res.header.location.substring(locationStart.length);
                 assert.strictEqual(jwt.decode(jwtResponse).inv_href, '/invitations/' + invitationId);
+                return null;
             });
     }
 
@@ -108,6 +109,7 @@ describe('invitation', () => {
                 assert(decodedJwt.inv_href);
                 assert(decodedJwt.inv_href.indexOf('/invitations/' + invitationId) >= 0);
                 assert.strictEqual(decodedJwt.email, email);
+                return null;
             });
     }
 

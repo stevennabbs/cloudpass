@@ -19,15 +19,7 @@ module.exports = function (sequelize, DataTypes) {
                 indexes: [{
                     unique: true,
                     fields: ['accountId', 'groupId']
-                }],
-                hooks: {
-                    afterCreate: function (instance) {
-                        console.log(instance);
-                    },
-                    afterDestroy: function (instance) {
-                        console.log(instance);
-                    }
-                }
+                }]
             }
         )
     )

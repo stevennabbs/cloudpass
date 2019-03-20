@@ -242,12 +242,14 @@ function validateAndHashPassword(instance) {
         return instance.getDirectory({include: [instance.sequelize.models.passwordPolicy]})
             .then(function (directory) {
                 directory.passwordPolicy.validatePassword(password);
+                return null;
             })
             .then(function () {
                 return bcrypt.hashAsync(password, 8);
             })
             .then(function (hash) {
                 instance.set({'password': hash}, {role: 'passwordHashing'});
+                return null;
             });
     }
 }

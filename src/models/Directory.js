@@ -199,7 +199,6 @@ function createNewAccount(attributes, registrationWorflowEnabled, authInfo, apiK
                 });
         }
     });
-    logger('audit').info('created account %s (%s) in directory %s (%s), status is %s', account.email, account.id, this.name, this.id, account.status);
     return result;
 }
 

@@ -57,7 +57,7 @@ describe('account links', () => {
     });
 
     describe('Manual Account linking', () => {
-        it('Links should be symetrical', async () => {
+        it('Links should be symmetrical', async () => {
             await init.postRequest('accountLinks')
                 .send({
                     leftAccount: defaultDirectoryAccount,

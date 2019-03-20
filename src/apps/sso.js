@@ -165,6 +165,7 @@ function handleRequest(req, res) {
                 }
                 res.cookie(req.user.tenant.id, cookieToken, cookieOptions);
                 sendJwtResponse(res, req.authInfo.cb_uri)(req.query.jwtResponse);
+                return null;
             })
             .catch(req.next);
     } else {

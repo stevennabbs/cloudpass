@@ -57,6 +57,7 @@ describe('admin invitation', function () {
             })
             .then(function (res) {
                 assert(res.header['set-cookie']);
+                return null;
             });
     });
 

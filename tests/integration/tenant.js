@@ -7,6 +7,7 @@ describe('tenant', function () {
             .expect(302)
             .then(function (res) {
                 assert.strictEqual(res.header.location, init.apiKey.tenantId);
+                return null;
             });
     });
 
@@ -16,6 +17,7 @@ describe('tenant', function () {
             .then(function (res) {
                 assert.strictEqual(res.body.key, 'test-tenant');
                 assert.strictEqual(res.body.name, 'test-tenant');
+                return null;
             });
     });
 

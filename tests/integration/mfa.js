@@ -32,6 +32,7 @@ describe('Multi-factor authentication', function () {
             })
             .then(function (res) {
                 account = res.body;
+                return null;
             });
         ;
     });
@@ -55,6 +56,7 @@ describe('Multi-factor authentication', function () {
                     assert(res.body.secret);
                     assert(res.body.keyUri);
                     assert(res.body.base64QRImage);
+                    return null;
                 });
         });
 
@@ -65,6 +67,7 @@ describe('Multi-factor authentication', function () {
                 .then(function (res) {
                     assert.strictEqual(res.body.type, 'google-authenticator');
                     assert.strictEqual(res.body.accountName, account.email);
+                    return null;
                 });
         });
 
@@ -86,6 +89,7 @@ describe('Multi-factor authentication', function () {
                 .expect(200)
                 .then(function (res) {
                     factor = res.body;
+                    return null;
                 });
         });
 
@@ -94,6 +98,7 @@ describe('Multi-factor authentication', function () {
                 .expect(200)
                 .then(function (res) {
                     assert.strictEqual(res.body.status, 'CREATED');
+                    return null;
                 });
         });
 
@@ -108,6 +113,7 @@ describe('Multi-factor authentication', function () {
                         .expect(200)
                         .then(function (res) {
                             assert.strictEqual(res.body.verificationStatus, 'UNVERIFIED');
+                            return null;
                         });
                 });
         });
@@ -123,6 +129,7 @@ describe('Multi-factor authentication', function () {
                         .expect(200)
                         .then(function (res) {
                             assert.strictEqual(res.body.verificationStatus, 'VERIFIED');
+                            return null;
                         });
                 });
         });

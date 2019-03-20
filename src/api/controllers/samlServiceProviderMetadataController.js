@@ -27,6 +27,7 @@ function sendXmlMetadata(req, res){
         .tap(_.partial(ApiError.assert, _, ApiError.NOT_FOUND))
         .then(function(providerMetadata){
             res.type('xml').send(samlHelper.getXmlMetadata(providerMetadata));
+            return null;
         });
 }
 

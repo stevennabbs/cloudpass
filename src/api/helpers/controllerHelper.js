@@ -169,6 +169,7 @@ function performExpansion(resource, expands) {
                         //it's a single resource
                         resourceJson[k] = expandedResource;
                     }
+                    return null;
                 });
             }
         )
@@ -275,6 +276,7 @@ exports.getCollection = function (model, collection, req, res) {
                             options,
                             result.count,
                             expanded));
+                    return null;
                 });
         })
         .catch(req.next);

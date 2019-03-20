@@ -31,6 +31,7 @@ describe('Application', function () {
                     assert.strictEqual(res.body.directories.items[0].name, name);
                     applicationId = res.body.id;
                     directoryId = res.body.directories.items[0].id;
+                    return null;
                 });
         });
 
@@ -46,6 +47,7 @@ describe('Application', function () {
                     assert.strictEqual(res.body.name, applicationName);
                     assert.strictEqual(res.body.directories.size, 1);
                     assert.strictEqual(res.body.directories.items[0].name, directoryName);
+                    return null;
                 });
         });
 
@@ -59,6 +61,7 @@ describe('Application', function () {
                     assert(res.body.id);
                     assert.strictEqual(res.body.name, name);
                     assert.strictEqual(res.body.directories.size, 0);
+                    return null;
                 });
         });
 
@@ -101,6 +104,7 @@ describe('Application', function () {
                     assert.strictEqual(res.body.directories.items[0].id, directoryId);
                     assert.strictEqual(res.body.groups.size, 1);
                     assert.strictEqual(res.body.groups.items[0].id, groupId);
+                    return null;
                 });
         });
 
@@ -120,6 +124,7 @@ describe('Application', function () {
                     assert.strictEqual(res.body.groups.size, 1);
                     assert.strictEqual(res.body.groups.items[0].id, groupId);
                     accountId = res.body.id;
+                    return null;
                 });
         });
 
@@ -130,6 +135,7 @@ describe('Application', function () {
                 .expect(200)
                 .then(function (res) {
                     assert.strictEqual(res.body.directory.id, directoryId);
+                    return null;
                 });
         });
     });
@@ -146,6 +152,7 @@ describe('Application', function () {
                 .then(function (res) {
                     assert(res.body.account);
                     assert(res.body.account.href);
+                    return null;
                 });
         });
 
@@ -159,6 +166,7 @@ describe('Application', function () {
                 .expect(200)
                 .then(function (res) {
                     assert.strictEqual(res.body.email, 'test@example.com');
+                    return null;
                 });
         });
 
@@ -176,6 +184,7 @@ describe('Application', function () {
                     //we should get an error because this organization does not exists
                     assert.strictEqual(res.body.status, 400);
                     assert.strictEqual(res.body.code, 2014);
+                    return null;
                 });
         });
 
@@ -189,6 +198,7 @@ describe('Application', function () {
                 .then(res => {
                     assert.strictEqual(res.body.status, 400);
                     assert.strictEqual(res.body.code, 7100);
+                    return null;
                 });
 
 
@@ -220,6 +230,7 @@ describe('Application', function () {
                         .then(res => {
                             assert.strictEqual(res.body.status, 400);
                             assert.strictEqual(res.body.code, 7103);
+                            return null;
                         });
                 })
         );
@@ -228,7 +239,7 @@ describe('Application', function () {
             init.postRequest('accounts/' + accountId)
                 .send({passwordAuthenticationAllowed: false})
                 .then(() => {
-                    init.postRequest('applications/' + applicationId + '/loginAttempts')
+                    return init.postRequest('applications/' + applicationId + '/loginAttempts')
                         .send({
                             type: 'basic',
                             value: Buffer.from('test@example.com:Aa12345', 'utf8').toString('base64')
@@ -238,6 +249,7 @@ describe('Application', function () {
                 .then(res => {
                     assert.strictEqual(res.body.status, 400);
                     assert.strictEqual(res.body.code, 7101);
+                    return null;
                 });
         });
     });

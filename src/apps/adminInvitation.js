@@ -27,9 +27,9 @@ app.get('/', function (req, res) {
             actor: new ssacl.Omnipotent()
         }
     )
-        .then(function (invitation) {
+        .then(invitation => {
             ApiError.assert(invitation, ApiError, 400, 400, 'Invitation not found');
-            res.json(invitation.get());
+            return res.json(invitation.get());
         });
 });
 
@@ -56,14 +56,10 @@ app.post('/', function (req, res) {
                             false
                         );
                     })
-                    .then(function () {
-                        return invitation.destroy();
-                    });
+                    .then(() => invitation.destroy());
             });
     })
-        .then(function () {
-            res.status(204).json();
-        })
+        .then(() => res.status(204).json())
         .catch(req.next);
 });
 

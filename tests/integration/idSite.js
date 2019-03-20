@@ -80,7 +80,10 @@ describe('idSite', () => {
 
     describe('login', () => {
         let account;
-        before(() => createAccount().then(a => account = a));
+        before(() => createAccount().then(a => {
+            account = a;
+            return null;
+        }));
 
         it('in application', () =>
             init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})
@@ -143,6 +146,7 @@ describe('idSite', () => {
                     //cloudpass should redirect to ID site because no 2nd factor has been provided yet
                     assert(res.header.location);
                     assert(res.header.location.startsWith(idSiteUrl + '/#/?jwt='));
+                    return null;
                 })
         );
 
@@ -169,6 +173,7 @@ describe('idSite', () => {
                         const locationPrefix = callbackUrl + '?jwtResponse=';
                         assert(res.header.location.startsWith(locationPrefix));
                         assert.strictEqual(jwt.decode(res.header.location.substring(locationPrefix.length)).org_href, null);
+                        return null;
                     })
             );
 
@@ -208,6 +213,7 @@ describe('idSite', () => {
                         const locationPrefix = callbackUrl + '?jwtResponse=';
                         assert(res.header.location.startsWith(locationPrefix));
                         assert.strictEqual(jwt.decode(res.header.location.substring(locationPrefix.length)).org_href, '/organizations/' + organizationId);
+                        return null;
                     });
             });
 
@@ -262,6 +268,7 @@ describe('idSite', () => {
                         const locationPrefix = callbackUrl + '?jwtResponse=';
                         assert(res.header.location.startsWith(locationPrefix));
                         assert.strictEqual(jwt.decode(res.header.location.substring(locationPrefix.length)).org_href, '/organizations/' + organizationId);
+                        return null;
                     });
             });
         });
@@ -297,6 +304,7 @@ describe('idSite', () => {
                             assert(res.body.idSiteModel.hasOwnProperty('providers'));
                             assert(res.body.idSiteModel.hasOwnProperty('passwordPolicy'));
                             assert(res.body.idSiteModel.hasOwnProperty('logoUrl'));
+                            return null;
                         })
                         .then(() => bearer)
                 )
@@ -418,6 +426,7 @@ describe('idSite', () => {
                         //cloudpass should redirect directly to the callback URL, not to the ID site
                         assert(res.header.location);
                         assert(res.header.location.startsWith(callbackUrl + '?jwtResponse='));
+                        return null;
                     })
             );
         });
@@ -445,6 +454,7 @@ describe('idSite', () => {
                 assert(res.header['set-cookie']);
                 //cookie should be empty
                 assert.strictEqual(res.header['set-cookie'][0].split(';')[0].split('=')[1], '');
+                return null;
             })
     );
 
@@ -520,13 +530,17 @@ describe('idSite', () => {
                 assert(res.body.hasOwnProperty('providers'));
                 assert(res.body.hasOwnProperty('passwordPolicy'));
                 assert(res.body.hasOwnProperty('logoUrl'));
+                return null;
             })
     );
 
     describe('Settings', () => {
 
         let account;
-        before(() => createAccount().then(a => account = a));
+        before(() => createAccount().then(a => {
+            account = a;
+            return null
+        }));
 
         function getSettingsBearer() {
             return init.getIdSiteBearer(applicationId, {cb_uri: callbackUrl})

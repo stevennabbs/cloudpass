@@ -45,6 +45,7 @@ module.exports = function (model, transactionalMethods) {
                 })
                 .then(function(updatedResource){
                     res.json(updatedResource.getCustomData());
+                    return null;
                 })
                 .catch(req.next);
         },
@@ -59,6 +60,7 @@ module.exports = function (model, transactionalMethods) {
             .then(function(rowNb){
                 ApiError.assert(rowNb, ApiError.NOT_FOUND);
                 res.status(204).json();
+                return null;
             })
             .catch(req.next);
         },
@@ -85,6 +87,7 @@ module.exports = function (model, transactionalMethods) {
                     } else {
                         res.status(204).json();
                     }
+                    return null;
                 })
                 .catch(req.next);
         },

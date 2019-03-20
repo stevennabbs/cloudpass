@@ -100,7 +100,10 @@ SAuthc1Strategy.prototype.authenticate = function (req) {
                     .orElseThrow(() => new Error('digest verification failed'));
             }.bind(this));
     }.bind(this))
-        .then(this.success)
+        .then(apiKey => {
+            this.success(apiKey);
+            return null;
+        })
         .catch(this.fail);
 };
 

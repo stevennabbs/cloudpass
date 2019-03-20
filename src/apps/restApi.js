@@ -1,12 +1,12 @@
 'use strict';
 
+const _ = require('lodash');
+const BluebirdPromise = require('sequelize').Promise;
 const express = require('express');
 const morgan = require('morgan');
 const nocache = require('nocache');
 const bodyParser = require('body-parser');
 const config = require('config');
-const BluebirdPromise = require('sequelize').Promise;
-const _ = require('lodash');
 const passport = require('passport');
 const Optional = require('optional-js');
 const BasicStrategy = require('passport-http').BasicStrategy;
@@ -84,6 +84,7 @@ module.exports = function (secret) {
                             .filter(_.flow(_.property('secret'), _.partial(_.eq, providedSecret)))
                             .orElse(false)
                     );
+                    return null;
                 })
                 .catch(done);
         }

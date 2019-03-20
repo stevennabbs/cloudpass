@@ -15,6 +15,7 @@ describe('SAuthc1', function () {
             .expect(200)
             .then(function (res) {
                 application = res.body.items[0];
+                return null;
             });
     });
 
@@ -23,6 +24,7 @@ describe('SAuthc1', function () {
             .then(function (res) {
                 assert.strictEqual(res.status, 200);
                 assert(res.body.href);
+                return null;
             });
     });
 
@@ -32,6 +34,7 @@ describe('SAuthc1', function () {
                 assert.strictEqual(res.status, 200);
                 assert(res.body.href);
                 assert(res.body.applications.items);
+                return null;
             });
     });
 
@@ -39,6 +42,7 @@ describe('SAuthc1', function () {
         return sendAauthc1Request('/v1/tenants/' + init.apiKey.tenantId, null, 'POST', {customData: {}})
             .then(function (res) {
                 assert.strictEqual(res.status, 200);
+                return null;
             });
     });
 

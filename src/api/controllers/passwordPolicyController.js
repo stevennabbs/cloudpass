@@ -26,6 +26,7 @@ controller.setStrength = function(req, res) {
         })
         .then(function(passwordPolicy){
             res.json(passwordPolicy.getStrength());
+            return null;
         })
         .catch(req.next);  
 };

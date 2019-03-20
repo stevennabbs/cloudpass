@@ -34,7 +34,7 @@ const sequelize = new Sequelize(config.persistence.database, config.persistence.
 
 //convenience method to start a transaction only if none is already started
 sequelize.requireTransaction = function (query) {
-    return Optional.ofNullable(Sequelize.cls.get('transaction'))
+    return Optional.ofNullable(Sequelize._cls.get('transaction'))
         .map(query)
         .orElseGet(() => this.transaction({isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ}, query));
 };

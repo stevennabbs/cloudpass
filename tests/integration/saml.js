@@ -33,6 +33,7 @@ describe('SAML', function(){
                                 assert.strictEqual(res.body.provider.ssoLoginUrl, idpSsoLoginUrl);
                                 assert.strictEqual(res.body.provider.ssoLogoutUrl, idpSsoLogoutUrl);
                                 assert.strictEqual(res.body.provider.encodedX509SigningCert, idpCertificate);
+                                return null;
                             });;
                 });
         });
@@ -47,6 +48,7 @@ describe('SAML', function(){
                 .expect(200)
                 .then(function(res){
                     samlServiceProviderMetadataId = res.body.samlServiceProviderMetadata.id;
+                    return null;
                 });
         });
 
@@ -56,6 +58,7 @@ describe('SAML', function(){
                 .expect(200)
                 .then(function(res){
                     assert.strictEqual(res.type, 'application/xml');
+                    return null;
                 });
         });
 
@@ -67,6 +70,7 @@ describe('SAML', function(){
                     assert.strictEqual(res.type, 'application/json');
                     assert(res.body.entityId);
                     assert(res.body.x509SigningCert);
+                    return null;
                 });
         });
     });
@@ -79,6 +83,7 @@ describe('SAML', function(){
                 .expect(200)
                 .then(function(res){
                     attributeStatementMappingRulesId = res.body.attributeStatementMappingRules.id;
+                    return null;
                 });
         });
 
@@ -87,6 +92,7 @@ describe('SAML', function(){
                     .expect(200)
                     .then(function(res){
                         assert.deepStrictEqual(res.body.items, []);
+                        return null;
                     });
         });
 
@@ -110,6 +116,7 @@ describe('SAML', function(){
                     .expect(200)
                     .then(function(res){
                         assert.deepStrictEqual(res.body.items, mappingItems);
+                        return null;
                     });
         });
 
@@ -146,6 +153,7 @@ describe('SAML', function(){
                 .expect(200)
                 .then(function(res){
                     assert(res.body.serviceProvider);
+                    return null;
                 });
         });
 
@@ -155,6 +163,7 @@ describe('SAML', function(){
                 .then(function(res){
                     assert(res.body.ssoInitiationEndpoint);
                     assert(res.body.defaultRelayStates);
+                    return null;
                 });
         });
 
@@ -164,6 +173,7 @@ describe('SAML', function(){
                 .then(function(res){
                     assert.strictEqual(res.body.providers.length, 1);
                     assert.strictEqual(res.body.providers[0].providerId, 'saml');
+                    return null;
                 });
         });
 
@@ -176,6 +186,7 @@ describe('SAML', function(){
                 .expect(200)
                 .then(function(res){
                     assert(res.body.defaultRelayState);
+                    return null;
                 });
         });
 
@@ -218,6 +229,7 @@ describe('SAML', function(){
                             assert.strictEqual(res.body.items[0].providerData.firstName, 'John');
                             assert.strictEqual(res.body.items[0].providerData.lastName, 'Doe');
                             assert.strictEqual(res.body.items[0].providerData.company, expectedCompanyName);
+                            return null;
                         });
             }
 
@@ -288,6 +300,7 @@ describe('SAML', function(){
                     .then(function(payload){
                         assert(payload.err);
                         assert.strictEqual(payload.err.status, 404);
+                        return null;
                     });
             });
 

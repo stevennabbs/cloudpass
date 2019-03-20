@@ -31,5 +31,6 @@ exports.generateDefaultRelayState = function(req, res){
     )
     .then(function(relayState){
         res.json({defaultRelayState: relayState});
+        return null;
     });
 };

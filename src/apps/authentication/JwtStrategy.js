@@ -29,7 +29,10 @@ JwtStrategy.prototype.authenticate = function (req) {
         ApiError.assert(apiKeyId, 'no API key Id');
         return getApiKey(apiKeyId, ...this.apiKeyIncludes)
             .tap(_.partial(ApiError.assert, _, 'no API key'))
-            .then(apiKey => verifyJwt(token, apiKey.secret).then(_.partial(this.success, apiKey)));
+            .then(apiKey => verifyJwt(token, apiKey.secret).then(verified => {
+                this.success(apiKey, verified);
+                return null;
+            }));
     })
         .catch(this.fail);
 };

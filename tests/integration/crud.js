@@ -13,6 +13,7 @@ describe('resource CRUD', function () {
                     directoryId = res.body.id;
                     assert.strictEqual(res.body.name, directoryName);
                     assert.strictEqual(res.body.description, '');
+                    return null;
                 });
     });
 
@@ -22,6 +23,7 @@ describe('resource CRUD', function () {
                 .expect(200)
                 .then(function (res) {
                     assert.strictEqual(res.body.description, directoryName);
+                    return null;
                 });
     });
 
@@ -32,6 +34,7 @@ describe('resource CRUD', function () {
                     assert(res.body.href);
                     assert(res.body.createdAt);
                     assert(res.body.modifiedAt);
+                    return null;
                 });
     });
 
@@ -42,6 +45,7 @@ describe('resource CRUD', function () {
                 .then(function (res) {
                     assert.strictEqual(res.body.a, 'b');
                     assert.strictEqual(res.body.c, 'd');
+                    return null;
                 });
     });
 
@@ -55,6 +59,7 @@ describe('resource CRUD', function () {
                 .then(function (res) {
                     assert.strictEqual(res.body.a, undefined);
                     assert.strictEqual(res.body.c, 'd');
+                    return null;
                 });
     });
 
@@ -68,6 +73,7 @@ describe('resource CRUD', function () {
                 .then(function (res) {
                     assert.strictEqual(res.body.a, undefined);
                     assert.strictEqual(res.body.c, undefined);
+                    return null;
                 });
     });
 

@@ -19,4 +19,7 @@ function addParamToUri(uri, paramName, paramValue) {
     return url.format(parsed);
 }
 
-module.exports = (res, uri) => jwtResponse => res.redirect(addParamToUri(uri, 'jwtResponse', jwtResponse));
+module.exports = (res, uri) => jwtResponse => {
+    res.redirect(addParamToUri(uri, 'jwtResponse', jwtResponse));
+    return null;
+}
