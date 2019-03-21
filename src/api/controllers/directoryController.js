@@ -151,15 +151,23 @@ controller.consumeSamlAssertion = function (req, res) {
                     });
             })
         )
-        .tap(([account, _, accountStore]) =>
-            //check that the account belongs to the required application or organization
-            accountStore.getAccounts({
-                where: {id: account.id},
-                limit: 1,
-                attributes: ['id']
-            })
-                .get(0)
-                .then(() => ApiError.assert(_, ApiError, 400, 7104, 'This account does not belong to the required account store'))
+        .tap(([account, created, accountStore]) => { // eslint-disable-line no-unused-vars
+                //check that the account belongs to the required application or organization
+                return accountStore.getAccounts({
+                    where: {id: account.id},
+                    limit: 1,
+                    attributes: ['id']
+                })
+                    .get(0)
+                    .then(foundAccount => {
+                        try {
+                            return ApiError.assert(foundAccount, ApiError, 400, 7104, 'This account does not belong to the required account store');
+                        } catch (e) {
+                            logger('sso').error('cannot find account %s in account store %s', account.id, accountStore.id);
+                            throw e;
+                        }
+                    })
+            }
         )
         .spread((account, created, accountStore) =>
             signJwt(
