@@ -56,7 +56,7 @@ const {combine, splat, simple, label, timestamp, colorize, printf} = winston.for
 
 
 exports.fromConfig = function (winstonConf, callback) {
-    function createTransport(loggerName, level, transportName) {
+    function createTransport(loggerName, loggerLevel, transportName) {
         const transportsConf = winstonConf.transports || {};
         const moduleName = (transportsConf[transportName] != undefined ? transportsConf[transportName].module : undefined) || transportName;
         const formats = [splat(), simple(), label({label: loggerName}), timestamp()];
@@ -87,8 +87,15 @@ exports.fromConfig = function (winstonConf, callback) {
                 return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
             }
         }));
+
+        // initialize transport instance with max(logger level, configured transport level)
+        let transportLevel = (transportsConf[transportName] != undefined ? transportsConf[transportName].level : loggerLevel) || loggerLevel;
+        if (winston.config.npm.levels[transportLevel] > winston.config.npm.levels[loggerLevel]) {
+            transportLevel = loggerLevel;
+        }
+
         const transportConf = Object.assign({}, transportsConf[transportName], {
-            level: level,
+            level: transportLevel,
             format: combine(...formats)
         });
         try {
@@ -113,8 +120,7 @@ exports.fromConfig = function (winstonConf, callback) {
     for (const loggerName in winstonConf.loggers) {
         if (Object.prototype.hasOwnProperty.call(winstonConf.loggers, loggerName)) {
             const loggerConf = winstonConf.loggers[loggerName];
-            const level = loggerConf.level;
-            const transports = loggerConf.transports.map(t => createTransport(loggerName, level, t));
+            const transports = loggerConf.transports.map(t => createTransport(loggerName, loggerConf.level, t));
             winston.loggers.add(loggerName, {
                 exitOnError: false,
                 level: loggerConf.level,
