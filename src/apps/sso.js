@@ -20,6 +20,7 @@ const errorHandler = require('./helpers/errorHandler');
 const ApiError = require('../ApiError');
 const JwtStrategy = require('./authentication/JwtStrategy');
 const hrefHelper = require('../helpers/hrefHelper');
+const logger = require('../helpers/loggingHelper').logger;
 
 
 function ssoStrategy(queryParameter, apiKeyIdPath) {
@@ -231,7 +232,11 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
             subject: jwtPayload.iss,
             audience: 'idSite'
         }
-    ).then(token => res.status(302).location(apiKey.tenant.idSites[0].url + _.defaultTo(jwtPayload.path, '/#/') + '?jwt=' + token).send());
+    ).then(token => {
+        const location = apiKey.tenant.idSites[0].url + _.defaultTo(jwtPayload.path, '/#/') + '?jwt=' + token;
+        logger('sso').debug('redirect to %s', location);
+        return res.status(302).location(location).send();
+    });
 }
 
 module.exports = app;
