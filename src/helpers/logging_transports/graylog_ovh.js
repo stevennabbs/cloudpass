@@ -95,6 +95,7 @@ class GraylogOvhTransport extends Transport {
     }
 
     close() {
+        console.log('ovh close');
         if (this.client) {
             this.client.end();
         }

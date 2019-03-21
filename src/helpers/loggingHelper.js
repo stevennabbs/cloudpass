@@ -56,7 +56,7 @@ const {combine, splat, simple, label, timestamp, colorize, printf} = winston.for
 
 
 exports.fromConfig = function (winstonConf, callback) {
-    function createTransport(loggerName, transportName) {
+    function createTransport(loggerName, level, transportName) {
         const transportsConf = winstonConf.transports || {};
         const moduleName = (transportsConf[transportName] != undefined ? transportsConf[transportName].module : undefined) || transportName;
         const formats = [splat(), simple(), label({label: loggerName}), timestamp()];
@@ -88,6 +88,7 @@ exports.fromConfig = function (winstonConf, callback) {
             }
         }));
         const transportConf = Object.assign({}, transportsConf[transportName], {
+            level: level,
             format: combine(...formats)
         });
         try {
@@ -112,7 +113,8 @@ exports.fromConfig = function (winstonConf, callback) {
     for (const loggerName in winstonConf.loggers) {
         if (Object.prototype.hasOwnProperty.call(winstonConf.loggers, loggerName)) {
             const loggerConf = winstonConf.loggers[loggerName];
-            const transports = loggerConf.transports.map(t => createTransport(loggerName, t));
+            const level = loggerConf.level;
+            const transports = loggerConf.transports.map(t => createTransport(loggerName, level, t));
             winston.loggers.add(loggerName, {
                 exitOnError: false,
                 level: loggerConf.level,

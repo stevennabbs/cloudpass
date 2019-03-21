@@ -34,9 +34,6 @@ logging:
     email:
       transports: [console]
       level: info
-    login:
-      transports: [console]
-      level: info
     sso:
       transports: [console]
       level: info

@@ -231,7 +231,6 @@ Loggers can be configured in the *logging* section:
 - *sql*: SQL queries before execution,
 - *http*: HTTP requests via [morgan](https://github.com/expressjs/morgan),
 - *email*: sent emails,
-- *login*: login operations,
 - *sso*: SSO operations.
 
 Each logger can use multiple [transports](https://github.com/winstonjs/winston/blob/master/docs/transports.md).
@@ -271,9 +270,6 @@ logging:
       transports: [console, sentry, graylog]
       level: info
     email:
-      transports: [console, sentry, graylog]
-      level: info
-    login:
       transports: [console, sentry, graylog]
       level: info
     sso:
