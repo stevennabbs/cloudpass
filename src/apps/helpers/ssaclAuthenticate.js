@@ -2,6 +2,7 @@
 
 const passport = require('passport');
 const ApiError = require('../../ApiError.js');
+const logger = require('../../helpers/loggingHelper').logger;
 
 //authenticate the user and call the following middlewares with the actor set in SAACL CLS.
 module.exports = function (...strategies) {
@@ -19,6 +20,7 @@ module.exports = function (...strategies) {
                         return next(err);
                     }
                     if (!user) {
+                        logger('http').error('authentication failed, err: %s, info: %s', JSON.stringify(err), JSON.stringify(info));
                         res.header("Access-Control-Allow-Origin", "*");
                         return ApiError.UNAUTHORIZED.write(res);
                     }
