@@ -41,7 +41,7 @@ module.exports = function (sequelize, DataTypes) {
             {
                 hooks: {
                     afterCreate: function(accountCreationPolicy){
-                        return accountCreationPolicy.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             accountCreationPolicy.createVerificationEmailTemplate(_.defaults({tenantId: accountCreationPolicy.tenantId}, defaultEmailVerificationEmail)),
                             accountCreationPolicy.createVerificationSuccessEmailTemplate(_.defaults({tenantId: accountCreationPolicy.tenantId}, defaultEmailVerificationSuccessEmail)),
                             accountCreationPolicy.createWelcomeEmailTemplate(_.defaults({tenantId: accountCreationPolicy.tenantId}, defaultWelcomeEmail))

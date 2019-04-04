@@ -122,8 +122,6 @@ exports.authenticateAccount = function(login, password, applicationId, organizat
         });
 };
 
-// ignore until jshint  supports async/await, c.f. https://github.com/jshint/jshint/issues/2604
-/* jshint ignore:start */
 exports.getLinkedAccount = async (account, applicationId) =>
     //check that account linking policy is enabled and that the default account store is a directory
     Optional.ofNullable(await models.application.findByPk(
@@ -181,4 +179,3 @@ exports.getLinkedAccount = async (account, applicationId) =>
         )
     )
     .orElse(account);
-/* jshint ignore:end */

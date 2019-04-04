@@ -109,7 +109,7 @@ function createNewGroup(attributes) {
 }
 
 function getIdSiteModel() {
-    return this.sequelize.Promise.join(
+    return require('sequelize').Promise.join(
         getProviders(this),
         getDefaultPasswordStrengthPolicy(this),
         getLogoUrl(this)

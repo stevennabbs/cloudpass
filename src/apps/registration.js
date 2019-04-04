@@ -1,9 +1,9 @@
 'use strict';
 
 const express = require('express');
-const BluebirdPromise = require('sequelize').Promise;
 const bodyParser = require('body-parser');
 const models = require('../models');
+const BluebirdPromise = require('sequelize').Promise;
 const ApiError = require('../ApiError.js');
 
 
@@ -11,7 +11,7 @@ const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.post('/', function (req, res) {
-    models.sequelize.transaction(function () {
+    models.sequelize.transaction(() => {
         //create the tenant
         return models.tenant.create({
             key: req.body.tenantNameKey,
@@ -19,6 +19,7 @@ app.post('/', function (req, res) {
         })
             .then(function (tenant) {
                 req.app.get('ssaclCls').set('actor', tenant.id);
+                console.log(BluebirdPromise);
                 //create administration application & directory
                 return BluebirdPromise.join(
                     models.application.create({
@@ -57,7 +58,8 @@ app.post('/', function (req, res) {
             });
     })
         .then(() => res.status(204).json())
-        .catch(req.next);
+        .catch(e => console.log(e));
+        //.catch(req.next);
 });
 
 app.use(function (err, req, res, next) {

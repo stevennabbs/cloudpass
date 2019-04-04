@@ -68,7 +68,7 @@ controller.consumeEmailVerificationToken = function (req, res) {
             .then(function (token) {
                 ApiError.assert(token, ApiError.NOT_FOUND);
                 //enable the account and delete the token
-                return models.sequelize.Promise.join(
+                return require('sequelize').Promise.join(
                     token.account.update({status: 'ENABLED'}),
                     token.destroy()
                 );

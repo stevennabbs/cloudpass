@@ -95,7 +95,7 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 hooks: {
                     afterCreate: function(passwordPolicy){
-                        return passwordPolicy.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             passwordPolicy.createResetEmailTemplate(_.defaults({tenantId: passwordPolicy.tenantId}, defaultPasswordResetEmail)),
                             passwordPolicy.createResetSuccessEmailTemplate(_.defaults({tenantId: passwordPolicy.tenantId}, defaultPasswordResetSuccessEmail))
                         );

@@ -42,7 +42,7 @@ module.exports = function (sequelize, DataTypes) {
                 }],
                 hooks: {
                     beforeCreate: function (instance) {
-                        return instance.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             this.sequelize.models.invitationPolicy.create({tenantId: instance.tenantId}),
                             this.sequelize.models.accountLinkingPolicy.create({tenantId: instance.tenantId})
                         )
@@ -104,7 +104,7 @@ module.exports = function (sequelize, DataTypes) {
                             })
                                 .then(_.head)
                                 .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'Organization %s is not linked to application %s', organizationName, this.id)))
-                            .orElse(this.sequelize.Promise.resolve(this));
+                            .orElse(require('sequelize').Promise.resolve(this));
                     }
                 },
                 accountStoreWrapperMethods
