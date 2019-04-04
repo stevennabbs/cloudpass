@@ -50,7 +50,7 @@ const defaultClassMethods = {
 const defaultInstanceMethods = {
     toJSON: function () {
         //"clean" the object to not expand unwanted associations
-        this.dataValues = _.pick(this.dataValues, _.keys(this.constructor.attributes));
+        this.dataValues = _.pick(this.dataValues, _.keys(this.constructor.rawAttributes));
         const values = this.get();
         [this.constructor.associations, this.constructor.customAssociations].forEach(function(associations){
             _.forOwn(
