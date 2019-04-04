@@ -17,7 +17,7 @@ const persistenceOptions = _.merge(
             updatedAt: 'modifiedAt',
             //add href to all resources
             getterMethods: {
-                href: function () {
+                href() {
                     return this.constructor.getHref(this.id);
                 }
             }
@@ -27,7 +27,7 @@ const persistenceOptions = _.merge(
             if (l.levels[l.level] >= l.levels['debug']) {
                 const params = args[1].bind;
                 const dialect = args[1].sequelize === undefined ? undefined : args[1].sequelize.getDialect();
-                l.debug(AbstractQuery.formatBindParameters(args[0], params, dialect));
+                l.debug(AbstractQuery.formatBindParameters(args[0], params, dialect)[0]);
             }
         }
     },
