@@ -55,6 +55,17 @@ const defaultInstanceMethods = {
     toJSON: function () {
         //"clean" the object to not expand unwanted associations
         this.dataValues = _.pick(this.dataValues, _.keys(this.constructor.rawAttributes));
+        // TODO ugly hack: virtual getters not invoked by Model.get() if attributes is not empty, so add virtual attributes manually
+        // see https://github.com/sequelize/sequelize/issues/8504
+        // see https://github.com/sequelize/sequelize/pull/9568
+        // see https://github.com/sequelize/sequelize/issues/5566
+        if (this._hasCustomGetters) {
+            for (const k in this._customGetters) {
+                if (this._options.attributes && !this._options.attributes.includes(k)) {
+                    this._options.attributes.push(k);
+                }
+            }
+        }
         const values = this.get();
         [this.constructor.associations, this.constructor.customAssociations].forEach(function (associations) {
             _.forOwn(
