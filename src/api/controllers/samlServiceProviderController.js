@@ -1,13 +1,13 @@
 "use strict";
 
-var samlHelper = require('../helpers/samlHelper');
-var models = require('../../models');
-var ApiError = require('../../ApiError');
+const samlHelper = require('../helpers/samlHelper');
+const models = require('../../models');
+const ApiError = require('../../ApiError');
 
 exports.get = function(req, res){
     // SAML service provider ID = application ID
     models.application
-        .findById(req.swagger.params.id.value)
+        .findByPk(req.swagger.params.id.value)
         .tap(ApiError.assertFound)
         .call('getSamlPolicy')
         .call('getServiceProvider')
@@ -31,5 +31,6 @@ exports.generateDefaultRelayState = function(req, res){
     )
     .then(function(relayState){
         res.json({defaultRelayState: relayState});
+        return null;
     });
 };

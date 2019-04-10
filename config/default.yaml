@@ -67,32 +67,65 @@ persistence:
 #    dialect: sqlite
 #    storage: cloudpass.db
 
+environment: development
 
 logging:
-  transports: []
   loggers:
-    sql: {}
-    http: {}
-    email: {}
-    login: {}
-# You can configure logging that way:
+    audit:
+      transports: [console]
+      level: info
+    sql:
+      transports: [console]
+      level: warn
+    http:
+      transports: [console]
+      level: info
+    email:
+      transports: [console]
+      level: info
+    login:
+      transports: [console]
+      level: info
+    sso:
+      transports: [console]
+      level: info
+# example of logging configuration
+# currently, supported transports are:
+# - standard winston transports (console, file, http, stream)
+# - sentry
+# - graylog_ovh
 #logging:
-#   transports:
-#    - winston-log2gelf
-#   loggers:
+#  transports:
+#    sentry:
+#      module: sentry
+#      dsn: ...
+#      level: error
+#    graylog:
+#      module: graylog_ovh
+#      graylogHost: ...
+#      graylogOvhTokenValue: ...
+#      level: info
+#    graylog_audit:
+#      module: graylog_ovh
+#      graylogHost: ...
+#      graylogOvhTokenValue: ...
+#      level: info
+#  loggers:
+#    audit:
+#      transports: [console, sentry, graylog_audit]
+#      level: info
 #    sql:
-#      console:
-#        level: warn
-#        colorize: true
-#      file:
-#         level: error
-#         timestamp: true
-#         filename: logs/app.log,
-#         maxfiles: 5
-#         maxsize": 10485760
-#      log2gelf:
-#         level: debug
-#         host: 192.168.0.15
-#         port: 12201
-#         protocol: tls
-
+#      transports: [console, sentry, graylog]
+#      level: info
+#    http:
+#      transports: [console, sentry, graylog]
+#      level: info
+#    email:
+#      transports: [console, sentry, graylog]
+#      level: info
+#    login:
+#      transports: [console, sentry, graylog]
+#      level: info
+#    sso:
+#      transports: [console, sentry, graylog]
+#      level: info

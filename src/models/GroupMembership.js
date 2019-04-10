@@ -1,6 +1,7 @@
 "use strict";
 
 const ModelDecorator = require('./helpers/ModelDecorator');
+//const logger = require('../helpers/loggingHelper').logger;
 
 module.exports = function (sequelize, DataTypes) {
     return new ModelDecorator(

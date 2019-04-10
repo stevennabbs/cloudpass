@@ -226,14 +226,56 @@ Invitation emails can additionnaly use the following placeholders:
 
 ### Logging
 
-Four loggers can be configured in the *logging* section:
-- *sql*: logs the SQL queries before execution,
-- *http*: logs the HTTP requests via [morgan](https://github.com/expressjs/morgan),
-- *email*: logs when email are sent,
-- *login*: logs the result of logg.
+Loggers can be configured in the *logging* section:
+- *audit*: auditing trail,
+- *sql*: SQL queries before execution,
+- *http*: HTTP requests via [morgan](https://github.com/expressjs/morgan),
+- *email*: sent emails,
+- *sso*: SSO operations.
 
-Cloudpass uses [winston-config](https://github.com/triplem/winston-config) to configure logging. Please refer to the module documentation for the accepted configuration options.
+Each logger can use multiple [transports](https://github.com/winstonjs/winston/blob/master/docs/transports.md).
+- Currently, supported transports are:
+  - standard winston transports (`console`, `file`, `http`, `stream`)
+  - `sentry`
+  - `graylog_ovh`
+- Default transports without configuration (e.g. a naked `console`) can be omitted.
+- Non-default transports have to define their module. See `src/helpers/logging_transports`.
 
+For example:
+```yaml
+logging:
+  transports:
+    sentry:
+      module: sentry
+      dsn: ...
+      level: error
+    graylog:
+      module: graylog_ovh
+      graylogHost: ...
+      graylogOvhTokenValue: ...
+      level: info
+    graylog_audit:
+      module: graylog_ovh
+      graylogHost: ...
+      graylogOvhTokenValue: ...
+      level: info
+  loggers:
+    audit:
+      transports: [console, sentry, graylog_audit]
+      level: info
+    sql:
+      transports: [console, sentry, graylog]
+      level: info
+    http:
+      transports: [console, sentry, graylog]
+      level: info
+    email:
+      transports: [console, sentry, graylog]
+      level: info
+    sso:
+      transports: [console, sentry, graylog]
+      level: info
+```
 
 ## Getting Started
 

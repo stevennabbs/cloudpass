@@ -38,6 +38,4 @@ persistence:
       maxConnections: PERSISTENCE_OPTIONS_POOL_MAX_CONNECTIONS
       maxIdleTime: PERSISTENCE_OPTIONS_POOL_MAX_IDLE_TIME
 
-logging:
-  __name: LOGGING
-  __format: json
+environment: NODE_ENV

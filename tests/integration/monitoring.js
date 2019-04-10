@@ -14,6 +14,7 @@ describe('monitoring', function () {
                         "is_healthy": true
                     }]
                 );
+                return null;
             });
     });
 
@@ -22,6 +23,7 @@ describe('monitoring', function () {
             .expect(200)
             .then(res => {
                assert.strictEqual(res.body, require('../../package.json').version);
+                return null;
             });
     });
 });

@@ -1,28 +1,28 @@
 'use strict';
 
-var express = require('express');
-var morgan = require('morgan');
-var nocache = require('nocache');
-var bodyParser = require('body-parser');
-var config = require('config');
-var BluebirdPromise = require('sequelize').Promise;
-var _ = require('lodash');
-var passport = require('passport');
-var Optional = require('optional-js');
-var BasicStrategy = require('passport-http').BasicStrategy;
-var JwtCookieComboStrategy = require('passport-jwt-cookiecombo');
-var authorization = require('auth-header');
-var winston = require('winston');
-var SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
-var JwtStrategy = require('./authentication/JwtStrategy');
-var scopeChecker = require('./helpers/scopeChecker');
-var SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
-var getApiKey = require('./helpers/getApiKey');
-var ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
-var applyIdSiteMiddleware = require('./helpers/applyIdSiteMiddleware');
-var errorHandler = require('./helpers/errorHandler');
+const _ = require('lodash');
+const BluebirdPromise = require('sequelize').Promise;
+const express = require('express');
+const morgan = require('morgan');
+const nocache = require('nocache');
+const bodyParser = require('body-parser');
+const config = require('config');
+const passport = require('passport');
+const Optional = require('optional-js');
+const BasicStrategy = require('passport-http').BasicStrategy;
+const JwtCookieComboStrategy = require('passport-jwt-cookiecombo');
+const authorization = require('auth-header');
+const SAuthc1Strategy = require('./authentication/SAuthc1Strategy');
+const JwtStrategy = require('./authentication/JwtStrategy');
+const scopeChecker = require('./helpers/scopeChecker');
+const SwaggerExpress = BluebirdPromise.promisifyAll(require('swagger-express-mw'));
+const getApiKey = require('./helpers/getApiKey');
+const ssaclAuthenticate = require('./helpers/ssaclAuthenticate');
+const applyIdSiteMiddleware = require('./helpers/applyIdSiteMiddleware');
+const errorHandler = require('./helpers/errorHandler');
+const logger = require('../helpers/loggingHelper').logger;
 
-module.exports = function(secret){
+module.exports = function (secret) {
 
     // register SAuthc1 authentication strategy
     passport.use(new SAuthc1Strategy(config.get('server.rootUrl')));
@@ -32,10 +32,10 @@ module.exports = function(secret){
         'bearer-jwt',
         new JwtStrategy(
             req => Optional.ofNullable(req.headers.authorization)
-                    .map(_.bindKey(authorization, 'parse'))
-                    .filter(auth => auth.scheme === 'Bearer')
-                    .map(_.property('token'))
-                    .orElse(null),
+                .map(_.bindKey(authorization, 'parse'))
+                .filter(auth => auth.scheme === 'Bearer')
+                .map(_.property('token'))
+                .orElse(null),
             _.property('payload.sub')
         )
     );
@@ -68,45 +68,50 @@ module.exports = function(secret){
                 audience: 'admin'
             }
         },
-        function(payload, done){
+        function (payload, done) {
             return done(null, payload);
         }
     ));
 
     // basic authentication with API key & secret
     passport.use(new BasicStrategy(
-        function(apiKeyId, providedSecret, done){
+        function (apiKeyId, providedSecret, done) {
             getApiKey(apiKeyId)
-                    .then(function(apiKey){
-                        done(
-                            null,
-                            Optional.ofNullable(apiKey)
-                               .filter(_.flow(_.property('secret'), _.partial(_.eq, providedSecret)))
-                               .orElse(false)
-                        );
-            })
-            .catch(done);
+                .then(function (apiKey) {
+                    done(
+                        null,
+                        Optional.ofNullable(apiKey)
+                            .filter(_.flow(_.property('secret'), _.partial(_.eq, providedSecret)))
+                            .orElse(false)
+                    );
+                    return null;
+                })
+                .catch(done);
         }
     ));
 
     return SwaggerExpress
         .createAsync({
-            appRoot: process.cwd()+'/src',
+            appRoot: process.cwd() + '/src',
             configDir: '../config',
             swaggerFile: 'swagger/swagger.yaml'
         })
-        .then(function(swaggerExpress){
+        .then(function (swaggerExpress) {
 
-            var app = express();
-            app.use(morgan("tiny", { stream: {write: _.flow(_.nthArg(0), winston.loggers.get('http').info)}}));
+            const app = express();
+            app.use(morgan('tiny', {
+                stream: {
+                    write: message => message.split('\n').filter(l => l.length > 0).forEach(l => logger('http').info(l))
+                }
+            }));
             //Sauthc1 needs the raw body
             app.use(bodyParser.json({
-                verify: function(req, res, buf) {
+                verify: function (req, res, buf) {
                     req.rawBody = buf;
                 }
             }));
             app.use(nocache());
-            app.use(bodyParser.urlencoded({ extended: false }));
+            app.use(bodyParser.urlencoded({extended: false}));
             app.use(passport.initialize());
 
             //redirects to SAML idP can either be initiated from the application (with an access token)
@@ -130,5 +135,5 @@ module.exports = function(secret){
             app.use(errorHandler);
 
             return app;
-    });
+        });
 };

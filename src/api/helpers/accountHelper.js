@@ -9,12 +9,13 @@ const models = require('../../models');
 const ApiError = require('../../ApiError');
 const email = require('../../helpers/email');
 const hrefHelper = require('../../helpers/hrefHelper');
+const logger = require('../../helpers/loggingHelper').logger;
 
 
 exports.getSubAccountStore = function(accountStore, subAccountStoreHref){
     return Optional.ofNullable(subAccountStoreHref)
             .map(ash => {
-                var subAccountStore = hrefHelper.resolveHref(ash);
+                const subAccountStore = hrefHelper.resolveHref(ash);
                 //if account store & sub account store are the same, just return the former
                 if(subAccountStore instanceof accountStore.constructor){
                     ApiError.assert(accountStore.id === subAccountStore.id, ApiError, 400, 2014, 'The provided %s have different ID (%s and %s)', accountStore.constructor.options.name.plural, accountStore.id, subAccountStore.id);
@@ -35,7 +36,7 @@ exports.getSubAccountStore = function(accountStore, subAccountStoreHref){
 
 exports.findCloudAccount = function(login, applicationId, organizationName, accountStoreHref, ...directoryIncludes){
     //username and password are persisted lowercased to allow for case insensitive search
-    var lowerCaseLogin = login.toLowerCase();
+    const lowerCaseLogin = login.toLowerCase();
     return models.application.build({id: applicationId}, {isNewRecord: false})
             .getLookupAccountStore(organizationName)
             .then(as => exports.getSubAccountStore(as, accountStoreHref))
@@ -126,7 +127,7 @@ exports.authenticateAccount = function(login, password, applicationId, organizat
 /* jshint ignore:start */
 exports.getLinkedAccount = async (account, applicationId) =>
     //check that account linking policy is enabled and that the default account store is a directory
-    Optional.ofNullable(await models.application.findById(
+    Optional.ofNullable(await models.application.findByPk(
             applicationId,
             {
                 attributes: [],
@@ -175,6 +176,7 @@ exports.getLinkedAccount = async (account, applicationId) =>
                         rightAccountId: linkedAccount.id,
                         tenantId: linkedAccount.tenantId
                     });
+                    logger('sso').debug('created linked account %s for account %s with email %s in directory %s', linkedAccount.id, account.id, account.email, application.defaultAccountStoreMapping.accountStoreId);
                     return linkedAccount;
                 })
                 .orElse(account)

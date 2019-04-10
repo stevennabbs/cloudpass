@@ -1,45 +1,46 @@
 "use strict";
 
-var _ = require('lodash');
-var BluebirdPromise = require('sequelize').Promise;
-var Optional = require('optional-js');
-var config = require('config');
-var controllerHelper = require('../helpers/controllerHelper');
-var baseController = require('../helpers/baseController');
-var models = require('../../models');
-var ApiError = require('../../ApiError');
-var email = require('../../helpers/email');
+const _ = require('lodash');
+const BluebirdPromise = require('sequelize').Promise;
+const Optional = require('optional-js');
+const config = require('config');
+const controllerHelper = require('../helpers/controllerHelper');
+const baseController = require('../helpers/baseController');
+const models = require('../../models');
+const ApiError = require('../../ApiError');
+const email = require('../../helpers/email');
 
-var controller = baseController(models.account);
+const controller = baseController(models.account);
 
 controller.getCurrent = function (req, res) {
     res.status(302)
-            .location(
-                Optional.ofNullable(config.get('server.rootUrl'))
-                    .map(_.method('concat', '/v1/accounts/', req.user.accountId))
-                    .orElse(req.user.accountId)
-            )
-            .json();
+        .location(
+            Optional.ofNullable(config.get('server.rootUrl'))
+                .map(_.method('concat', '/v1/accounts/', req.user.accountId))
+                .orElse(req.user.accountId)
+        )
+        .json();
+    return null;
 };
 
 controller.getApiKeys = _.partial(controllerHelper.getCollection, models.account, 'apiKeys');
-controller.createApiKey = function(req, res){
+controller.createApiKey = function (req, res) {
     return controllerHelper.createAndExpand(
-            models.apiKey,
-            {tenantId: req.user.tenantId, accountId: req.swagger.params.id.value},
-            req, res);
+        models.apiKey,
+        {tenantId: req.user.tenantId, accountId: req.swagger.params.id.value},
+        req, res);
 };
 
 controller.getFactors = _.partial(controllerHelper.getCollection, models.account, 'factors');
-controller.createFactor = function(req, res){
-    var accountId = req.swagger.params.id.value;
-    var factorAttributes = req.swagger.params.attributes.value;
+controller.createFactor = function (req, res) {
+    const accountId = req.swagger.params.id.value;
+    const factorAttributes = req.swagger.params.attributes.value;
     //if accountName is not set, take the account email
     BluebirdPromise.resolve(
-      Optional.ofNullable(factorAttributes.accountName)
-        .orElseGet(() => models.account.findById(accountId, {attributes: ['email']})
-                        .tap(ApiError.assertFound)
-                        .get('email'))
+        Optional.ofNullable(factorAttributes.accountName)
+            .orElseGet(() => models.account.findByPk(accountId, {attributes: ['email']})
+                .tap(ApiError.assertFound)
+                .get('email'))
     ).then(email => {
         factorAttributes.accountName = email;
         return controllerHelper.createAndExpand(
@@ -49,11 +50,11 @@ controller.createFactor = function(req, res){
     });
 };
 
-controller.consumeEmailVerificationToken = function(req, res){
-    models.sequelize.transaction(function(){
+controller.consumeEmailVerificationToken = function (req, res) {
+    models.sequelize.transaction(function () {
         //account creation policy cannot be eagerly loaded here
         //see https://github.com/sequelize/sequelize/issues/2084
-        return models.emailVerificationToken.findById(
+        return models.emailVerificationToken.findByPk(
             req.swagger.params.tokenId.value,
             {
                 include: [{
@@ -64,51 +65,52 @@ controller.consumeEmailVerificationToken = function(req, res){
                 }]
             }
         )
-        .then(function(token){
-            ApiError.assert(token, ApiError.NOT_FOUND);
-            //enable the account and delete the token
-            return models.sequelize.Promise.join(
-                        token.account.update({status: 'ENABLED'}),
-                        token.destroy()
-                    );
-        });
+            .then(function (token) {
+                ApiError.assert(token, ApiError.NOT_FOUND);
+                //enable the account and delete the token
+                return models.sequelize.Promise.join(
+                    token.account.update({status: 'ENABLED'}),
+                    token.destroy()
+                );
+            });
     })
-    .spread(function(account){
-        account.directory.getAccountCreationPolicy()
-                .then(function(policy){
+        .spread(function (account) {
+            account.directory.getAccountCreationPolicy()
+                .then(function (policy) {
                     //send verification success & welcome emails if they are enabled
-                    if(policy.verificationSuccessEmailStatus === 'ENABLED'){
-                        policy
+                    if (policy.verificationSuccessEmailStatus === 'ENABLED') {
+                        return policy
                             .getVerificationSuccessEmailTemplates({limit: 1})
-                            .spread(function(template){
+                            .spread(function (template) {
                                 email.send(
                                     account,
                                     account.directory,
                                     template);
                             });
                     }
-                    if(policy.welcomeEmailStatus === 'ENABLED'){
-                        policy
-                            .getWelcomeEmailTemplates({limit : 1})
-                            .spread(function(template){
+                    if (policy.welcomeEmailStatus === 'ENABLED') {
+                        return policy
+                            .getWelcomeEmailTemplates({limit: 1})
+                            .spread(function (template) {
                                 email.send(
                                     account,
                                     account.directory,
                                     template);
                             });
                     }
+                    return null;
                 });
 
-        //send the whole account only if the expand parameter is set
-        res.json(req.swagger.params.expand.value?account:_.pick(account, 'href'));
-    })
-    .catch(req.next);
+            //send the whole account only if the expand parameter is set
+            res.json(req.swagger.params.expand.value ? account : _.pick(account, 'href'));
+        })
+        .catch(req.next);
 };
 
 controller.getProviderData = _.partial(controller.getComputedSubResource, 'getProviderData');
 
-controller.changePassword = function(req, res){
-    models.account.findById(
+controller.changePassword = function (req, res) {
+    models.account.findByPk(
         req.swagger.params.id.value,
         {
             include: [{
@@ -117,25 +119,26 @@ controller.changePassword = function(req, res){
             }]
         }
     )
-    .tap(ApiError.assertFound)
-    .tap(account =>
-        account.verifyPassword(req.swagger.params.attributes.value.currentPassword)
-            .then(_.partial(ApiError.assert, _, ApiError, 400, 7100, 'Password change failed because the specified password is incorrect.'))
-    )
-    .then(account => account.update({password: req.swagger.params.attributes.value.newPassword}))
-    .then(account => {
-        if (account.directory.passwordPolicy.resetSuccessEmailStatus === 'ENABLED') {
-            account.directory.passwordPolicy
-                .getResetSuccessEmailTemplates({limit: 1})
-                .spread(template => email.send(account, account.directory, template));
-        }
-        res.status(204).json();
-    })
-    .catch(req.next);
+        .tap(ApiError.assertFound)
+        .tap(account =>
+            account.verifyPassword(req.swagger.params.attributes.value.currentPassword)
+                .then(_.partial(ApiError.assert, _, ApiError, 400, 7100, 'Password change failed because the specified password is incorrect.'))
+        )
+        .then(account => account.update({password: req.swagger.params.attributes.value.newPassword}))
+        .then(account => {
+            if (account.directory.passwordPolicy.resetSuccessEmailStatus === 'ENABLED') {
+                account.directory.passwordPolicy
+                    .getResetSuccessEmailTemplates({limit: 1})
+                    .spread(template => email.send(account, account.directory, template));
+            }
+            res.status(204).json();
+            return null;
+        })
+        .catch(req.next);
 };
 
 //only for ID site, the actual work is made in applyIdSiteMiddleware
-controller.selectOrganization = (req, res) =>  res.json({
+controller.selectOrganization = (req, res) => res.json({
     account: models.account.build({id: req.swagger.params.id.value}),
     organization: models.organization.build({id: req.swagger.params.organizationId.value})
 });
