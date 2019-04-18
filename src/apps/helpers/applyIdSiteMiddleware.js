@@ -231,7 +231,7 @@ module.exports = function (app) {
     app.post('/applications/:applicationId/passwordResetTokens/:tokenId', removeCurrentPathFromScope);
     //allow challenging newly created factors
     app.post('/accounts/:id/factors', addPathsToScope(r => ({['/factors/' + r.id + '/challenges']: ['post']})));
-    //Hide configured factor sercrets
+    //Hide configured factor secrets
     app.get('/accounts/:id/factors', hideFactorSecrets);
     //after getting factors:
     // - allow deleting them if the user is authenticated (security settings view)

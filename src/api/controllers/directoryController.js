@@ -2,7 +2,9 @@
 
 const BluebirdPromise = require('sequelize').Promise;
 const _ = require('lodash');
-const signJwt = BluebirdPromise.promisify(require('jsonwebtoken').sign);
+const jsonwebtoken = require('jsonwebtoken');
+const signJwt = BluebirdPromise.promisify(jsonwebtoken.sign);
+const decodeJwt = jsonwebtoken.decode;
 const Optional = require('optional-js');
 const accountStoreController = require('../helpers/accountStoreController');
 const controllerHelper = require('../helpers/controllerHelper');
@@ -14,6 +16,8 @@ const ApiError = require('../../ApiError');
 const hrefHelper = require('../../helpers/hrefHelper');
 const logger = require('../../helpers/loggingHelper').logger;
 const isemail = require('isemail');
+const scopeHelper = require('../../helpers/scopeHelper')
+const idSiteHelper = require('../../apps/helpers/idSiteHelper');
 
 const controller = accountStoreController(models.directory, ['create', 'delete']);
 
@@ -170,30 +174,87 @@ controller.consumeSamlAssertion = function (req, res) {
             }
         )
         .spread((account, created, accountStore) =>
-            signJwt(
-                {
-                    isNewSub: created,
-                    status: "AUTHENTICATED",
-                    cb_uri: req.authInfo.cb_uri,
-                    irt: req.authInfo.init_jti,
-                    state: req.authInfo.state,
-                    inv_href: req.authInfo.inv_href,
-                    org_href: Optional.of(accountStore).filter(as => as instanceof models.organization).map(_.property('href')).orElse(null)
-                },
-                req.user.secret,
-                {
-                    expiresIn: 60,
-                    issuer: req.authInfo.app_href,
-                    subject: account.href,
-                    audience: req.user.id,
-                    header: {
-                        kid: req.user.id,
-                        stt: 'assertion'
-                    }
-                }
-            )
+            BluebirdPromise.join(account, account.countOrganizations(), created, accountStore)
         )
-        .then(sendJwtResponse(res, req.authInfo.cb_uri))
+        .spread((account, nbOrganizations, created, accountStore) => {
+                logger('sso').debug('found %s organizations for account %s', nbOrganizations, account.id);
+                if (nbOrganizations > 1) {
+                    // redirect to id site to choose organization
+                    const relayState = decodeJwt(req.body.RelayState);
+                    const application = hrefHelper.resolveHref(req.authInfo.app_href);
+                    return BluebirdPromise.join(
+                        models.idSite.findOne({
+                            where: {
+                                tenantId: req.user.tenantId
+                            },
+                            attributes: ['url'],
+                            limit: 1
+                        }),
+                        signJwt(
+                            {
+                                isNewSub: created,
+                                cb_uri: req.authInfo.cb_uri,
+                                irt: req.authInfo.init_jti,
+                                state: req.authInfo.state,
+                                inv_href: req.authInfo.inv_href,
+
+                                sofa: true,     // select organization for account
+                                scope: _.merge(
+                                    scopeHelper.getIdSiteScope(application, accountStore),
+                                    idSiteHelper.getAccountOrganizationsScope(account.id)
+                                ),
+                                app_href: application.href,
+                                init_jti: req.authInfo.init_jti,
+                                asnk: accountStore.name, //account store name key
+                                //sof: true, //show organization field
+                                ros: true, //require organization selection
+                                ash: application.href,
+                                //only to not make stormpath.js crash
+                                sp_token: 'null'
+                            },
+                            req.user.secret,
+                            {
+                                expiresIn: 60,
+                                issuer: req.authInfo.app_href,
+                                subject: relayState.sub,
+                                audience: 'idSite'
+                            }
+                        )
+                    )
+                        .spread((idSite, token) => {
+                                const location = idSite.url + '/#/?jwt=' + token;
+                                logger('sso').debug('choose organization, redirect to %s', location);
+                                return res.status(302).location(location).send();
+                            }
+                        );
+                } else {
+                    // only one organization: redirect to application
+                    return signJwt(
+                        {
+                            isNewSub: created,
+                            status: "AUTHENTICATED",
+                            cb_uri: req.authInfo.cb_uri,
+                            irt: req.authInfo.init_jti,
+                            state: req.authInfo.state,
+                            inv_href: req.authInfo.inv_href,
+                            org_href: Optional.of(accountStore).filter(as => as instanceof models.organization).map(_.property('href')).orElse(null)
+                        },
+                        req.user.secret,
+                        {
+                            expiresIn: 60,
+                            issuer: req.authInfo.app_href,
+                            subject: account.href,
+                            audience: req.user.id,
+                            header: {
+                                kid: req.user.id,
+                                stt: 'assertion'
+                            }
+                        }
+                    )
+                        .then(sendJwtResponse(res, req.authInfo.cb_uri));
+                }
+            }
+        )
         .catch(req.next);
 };
 
