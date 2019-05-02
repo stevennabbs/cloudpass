@@ -58,8 +58,7 @@ app.post('/', function (req, res) {
             });
     })
         .then(() => res.status(204).json())
-        .catch(e => console.log(e));
-        //.catch(req.next);
+        .catch(req.next);
 });
 
 app.use(function (err, req, res, next) {
