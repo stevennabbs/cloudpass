@@ -17,7 +17,7 @@ app.get('/', function (req, res) {
                 {
                     model: models.account,
                     as: 'fromAccount',
-                    attributes: ['givenName', 'middleName', 'surname']
+                    attributes: ['givenName', 'middleName', 'surname', 'fullName']
                 },
                 {
                     model: models.tenant,

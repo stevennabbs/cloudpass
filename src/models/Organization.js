@@ -34,6 +34,12 @@ module.exports = function (sequelize, DataTypes) {
                     validate: {isIn: [['ENABLED', 'DISABLED']]},
                     allowNull: false,
                     defaultValue: 'ENABLED'
+                },
+                idSiteModel: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/idSiteModel'};
+                    }
                 }
             },
             {
@@ -42,12 +48,7 @@ module.exports = function (sequelize, DataTypes) {
                         unique: true,
                         fields: ['name', 'tenantId']
                     }
-                ],
-                getterMethods: {
-                    idSiteModel: function () {
-                        return {href: this.href + '/idSiteModel'};
-                    }
-                }
+                ]
             }
         )
     )

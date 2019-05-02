@@ -54,6 +54,12 @@ module.exports = function (sequelize, DataTypes) {
                         }
                     },
                     allowNull: true
+                },
+                href: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
+                        return this.sequelize.models.directory.getHref(this.directoryId)+'/provider';
+                    }
                 }
             },
             {
@@ -66,15 +72,10 @@ module.exports = function (sequelize, DataTypes) {
                         }
                     }
                 },
-                getterMethods: {
-                    href: function () {
-                        return this.sequelize.models.directory.getHref(this.directoryId)+'/provider';
-                    }
-                },
                 hooks: {
                     beforeCreate: function(instance){
                         if(instance.providerId === 'saml'){
-                            return instance.sequelize.Promise.join(
+                            return require('sequelize').Promise.join(
                                 //generate a certificate
                                 pem.createCertificateAsync({
                                     commonName: Optional.ofNullable(config.get('server.rootUrl'))
@@ -106,7 +107,7 @@ module.exports = function (sequelize, DataTypes) {
                         }
                     },
                     afterDestroy: function(instance){
-                        return instance.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             this.sequelize.models.samlServiceProviderMetadata.destroy({where: {id: instance.samlServiceProviderMetadataId}}),
                             this.sequelize.models.attributeStatementMappingRules.destroy({where: {id: instance.attributeStatementMappingRulesId}})
                         );

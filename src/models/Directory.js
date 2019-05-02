@@ -46,7 +46,7 @@ module.exports = function (sequelize, DataTypes) {
                 }],
                 hooks: {
                     beforeCreate: function (instance) {
-                        return instance.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             this.sequelize.models.passwordPolicy.create({tenantId: instance.tenantId}),
                             this.sequelize.models.accountCreationPolicy.create({tenantId: instance.tenantId}),
                             this.sequelize.models.accountLockingPolicy.create({tenantId: instance.tenantId})
@@ -65,7 +65,7 @@ module.exports = function (sequelize, DataTypes) {
                         });
                     },
                     afterDestroy: function (instance) {
-                        return instance.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             this.sequelize.models.passwordPolicy.destroy({
                                 where: {
                                     id: instance.passwordPolicyId

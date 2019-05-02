@@ -9,6 +9,7 @@ const _ = require('lodash');
 const Umzug = require('umzug');
 const Optional = require('optional-js');
 const logger = require('../helpers/loggingHelper').logger;
+const AbstractQuery = require('sequelize/lib/dialects/abstract/query').AbstractQuery
 
 const persistenceOptions = _.merge(
     {
@@ -16,14 +17,19 @@ const persistenceOptions = _.merge(
             updatedAt: 'modifiedAt',
             //add href to all resources
             getterMethods: {
-                href: function () {
+                href() {
                     return this.constructor.getHref(this.id);
                 }
             }
         },
-        //remove the last argument passed to the logging function (which is an option object)
-        logging: (...args) => logger('sql').debug(..._.initial(args)),
-        operatorsAliases: false
+        logging: (...args) => {
+            const l = logger('sql');
+            if (l.levels[l.level] >= l.levels['debug']) {
+                const params = args[1].bind;
+                const dialect = args[1].sequelize === undefined ? undefined : args[1].sequelize.getDialect();
+                l.debug(AbstractQuery.formatBindParameters(args[0], params, dialect)[0]);
+            }
+        }
     },
     config.get('persistence.options')
 );
@@ -58,7 +64,7 @@ Sequelize.Model.count = function (options) {
 Sequelize.Model.findAndCountAll = function (options) {
     const self = this;
     return this.sequelize.requireTransaction(function () {
-        return self.sequelize.Promise.join(
+        return sequelize.Promise.join(
             self.count(options),
             self.findAll(options)
         );

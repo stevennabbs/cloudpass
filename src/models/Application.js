@@ -33,6 +33,30 @@ module.exports = function (sequelize, DataTypes) {
                     validate: {isIn: [['ENABLED', 'DISABLED']]},
                     allowNull: false,
                     defaultValue: 'ENABLED'
+                },
+                loginAttempts: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/loginAttempts'};
+                    }
+                },
+                verificationEmails: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/verificationEmails'};
+                    }
+                },
+                idSiteModel: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/idSiteModel'};
+                    }
+                },
+                samlPolicy: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: hrefHelper.baseUrl + 'samlPolicies/' + this.id};
+                    }
                 }
             },
             {
@@ -42,7 +66,7 @@ module.exports = function (sequelize, DataTypes) {
                 }],
                 hooks: {
                     beforeCreate: function (instance) {
-                        return instance.sequelize.Promise.join(
+                        return require('sequelize').Promise.join(
                             this.sequelize.models.invitationPolicy.create({tenantId: instance.tenantId}),
                             this.sequelize.models.accountLinkingPolicy.create({tenantId: instance.tenantId})
                         )
@@ -50,20 +74,6 @@ module.exports = function (sequelize, DataTypes) {
                                 instance.set('invitationPolicyId', invitationPolicy.id);
                                 instance.set('accountLinkingPolicyId', accountLinkingPolicy.id);
                             });
-                    }
-                },
-                getterMethods: {
-                    loginAttempts: function () {
-                        return {href: this.href + '/loginAttempts'};
-                    },
-                    verificationEmails: function () {
-                        return {href: this.href + '/verificationEmails'};
-                    },
-                    idSiteModel: function () {
-                        return {href: this.href + '/idSiteModel'};
-                    },
-                    samlPolicy: function () {
-                        return {href: hrefHelper.baseUrl + 'samlPolicies/' + this.id};
                     }
                 }
             }
@@ -104,7 +114,7 @@ module.exports = function (sequelize, DataTypes) {
                             })
                                 .then(_.head)
                                 .tap(_.partial(ApiError.assert, _, ApiError, 404, 2014, 'Organization %s is not linked to application %s', organizationName, this.id)))
-                            .orElse(this.sequelize.Promise.resolve(this));
+                            .orElse(require('sequelize').Promise.resolve(this));
                     }
                 },
                 accountStoreWrapperMethods
