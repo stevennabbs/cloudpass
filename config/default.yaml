@@ -69,6 +69,10 @@ persistence:
 
 environment: development
 
+gc:
+  warnPauseMs: 1000
+  errorPauseMs: 5000
+
 logging:
   loggers:
     audit:
@@ -89,6 +93,10 @@ logging:
     sso:
       transports: [console]
       level: info
+    gc:
+      transports: [console]
+      level: warn
+
 # example of logging configuration
 # currently, supported transports are:
 # - standard winston transports (console, file, http, stream)
