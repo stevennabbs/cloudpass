@@ -54,6 +54,12 @@ module.exports = function (sequelize, DataTypes) {
                         }
                     },
                     allowNull: true
+                },
+                href: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
+                        return this.sequelize.models.directory.getHref(this.directoryId)+'/provider';
+                    }
                 }
             },
             {
@@ -64,11 +70,6 @@ module.exports = function (sequelize, DataTypes) {
                             // ssoLogoutUrl is optional
                             ApiError.assert(this.encodedX509SigningCert, 'Missing IdP certificate');
                         }
-                    }
-                },
-                getterMethods: {
-                    href: function () {
-                        return this.sequelize.models.directory.getHref(this.directoryId)+'/provider';
                     }
                 },
                 hooks: {

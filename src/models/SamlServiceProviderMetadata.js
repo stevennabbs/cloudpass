@@ -16,7 +16,7 @@ module.exports = function (sequelize, DataTypes) {
                 privateKey: {
                     type: DataTypes.TEXT,
                     allowNull: false,
-                    roles: { serviceProvider: true }
+                    roles: {serviceProvider: true}
                 },
                 x509SigningCert: {
                     type: DataTypes.TEXT,
@@ -26,29 +26,33 @@ module.exports = function (sequelize, DataTypes) {
                     //only needed to compute the entity ID & assertion endpoint
                     type: DataTypes.UUID,
                     allowNull: false,
-                    roles: { serviceProvider: true }
+                    roles: {serviceProvider: true}
+                },
+                assertionConsumerServicePostEndpoint: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
+                        return this.sequelize.models.directory.getHref(this.get('directoryId', {role: 'serviceProvider'})) + '/saml/sso/post';
+                    }
+                },
+                entityId: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
+                        return 'urn:cloudpass:directory:' + this.get('directoryId', {role: 'serviceProvider'}) + ':provider:sp';
+                    }
                 }
             },
             {
                 name: {
-                   singular: 'samlServiceProviderMetadata',
-                   plural: 'samlServiceProviderMetadatas' // *cringes*
-                },
-                getterMethods: {
-                    assertionConsumerServicePostEndpoint: function() {
-                        return this.sequelize.models.directory.getHref(this.get('directoryId', {role: 'serviceProvider'}))+'/saml/sso/post';
-                    },
-                    entityId: function(){
-                        return 'urn:cloudpass:directory:'+this.get('directoryId', {role: 'serviceProvider'})+':provider:sp';
-                    }
+                    singular: 'samlServiceProviderMetadata',
+                    plural: 'samlServiceProviderMetadatas' // *cringes*
                 }
             }
         )
     )
-    .withClassMethods({
-        associate: models => {
-            models.samlServiceProviderMetadata.belongsTo(models.tenant, {onDelete: 'cascade'});
-        }
-    })
-    .end();
+        .withClassMethods({
+            associate: models => {
+                models.samlServiceProviderMetadata.belongsTo(models.tenant, {onDelete: 'cascade'});
+            }
+        })
+        .end();
 };

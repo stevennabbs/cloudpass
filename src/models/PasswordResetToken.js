@@ -22,15 +22,16 @@ module.exports = function (sequelize, DataTypes) {
                 expires: {
                     type: DataTypes.DATE,
                     allowNull: false
-                }
-            },
-            {
-                timestamps: false,
-                getterMethods: {
-                    href: function () {
+                },
+                href: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
                         return this.constructor.getHref(this.id, this.applicationId);
                     }
                 }
+            },
+            {
+                timestamps: false
             }
         )
     )

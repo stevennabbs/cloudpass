@@ -92,17 +92,21 @@ module.exports = function (sequelize, DataTypes) {
                     validate: {isIn: [['ENABLED', 'DISABLED', 'UNVERIFIED']]},
                     allowNull: false,
                     defaultValue: 'ENABLED'
-                }
-            },
-            {
-                getterMethods: {
-                    fullName: function () {
+                },
+                fullName: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
                         return _.compact([this.givenName, this.middleName, this.surname]).join(' ');
-                    },
-                    passwordChanges: function () {
+                    }
+                },
+                passwordChanges: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
                         return {href: this.href + '/passwordChanges'};
                     }
                 },
+            },
+            {
                 indexes: [
                     {
                         unique: true,

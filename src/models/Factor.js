@@ -45,29 +45,36 @@ module.exports = function (sequelize, DataTypes) {
                 },
                 secret: {
                     type: DataTypes.STRING
-                }
-            },
-            {
-                getterMethods: {
-                    keyUri: function(){
+                },
+                keyUri: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
                         return Optional.ofNullable(this.secret)
-                                .map(s => speakeasy.otpauthURL({
+                            .map(s => speakeasy.otpauthURL({
                                 secret: s,
                                 label: Optional.ofNullable(this.issuer).map(i => i+':').orElse('') + this.accountName,
                                 issuer: this.issuer,
                                 encoding: 'base32'
                             }))
                             .orElse(null);
-                    },
-                    base64QRImage: function(){
-                        return Optional.ofNullable(this.keyUri)
-                                .map(u => qr.imageSync(u).toString('base64'))
-                                .orElse(null);
-                    },
-                    challenges: function(){
-                        return {href: this.href+'/challenges'};
                     }
                 },
+                base64QRImage: {
+                    type: DataTypes.VIRTUAL(DataTypes.STRING),
+                    get() {
+                        return Optional.ofNullable(this.keyUri)
+                            .map(u => qr.imageSync(u).toString('base64'))
+                            .orElse(null);
+                    }
+                },
+                challenges: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href+'/challenges'};
+                    }
+                }
+            },
+            {
                 hooks: {
                     beforeCreate: function(instance){
                         instance.set('secret', speakeasy.generateSecret().base32);

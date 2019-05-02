@@ -33,6 +33,30 @@ module.exports = function (sequelize, DataTypes) {
                     validate: {isIn: [['ENABLED', 'DISABLED']]},
                     allowNull: false,
                     defaultValue: 'ENABLED'
+                },
+                loginAttempts: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/loginAttempts'};
+                    }
+                },
+                verificationEmails: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/verificationEmails'};
+                    }
+                },
+                idSiteModel: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: this.href + '/idSiteModel'};
+                    }
+                },
+                samlPolicy: {
+                    type: DataTypes.VIRTUAL(DataTypes.JSON),
+                    get() {
+                        return {href: hrefHelper.baseUrl + 'samlPolicies/' + this.id};
+                    }
                 }
             },
             {
@@ -50,20 +74,6 @@ module.exports = function (sequelize, DataTypes) {
                                 instance.set('invitationPolicyId', invitationPolicy.id);
                                 instance.set('accountLinkingPolicyId', accountLinkingPolicy.id);
                             });
-                    }
-                },
-                getterMethods: {
-                    loginAttempts: function () {
-                        return {href: this.href + '/loginAttempts'};
-                    },
-                    verificationEmails: function () {
-                        return {href: this.href + '/verificationEmails'};
-                    },
-                    idSiteModel: function () {
-                        return {href: this.href + '/idSiteModel'};
-                    },
-                    samlPolicy: function () {
-                        return {href: hrefHelper.baseUrl + 'samlPolicies/' + this.id};
                     }
                 }
             }
