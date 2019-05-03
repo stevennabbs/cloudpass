@@ -18,11 +18,11 @@ describe('monitoring', function () {
             });
     });
 
-    it('version', function() {
+    it('version', function () {
         request(init.servers.monitoring).get('/version')
             .expect(200)
             .then(res => {
-               assert.strictEqual(res.body, require('../../package.json').version);
+                assert.strictEqual(res.body, require('../../package.json').version);
                 return null;
             });
     });
