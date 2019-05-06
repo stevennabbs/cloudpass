@@ -20,7 +20,7 @@ module.exports = function (...strategies) {
                         return next(err);
                     }
                     if (!user) {
-                        logger('http').error('authentication failed, err: %s, info: %s', JSON.stringify(err), JSON.stringify(info));
+                        logger('http').warn('authentication failed, err: %s, info: %s', JSON.stringify(err), JSON.stringify(info));
                         res.header("Access-Control-Allow-Origin", "*");
                         return ApiError.UNAUTHORIZED.write(res);
                     }
