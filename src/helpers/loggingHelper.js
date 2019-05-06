@@ -73,7 +73,7 @@ exports.fromConfig = function (winstonConf, callback) {
                     if (error) {
                         info.error = info.error || error;
                     }
-                    info.message = format.splat().transform(info).message;
+                    info.message = format.splat().transform(deepcopy(info)).message;
                 }
             }
             return info;
