@@ -39,3 +39,11 @@ persistence:
       maxIdleTime: PERSISTENCE_OPTIONS_POOL_MAX_IDLE_TIME
 
 environment: NODE_ENV
+
+logging:
+  transports:
+    __name: LOG_TRANSPORTS
+    __format: json
+  loggers:
+    __name: LOG_LOGGERS
+    __format: json
