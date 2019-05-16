@@ -11,9 +11,8 @@ server:
   secret: SERVER_SECRET
 
 email:
-  fields:
-    __name: EMAIL_FIELDS
-    __format: json
+  __name: EMAIL_JSON
+  __format: json
   transport:
     options:
       direct: EMAIL_TRANSPORT_DIRECT
@@ -42,8 +41,8 @@ environment: NODE_ENV
 
 logging:
   transports:
-    __name: LOG_TRANSPORTS
+    __name: LOG_TRANSPORTS_JSON
     __format: json
   loggers:
-    __name: LOG_LOGGERS
+    __name: LOG_LOGGERS_JSON
     __format: json
