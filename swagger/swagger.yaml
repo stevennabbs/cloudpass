@@ -942,7 +942,6 @@ paths:
           schema:
             type: object
             required:
-              - clientId
               - ssoLoginUrl
               - encodedX509SigningCert
             properties:
