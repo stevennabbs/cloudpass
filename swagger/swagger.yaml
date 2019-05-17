@@ -943,7 +943,6 @@ paths:
             type: object
             required:
               - clientId
-              - clientSecret
               - ssoLoginUrl
               - encodedX509SigningCert
             properties:
