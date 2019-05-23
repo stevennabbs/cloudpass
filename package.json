@@ -82,7 +82,7 @@
     "gulp-deb": "^0.2.1",
     "gulp-rename": "^1.4.0",
     "istanbul": "^1.1.0-alpha.1",
-    "merge-stream": "^1.0.1",
+    "merge-stream": "^2.0.0",
     "mocha": "^6.1.4",
     "rewire": "^4.0.1",
     "rimraf": "^2.6.3",
