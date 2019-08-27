@@ -85,7 +85,7 @@
     "merge-stream": "^1.0.1",
     "mocha": "^6.1.4",
     "rewire": "^4.0.1",
-    "rimraf": "^2.6.3",
+    "rimraf": "^3.0.0",
     "smtp-tester": "^1.2.0",
     "sqlite3": "^4.0.6",
     "superagent": "^5.0.5",
