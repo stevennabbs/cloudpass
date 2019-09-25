@@ -61,7 +61,7 @@
                     </execution>
                     <execution>
                         <id>npm ci</id>
-                        <phase>compile</phase>
+                        <phase>validate</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
