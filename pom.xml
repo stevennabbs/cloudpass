@@ -117,6 +117,29 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>npm version</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <phase>deploy</phase>
+                                <configuration>
+                                    <arguments>version ${MVN_RELEASE_VERSION}</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <repositories>
