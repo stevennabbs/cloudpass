@@ -130,7 +130,7 @@
                                 <goals>
                                     <goal>npm</goal>
                                 </goals>
-                                <phase>deploy</phase>
+                                <phase>post-integration-test</phase>
                                 <configuration>
                                     <arguments>version ${MVN_RELEASE_VERSION}</arguments>
                                 </configuration>
