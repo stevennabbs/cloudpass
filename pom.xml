@@ -50,7 +50,7 @@
                 <configuration>
                     <nodeVersion>v10.16.3</nodeVersion>
                     <npmVersion>6.9.0</npmVersion>
-                    <installDirectory>/tmp</installDirectory>
+                    <installDirectory>${java.io.tmpdir}</installDirectory>
                 </configuration>
                 <executions>
                     <execution>
