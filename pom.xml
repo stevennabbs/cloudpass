@@ -54,12 +54,14 @@
                 <executions>
                     <execution>
                         <id>install node and npm</id>
+                        <phase>validate</phase>
                         <goals>
                             <goal>install-node-and-npm</goal>
                         </goals>
                     </execution>
                     <execution>
                         <id>npm ci</id>
+                        <phase>compile</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
@@ -69,6 +71,7 @@
                     </execution>
                     <execution>
                         <id>npm test</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
@@ -127,10 +130,10 @@
                         <executions>
                             <execution>
                                 <id>npm version</id>
+                                <phase>validate</phase>
                                 <goals>
                                     <goal>npm</goal>
                                 </goals>
-                                <phase>post-integration-test</phase>
                                 <configuration>
                                     <arguments>version ${MVN_RELEASE_VERSION}</arguments>
                                 </configuration>
