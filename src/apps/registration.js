@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const models = require('../models');
 const BluebirdPromise = require('sequelize').Promise;
 const ApiError = require('../ApiError.js');
-const logger = require('../helpers/loggingHelper').logger;
 
 
 const app = express();
@@ -35,7 +34,6 @@ app.post('/', function (req, res) {
             })
             .spread(function (application, directory, tenantId) {
                 // verify honeypot anti-spam fields
-                logger('sso').info('registration request: %s', JSON.stringify(req.body));
                 const spam = (req.body.first_name || req.body.last_name || req.body.email_address || req.body.company_name
                     || req.body.user_password || req.body.confirm_password);
                 ApiError.assert(!spam, ApiError, 400, 400, 'Spam detected');

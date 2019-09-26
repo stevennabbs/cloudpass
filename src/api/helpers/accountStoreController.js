@@ -11,6 +11,7 @@ module.exports = function(model, transactionalMethods){
     const controller = baseController(model, transactionalMethods);
 
     controller.createAccount = function(req, res){
+        console.log(req.body);
           controllerHelper.queryAndExpand(
             () => model.findByPk(req.swagger.params.id.value)
                 .tap(ApiError.assertFound)
