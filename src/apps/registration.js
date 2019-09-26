@@ -34,6 +34,7 @@ app.post('/', function (req, res) {
             })
             .spread(function (application, directory, tenantId) {
                 // verify honeypot anti-spam fields
+                console.log(req.body);
                 const spam = (req.body.first_name || req.body.last_name || req.body.email_address || req.body.company_name
                     || req.body.user_password || req.body.confirm_password);
                 ApiError.assert(!spam, ApiError, 400, 400, 'Spam detected');
