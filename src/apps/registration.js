@@ -19,7 +19,6 @@ app.post('/', function (req, res) {
         })
             .then(function (tenant) {
                 req.app.get('ssaclCls').set('actor', tenant.id);
-                console.log(BluebirdPromise);
                 //create administration application & directory
                 return BluebirdPromise.join(
                     models.application.create({
@@ -34,6 +33,11 @@ app.post('/', function (req, res) {
                 );
             })
             .spread(function (application, directory, tenantId) {
+                // verify honeypot anti-spam fields
+                const spam = (req.body.first_name || req.body.last_name || req.body.email_address || req.body.company_name
+                    || req.body.user_password || req.body.confirm_password);
+                ApiError.assert(!spam, ApiError, 400, 400, 'Spam detected');
+
                 //create an account store mapping between the application and the directory
                 //and an admin account in the directory
                 return BluebirdPromise.join(
