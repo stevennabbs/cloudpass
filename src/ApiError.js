@@ -16,11 +16,11 @@ class ApiError extends ExtendableError {
     }
 
     write(req, res) {
-        let result = res.status(this.status);
         if (req.fullErrors) {
-            result = result.json(this);
+            return res.status(this.status).result.json(this);
+        } else {
+            return res.status(this.status);
         }
-        return result;
     }
 }
 

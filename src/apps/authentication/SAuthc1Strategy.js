@@ -104,7 +104,9 @@ SAuthc1Strategy.prototype.authenticate = function (req) {
             this.success(apiKey);
 
             // when a server is connected, return full errors
+            console.log('before');
             req.fullErrors = true;
+            console.log('after');
             return null;
         })
         .catch(this.fail);
