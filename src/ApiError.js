@@ -15,11 +15,11 @@ class ApiError extends ExtendableError {
         this.moreInfo = '';
     }
 
-    write(req, res) {
-        if (req.fullErrors) {
+    write(res) {
+        if (res.fullErrors) {
             return res.status(this.status).result.json(this);
         } else {
-            return res.status(this.status);
+            return res.status(this.status).end();
         }
     }
 }
