@@ -209,8 +209,8 @@ describe('Account workflows', function () {
                         .expect(400);
                 })
                 .then(function (res) {
-                    assert.strictEqual(res.body.status, 400);
-                    assert.strictEqual(res.body.code, 400);
+                    // no detailed error info
+                    assert.notStrictEqual(res.body, {});
                     return null;
                 });
         });
