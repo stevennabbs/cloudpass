@@ -22,7 +22,7 @@ module.exports = function (...strategies) {
                     if (!user) {
                         logger('http').warn('authentication failed, err: %s, info: %s', JSON.stringify(err), JSON.stringify(info));
                         res.header("Access-Control-Allow-Origin", "*");
-                        return ApiError.UNAUTHORIZED.write(res);
+                        return ApiError.UNAUTHORIZED.write(req, res);
                     }
                     req.user = user;
                     req.authInfo = info;

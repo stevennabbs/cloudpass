@@ -66,6 +66,6 @@ module.exports = function (err, req, res, next) {
         )
             .then(sendJwtResponse(res, req.authInfo.cb_uri));
     } else {
-        apiError.write(res);
+        apiError.write(req, res);
     }
 };
