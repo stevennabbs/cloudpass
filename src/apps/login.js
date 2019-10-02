@@ -29,6 +29,7 @@ app.post('/', function (req, res) {
         .then(function (tenant) {
             ApiError.assert(tenant, ApiError, 400, 400, 'Invalid tenant name');
             req.app.get('ssaclCls').set('actor', tenant.id);
+            res.loginAttempt = true;
             return authenticateAccount(req.body.email, req.body.password, tenant.applications[0].id);
         })
         .then(function (account) {
