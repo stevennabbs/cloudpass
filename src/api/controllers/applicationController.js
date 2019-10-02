@@ -63,6 +63,7 @@ controller.authenticate = function (req, res) {
     const applicationId = req.swagger.params.id.value;
     const login = decodedValue.substring(0, delimiterIndex);
     const password = decodedValue.substring((delimiterIndex + 1));
+    res.loginAttempt = true;
     accountHelper.authenticateAccount(
         login,
         password,

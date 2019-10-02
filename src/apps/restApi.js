@@ -77,10 +77,6 @@ module.exports = function (secret) {
     // basic authentication with API key & secret
     passport.use(new BasicStrategy({passReqToCallback: true},
         function (req, apiKeyId, providedSecret, done) {
-
-            // when a server is connected, return full errors
-            req.res.fullErrors = true;
-
             getApiKey(apiKeyId)
                 .then(function (apiKey) {
                     done(

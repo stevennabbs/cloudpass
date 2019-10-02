@@ -16,11 +16,13 @@ class ApiError extends ExtendableError {
     }
 
     write(res) {
-        if (res.fullErrors) {
-            return res.status(this.status).result.json(this);
-        } else {
-            return res.status(this.status).end();
+        if (res.loginAttempt) {
+            // security: return generic error "invalid username or password"
+            this.code = 7104;
+            this.developerMessage = 'Invalid username or password';
+            this.moreInfo = '';
         }
+        return res.status(this.status).json(this);
     }
 }
 
