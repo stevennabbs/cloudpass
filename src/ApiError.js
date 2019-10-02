@@ -22,7 +22,7 @@ class ApiError extends ExtendableError {
             this.developerMessage = 'Invalid username or password';
             this.moreInfo = '';
         }
-        return res.status(this.status).result.json(this);
+        return res.status(this.status).json(this);
     }
 }
 
