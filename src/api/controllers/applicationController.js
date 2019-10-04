@@ -100,10 +100,16 @@ controller.createPasswordResetToken = function (req, res) {
             _.get(req.swagger.params.attributes.value.accountStore, 'href')
         )
             .then(function (account) {
-                ApiError.assert(account, ApiError, 400, 2016, 'The email property value %s does not match a known resource.', req.swagger.params.attributes.value.email);
-                ApiError.assert(account.status === 'ENABLED', ApiError, 400, 7101, 'The account is not enabled');
-                ApiError.assert(account.passwordAuthenticationAllowed, ApiError, 400, 7101, 'Password authentication is not allowed for this account');
-                //get the directory with its password policy and email templates
+                if (!account) {
+                    logger('email').error('password reset: email %s not found', req.swagger.params.attributes.value.email);
+                    return null;
+                } else if (account.status !== 'ENABLED') {
+                    logger('email').error('password reset: account %s is not enabled', account.href);
+                    return null;
+                } else if (!account.passwordAuthenticationAllowed) {
+                    logger('email').error('password reset: password authentication not allowed for account %s', account.href);
+                    return null;
+                }
                 return account.getDirectory({
                     include: [{
                         model: models.passwordPolicy,
@@ -114,7 +120,10 @@ controller.createPasswordResetToken = function (req, res) {
                     }]
                 })
                     .then(function (directory) {
-                        ApiError.assert(directory.passwordPolicy.resetEmailStatus === 'ENABLED', ApiError, 400, 400, 'the password reset workflow is not enabled');
+                        if (directory.passwordPolicy.resetEmailStatus !== 'ENABLED') {
+                            logger('email').error('password reset workflow is not enabled on directory %s', directory.href);
+                            return null;
+                        }
 
                         //create a new token
                         const tokenExpiryDate = new Date();
