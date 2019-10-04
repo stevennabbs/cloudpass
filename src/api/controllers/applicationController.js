@@ -102,13 +102,13 @@ controller.createPasswordResetToken = function (req, res) {
             .then(function (account) {
                 if (!account) {
                     logger('email').error('password reset: email %s not found', req.swagger.params.attributes.value.email);
-                    return null;
+                    return {};
                 } else if (account.status !== 'ENABLED') {
                     logger('email').error('password reset: account %s is not enabled', account.href);
-                    return null;
+                    return {};
                 } else if (!account.passwordAuthenticationAllowed) {
                     logger('email').error('password reset: password authentication not allowed for account %s', account.href);
-                    return null;
+                    return {};
                 }
                 return account.getDirectory({
                     include: [{
@@ -122,7 +122,7 @@ controller.createPasswordResetToken = function (req, res) {
                     .then(function (directory) {
                         if (directory.passwordPolicy.resetEmailStatus !== 'ENABLED') {
                             logger('email').error('password reset workflow is not enabled on directory %s', directory.href);
-                            return null;
+                            return {};
                         }
 
                         //create a new token
