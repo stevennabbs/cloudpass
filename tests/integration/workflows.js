@@ -206,7 +206,7 @@ describe('Account workflows', function () {
                     //send a password reset request
                     return init.postRequest('applications/' + directory.applications.items[0].id + '/passwordResetTokens')
                         .send({email: account.email})
-                        .expect(400);
+                        .expect(200);
                 })
                 .then(function (res) {
                     // no detailed error info
