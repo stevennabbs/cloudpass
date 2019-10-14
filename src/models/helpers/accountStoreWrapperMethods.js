@@ -39,6 +39,19 @@ function getLogoUrl(accountStoreWrapper) {
         .get('logoUrl');
 }
 
+function getAccountCreation(accountStoreWrapper) {
+    return accountStoreWrapper.getTenant({
+        attributes: [],
+        include: [{
+            model: accountStoreWrapper.sequelize.models.idSite,
+            attributes: ['accountCreation']
+        }]
+    })
+        .get('idSites')
+        .get(0)
+        .get('accountCreation');
+}
+
 function getDefaultPasswordStrengthPolicy(accountStoreWrapper) {
     return getDefaultPasswordPolicy(accountStoreWrapper)
         .then(function (passwordPolicy) {
@@ -112,13 +125,15 @@ function getIdSiteModel() {
     return require('sequelize').Promise.join(
         getProviders(this),
         getDefaultPasswordStrengthPolicy(this),
-        getLogoUrl(this)
-    ).spread(function (providers, passwordPolicy, logoUrl) {
+        getLogoUrl(this),
+        getAccountCreation(this)
+    ).spread(function (providers, passwordPolicy, logoUrl, accountCreation) {
         return {
             href: this.href + '/idSiteModel',
             providers: providers,
             passwordPolicy: passwordPolicy,
-            logoUrl: logoUrl
+            logoUrl: logoUrl,
+            accountCreation: accountCreation
         };
     }.bind(this));
 }
