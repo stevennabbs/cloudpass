@@ -2,7 +2,7 @@
 module.exports = {
     up: function(migration, DataTypes, models) {
         return migration.addColumn(
-            'idSite',
+            'idSites',
             'accountCreation',
             {
                 type: DataTypes.BOOLEAN,
