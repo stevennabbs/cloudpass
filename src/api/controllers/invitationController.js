@@ -41,6 +41,7 @@ function sendEmail(invitation, apiKey) {
                                 ash: application.href,
                                 inv_href: invitation.href,
                                 email: invitation.email,
+                                organization: invitation.organization,
                                 sp_token: 'null'
                             },
                             apiKey.secret,
