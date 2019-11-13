@@ -55,7 +55,7 @@ app.get('/', function (req, res) {
         //check that the requested redirect URI is authorized
         if (new UrlMatch(req.user.tenant.idSites[0].authorizedRedirectURIs).test(req.authInfo.cb_uri)) {
             const application = hrefHelper.resolveHref(req.authInfo.sub);
-            logger('sso').info('authInfo defined %s', req.authInfo);
+            logger('sso').info('authInfo defined %s', JSON.stringify(req.authInfo));
             logger('sso').info('onk defined %s', req.authInfo.onk);
             //get the account store in where to login
             //and the invited email (if exists)
