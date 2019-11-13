@@ -55,8 +55,8 @@ app.get('/', function (req, res) {
         //check that the requested redirect URI is authorized
         if (new UrlMatch(req.user.tenant.idSites[0].authorizedRedirectURIs).test(req.authInfo.cb_uri)) {
             const application = hrefHelper.resolveHref(req.authInfo.sub);
-            logger.warn('authInfo defined ', req.authInfo);
-            logger.warn('organizationName defined ', req.authInfo.onk);
+            logger('sso').info('authInfo defined %s', req.authInfo);
+            logger('sso').info('onk defined %s', req.authInfo.onk);
             //get the account store in where to login
             //and the invited email (if exists)
             BluebirdPromise.join(
@@ -65,7 +65,7 @@ app.get('/', function (req, res) {
                 Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
             ).spread(function (organizationName, accountStore, invitationEmail) {
                 const cookie = req.cookies[req.user.tenantId];
-                logger.warn('organizationName passed as param ', organizationName);
+                logger('sso').info('organizationName defined %s', organizationName);
                 if (cookie) {
                     //the user already authenticated for this tenant
                     //check if his account belongs to the requested account store
