@@ -55,6 +55,8 @@ app.get('/', function (req, res) {
         //check that the requested redirect URI is authorized
         if (new UrlMatch(req.user.tenant.idSites[0].authorizedRedirectURIs).test(req.authInfo.cb_uri)) {
             const application = hrefHelper.resolveHref(req.authInfo.sub);
+            it('authInfo defined ', req.authInfo);
+            it('organizationName defined ', req.authInfo.onk);
             //get the account store in where to login
             //and the invited email (if exists)
             BluebirdPromise.join(
@@ -63,6 +65,7 @@ app.get('/', function (req, res) {
                 Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
             ).spread(function (organizationName, accountStore, invitationEmail) {
                 const cookie = req.cookies[req.user.tenantId];
+                it('organizationName passed as param ', organizationName);
                 if (cookie) {
                     //the user already authenticated for this tenant
                     //check if his account belongs to the requested account store
