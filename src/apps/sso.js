@@ -219,7 +219,7 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
                 ash: Optional.ofNullable(accountStore).map(_.property('href')).map(hrefHelper.unqualifyHref).map(_.bindKey(baseUrl, 'concat')).orElse(null),
                 inv_href: jwtPayload.inv_href,
                 email: invitationEmail,
-                accountStore: accountStore,
+                accountStore: Optional.ofNullable(accountStore).orElse(null),
                 company: 'default',
                 //only to not make stormpath.js crash
                 sp_token: 'null'
