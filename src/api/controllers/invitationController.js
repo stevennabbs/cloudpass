@@ -28,6 +28,7 @@ function sendEmail(invitation, apiKey) {
     })
         .then(application => {
             ApiError.assert(application.invitationPolicy.invitationEmailStatus === 'ENABLED', ApiError, 400, 400, 'the invitation workflow is not enabled');
+            logger('sso').info('invitation defined %s', JSON.stringify(invitation));
             return BluebirdPromise.resolve(
                 //if a callbackUri is specified, the link in the email must send the user on ID site
                 Optional.ofNullable(invitation.callbackUri)
@@ -41,7 +42,6 @@ function sendEmail(invitation, apiKey) {
                                 ash: application.href,
                                 inv_href: invitation.href,
                                 email: invitation.email,
-                                organization: invitation.organization,
                                 company: 'default',
                                 sp_token: 'null'
                             },
