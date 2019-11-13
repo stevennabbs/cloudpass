@@ -203,8 +203,6 @@ app.use(errorHandler);
 
 function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, invitationEmail, content) {
     const baseUrl = hrefHelper.getBaseUrl(jwtPayload.sub);
-    console.log(res);
-    console.log(accountStore);
     return jwt.signAsync(
         _.merge(
             {
@@ -221,8 +219,8 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
                 ash: Optional.ofNullable(accountStore).map(_.property('href')).map(hrefHelper.unqualifyHref).map(_.bindKey(baseUrl, 'concat')).orElse(null),
                 inv_href: jwtPayload.inv_href,
                 email: invitationEmail,
+                accountStore: accountStore,
                 company: 'default',
-                organization: 'default',
                 //only to not make stormpath.js crash
                 sp_token: 'null'
             },
