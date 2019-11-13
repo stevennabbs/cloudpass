@@ -60,7 +60,7 @@ app.get('/', function (req, res) {
             //get the account store in where to login
             //and the invited email (if exists)
             BluebirdPromise.join(
-                req.authInfo.onk,
+                Optional.ofNullable(req.authInfo.onk).orElse('default'),
                 application.getLookupAccountStore(req.authInfo.onk),
                 Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
             ).spread(function (organizationName, accountStore, invitationEmail) {
