@@ -12,6 +12,7 @@ const scopeHelper = require('../../helpers/scopeHelper');
 const email = require('../../helpers/email');
 const models = require('../../models');
 const ApiError = require('../../ApiError');
+const logger = require('../../helpers/loggingHelper').logger;
 
 const controller = baseController(models.invitation);
 
