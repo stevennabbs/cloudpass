@@ -57,8 +57,7 @@ app.get('/', function (req, res) {
             const application = hrefHelper.resolveHref(req.authInfo.sub);
             logger('sso').info('authInfo defined %s', JSON.stringify(req.authInfo));
             logger('sso').info('onk defined %s', req.authInfo.onk);
-            logger('sso').info('req defined %s', JSON.stringify(req));
-            logger('sso').info('res defined %s', JSON.stringify(res));
+            logger('sso').info('req.user defined %s', JSON.stringify(req.user));
             //get the account store in where to login
             //and the invited email (if exists)
             BluebirdPromise.join(
