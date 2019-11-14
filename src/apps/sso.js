@@ -62,10 +62,9 @@ app.get('/', function (req, res) {
             //get the account store in where to login
             //and the invited email (if exists)
             BluebirdPromise.join(
-                Optional.ofNullable(req.authInfo.onk).orElse('default'),
                 application.getLookupAccountStore(req.authInfo.onk),
                 Optional.ofNullable(req.authInfo.inv_href).map(href => hrefHelper.resolveHref(href).reload().then(_.property('email'))).orElse(null)
-            ).spread(function (organizationName, accountStore, invitationEmail) {
+            ).spread(function (accountStore, invitationEmail) {
                 const cookie = req.cookies[req.user.tenantId];
                 logger('sso').info('organizationName defined %s', organizationName);
                 if (cookie) {
@@ -92,7 +91,6 @@ app.get('/', function (req, res) {
                                         accountStore,
                                         authInfo,
                                         invitationEmail,
-                                        organizationName,
                                         {
                                             scope: idSiteHelper.getFactorsScope(account.id),
                                             org_href: orgHref
@@ -109,7 +107,6 @@ app.get('/', function (req, res) {
                                         accountStore,
                                         authInfo,
                                         invitationEmail,
-                                        organizationName,
                                         {
                                             scope: idSiteHelper.getSecuritySettingsScope(account.id),
                                             authenticated: true,
@@ -141,9 +138,9 @@ app.get('/', function (req, res) {
                         })
                         // Either jwt expired or the account does not belong to the account store
                         //  => re-authentication required
-                        .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail, organizationName));
+                        .catch(() => redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail));
                 }
-                return redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail, organizationName);
+                return redirectToIdSite(res, req.user, application, accountStore, req.authInfo, invitationEmail);
             })
                 .catch(req.next);
         } else {
@@ -193,7 +190,6 @@ app.get('/logout', function (req, res) {
         null, null,
         req.authInfo,
         null,
-        null,
         {
             scope: {
                 applications: {
@@ -210,7 +206,7 @@ app.get('/logout', function (req, res) {
 
 app.use(errorHandler);
 
-function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, invitationEmail, organizationName, content) {
+function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, invitationEmail, content) {
     const baseUrl = hrefHelper.getBaseUrl(jwtPayload.sub);
     return jwt.signAsync(
         _.merge(
@@ -228,7 +224,6 @@ function redirectToIdSite(res, apiKey, application, accountStore, jwtPayload, in
                 ash: Optional.ofNullable(accountStore).map(_.property('href')).map(hrefHelper.unqualifyHref).map(_.bindKey(baseUrl, 'concat')).orElse(null),
                 inv_href: jwtPayload.inv_href,
                 email: invitationEmail,
-                company: organizationName,
                 //only to not make stormpath.js crash
                 sp_token: 'null'
             },

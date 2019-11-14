@@ -52,6 +52,19 @@ function getAccountCreation(accountStoreWrapper) {
         .get('accountCreation');
 }
 
+function getOrganizationEdit(accountStoreWrapper) {
+    return accountStoreWrapper.getTenant({
+        attributes: [],
+        include: [{
+            model: accountStoreWrapper.sequelize.models.idSite,
+            attributes: ['organizationEdit']
+        }]
+    })
+        .get('idSites')
+        .get(0)
+        .get('organizationEdit');
+}
+
 function getDefaultPasswordStrengthPolicy(accountStoreWrapper) {
     return getDefaultPasswordPolicy(accountStoreWrapper)
         .then(function (passwordPolicy) {
@@ -126,14 +139,16 @@ function getIdSiteModel() {
         getProviders(this),
         getDefaultPasswordStrengthPolicy(this),
         getLogoUrl(this),
-        getAccountCreation(this)
-    ).spread(function (providers, passwordPolicy, logoUrl, accountCreation) {
+        getAccountCreation(this),
+        getOrganizationEdit(this)
+    ).spread(function (providers, passwordPolicy, logoUrl, accountCreation, organizationEdit) {
         return {
             href: this.href + '/idSiteModel',
             providers: providers,
             passwordPolicy: passwordPolicy,
             logoUrl: logoUrl,
-            accountCreation: accountCreation
+            accountCreation: accountCreation,
+            organizationEdit: organizationEdit
         };
     }.bind(this));
 }
