@@ -66,9 +66,12 @@ function sendEmail(invitation, apiKey) {
                         Optional.ofNullable(invitation.fromAccountId).map(() => invitation.getFromAccount({attributes: ['givenName', 'surname', 'username', 'email']})).orElseGet(_.stubObject)
                     )
                         .spread((organization, fromAccount) => {
+
                             placeHolderValues.application = _.pick(application, ['name']);
                             placeHolderValues.organization = _.pick(organization, ['name', 'nameKey', 'description']);
                             placeHolderValues.fromAccount = _.pick(fromAccount, ['givenName', 'fullName', 'surname', 'username', 'email']);
+                            logger('sso').info('organization defined %s', JSON.stringify(organization));
+                            logger('sso').info('placeHolderValues defined %s', JSON.stringify(placeHolderValues));
                             email.send(
                                 {email: invitation.email},
                                 null,
