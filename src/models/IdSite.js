@@ -32,6 +32,11 @@ module.exports = function (sequelize, DataTypes) {
                     allowNull: false,
                     defaultValue: true
                 },
+                organizationEdit: {
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
                 sessionTtl: {
                     type: DataTypes.STRING(20),
                     allowNull: false,
@@ -48,6 +53,6 @@ module.exports = function (sequelize, DataTypes) {
     .withClassMethods({
         associate: models => models.group.belongsTo(models.tenant, {onDelete: 'cascade'})
     })
-    .withSettableAttributes('url', 'logoUrl', 'authorizedRedirectURIs', 'sessionTtl', 'sessionCookiePersistent', 'accountCreation')
+    .withSettableAttributes('url', 'logoUrl', 'authorizedRedirectURIs', 'sessionTtl', 'sessionCookiePersistent', 'accountCreation', 'organizationEdit')
     .end();
 };
